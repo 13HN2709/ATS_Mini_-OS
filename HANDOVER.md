@@ -858,3 +858,15 @@ Die Header- und Implementierungsdateien der offiziellen PU2CLR-Version 2.1.8 wur
 - **Wichtig:** Das ist ausschließlich ein Compile-only-Nachweis. Kein Geräteboot, kein Empfang/RDS-Test, keine Display-/Encoder-Prüfung und keine Flash-Aktion wurden bestätigt.
 - Nächster sicherer Arbeitsschritt: gezielte, lesende Inventarisierung der Display- und Encoder-Hardware/API und Abgleich mit dem konkreten ATS Mini V4; danach erst einen isolierten Minimal-UI-Umfang planen.
 - Keine GitHub Actions durch den Assistenten gestartet. Kein Flashen, keine Änderung an Bootloader, APP0, APP1, Recovery oder Partitionen. Die 8-MB-Partitionsdatei bleibt Compile-Referenz-only und darf nicht auf das 16-MB-Gerät geflasht werden.
+
+
+## 53. ATS Mini DEV Displaytreiber isoliert integriert (2026-11-01)
+
+- Neue Dateien: `firmware/ats-mini-os/src/display/DisplayDriver.h/.cpp`. Der LovyanGFX-Treiber basiert auf der lesend untersuchten Referenz `13HN2709/ats-mini-dev/ats-mini/Display.h`.
+- Übernommen wurden der ATS-Mini-8-Bit-Parallelbus, die ST7789-Initialisierung, die GC9307-Variante und die RDDID-Erkennung. Die separate LILYGO-SI473X-Konfiguration wird für ATS Mini V4 nicht verwendet.
+- Erste UI: schwarzer Hintergrund, neon-grüne Frequenz und Umrandung, separater Sendernamenbereich, eigene Radiotextzeile, RSSI/SNR und Stereo/Mono-Status.
+- `ats-mini-os.ino` initialisiert den Displaytreiber und aktualisiert die Anzeige aus `RadioSnapshot`. Bei fehlgeschlagener Displayinitialisierung bleiben serielle Diagnosen verfügbar.
+- Der manuelle Compile-Workflow installiert nun zusätzlich LovyanGFX und prüft den Header.
+- **Noch nicht kompiliert.** Bitte den bestehenden Workflow manuell starten und den Run-Link teilen. Der Assistent hat keine GitHub Action gestartet.
+- Pinbelegung/Panel-ID sind Referenzwerte und am konkreten Gerät nicht physisch bestätigt. Radiotext-Scrolling und Encoderbedienung sind noch nicht implementiert.
+- Keine Flash-Aktion und keine Änderung an Bootloader, APP0/APP1, Recovery oder Partitionen. Die 8-MB-Profile bleiben ausschließlich Compile-Referenz.
