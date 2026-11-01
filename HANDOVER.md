@@ -4,7 +4,7 @@
 >
 > **Stand:** 2026-11-01  
 > **Repository:** https://github.com/13HN2709/ATS_Mini_-OS  
-> **Status:** Compile-only-Build für OSPI und QSPI nach RDS-Initialisierung erfolgreich (Run `41274168929`); keine Hardwaretests, kein Flash und kein Radio-/Displaybetrieb bestätigt
+> **Status:** Nutzer bestätigt Run `41274825544` für OSPI und QSPI grün. Danach wurden RT-A/B-Pufferbereinigung und RDS-Seriendiagnose committed; diese letzten Änderungen warten noch auf den nächsten manuellen Compile-only-Lauf. Keine Hardwaretests, kein Flash und kein Radio-/Displaybetrieb bestätigt
 
 ## 1. Aktueller Auftrag
 
@@ -800,3 +800,24 @@ Die Header- und Implementierungsdateien der offiziellen PU2CLR-Version 2.1.8 wur
 - Nach einem erfolgreichen Build soll die RDS-Textsegment-/A/B-Flag-Behandlung gezielt überprüft werden. Die PU2CLR-Bibliothek hält interne RT-Puffer; die aktuelle Schnittstelle übernimmt deren Inhalt, daher ist die saubere Trennung alter und neuer RT-Segmente noch im Build-/Hardwaretest zu validieren.
 - `rdsAvailable` wird gesetzt, sobald ein empfangener RDS-Status vorliegt; tatsächliche Stabilität und Empfangsqualität müssen am Gerät geprüft werden.
 - Kein Firmware-Flash, kein Hardwaretest und keine Änderung der Partitionstabelle durchgeführt. Die 8-MB-Compile-Referenzpartition bleibt ausschließlich für CI.
+
+
+## 49. RDS-A/B-Pufferbereinigung und Startdiagnose (2026-11-01)
+
+### Nach dem grünen Lauf 41274825544 vorgenommene Änderungen
+- Nutzerbestätigter Lauf [41274825544](https://github.com/13HN2709/ATS_Mini_-OS/actions/runs/41274825544): beide Compile-only-Jobs `esp32s3-ospi` und `esp32s3-qspi` erfolgreich.
+- Danach wurde `TunerDriver.cpp` angepasst: Die PU2CLR-SI4735-2.1.8-Implementierung löscht die RT-Puffer bei Wechsel des Text-Flags A/B nicht automatisch. Beim erkannten Wechsel werden nun `clearRdsBuffer2A()` und `clearRdsBuffer2B()` aufgerufen, bevor das aktuelle Segment der neuen Meldung übernommen wird.
+- `ats-mini-os.ino` gibt im 2-Sekunden-Serienstatus zusätzlich RDS-Verfügbarkeit, PI, PTY, PS und RT aus. Das erleichtert den ersten sicheren Bring-up über den seriellen Monitor, bevor Display und Encoder integriert werden.
+- Commits nach Run 41274825544:
+  - RT-Pufferbereinigung: `2e89494fa299931d5a7672089c2ea27d4fe9169d`
+  - RDS-Seriendiagnose: `006702e8388153073f29b86d2eb474eae83855ba`
+
+### Nächster Schritt
+- Nutzer startet den Compile-only-Workflow manuell: https://github.com/13HN2709/ATS_Mini_-OS/actions/workflows/ats-mini-os-first-compile.yml
+- Beide Profile müssen nach diesen letzten Commits erneut erfolgreich kompilieren.
+- Wenn der Build grün bleibt, ist als nächster Entwicklungsblock die erste Display-/Encoder-Inventarisierung und eine separate, minimale UI-Anbindung vorzubereiten. Pins, Displaycontroller und benötigte Bibliotheken müssen vor Codeannahmen verifiziert werden.
+
+### Grenzen
+- Der Lauf 41274825544 liegt **vor** den zwei genannten Commits und verifiziert diese Änderungen nicht.
+- Kein Workflow durch den Assistenten gestartet, kein Firmware-Flash, keine Bootloader-/APP0-/APP1-/Recovery-/Partitionsänderung.
+- Die 8-MB-Partitionsdatei bleibt ausschließlich Compile-Referenz und darf nicht auf das 16-MB-Gerät geflasht werden.
