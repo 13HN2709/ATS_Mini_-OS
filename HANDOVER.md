@@ -779,3 +779,24 @@ Die Header- und Implementierungsdateien der offiziellen PU2CLR-Version 2.1.8 wur
 - Compile-only-Run [41274168929](https://github.com/13HN2709/ATS_Mini_-OS/actions/runs/41274168929) ist für QSPI und OSPI erfolgreich; er bestätigt die RDS-Initialisierung, aber noch keine RDS-Decodierung.
 - Diese API-Prüfung ist eine Quellcodeprüfung. Es wurde kein Gerät getestet, kein Firmware-Image geflasht und keine Partition oder Bootkomponente geändert.
 - Nächster Schritt: den RDS-Service und eine schmale Treiberschnittstelle implementieren; danach den Nutzer den manuellen Compile-only-Workflow erneut starten lassen.
+
+
+## 48. Erster modularer RDS-Polling-Service implementiert (2026-11-01)
+
+### Änderungen im Branch
+- `firmware/ats-mini-os/src/tuner/TunerDriver.h`: neuer `TunerRdsData*-Datenvertrag und `pollRds()`-Schnittstelle; der Treiber bleibt Eigentümer des SI4735-Objekts.
+- `firmware/ats-mini-os/src/tuner/TunerDriver.cpp`: liest pro Aufruf genau einen RDS-Status, verarbeitet gültige PI-/PTY-Blöcke und Gruppen 0 (PS) sowie 2A/2B (Radiotext). Text wird begrenzt in eigene Ausgabepuffer kopiert.
+- `firmware/ats-mini-os/src/radio/RadioCore.h/.cpp`: fragt RDS alle 250 ms ab und überträgt nur aktualisierte Felder in den Snapshot. StationName und RadioText bleiben getrennt; der zuletzt gültige Sendername wird bei normalem Polling nicht durch leere Daten überschrieben.
+- Es wurden keine UI-Dateien, Bootloader-, Flash- oder Partitionsdateien verändert.
+
+### Commits
+- Tuner-Schnittstelle: `a69dd10f958a5183eb197acdaef11139be863c5c`
+- Tuner-Polling: `6d7dacb558dc518e617368a19d133def1cc7fa32`
+- RadioCore-Deklaration: `2cfa531332f16424ce7c690148b90e26dc65655d`
+- RadioCore-Integration: `72af1d4277f0be49e6c88da2916904901646712b`
+
+### Einschränkungen und nächste Prüfung
+- **Build noch nicht verifiziert.** Der Nutzer muss den Compile-only-Workflow manuell starten: https://github.com/13HN2709/ATS_Mini_-OS/actions/workflows/ats-mini-os-first-compile.yml
+- Nach einem erfolgreichen Build soll die RDS-Textsegment-/A/B-Flag-Behandlung gezielt überprüft werden. Die PU2CLR-Bibliothek hält interne RT-Puffer; die aktuelle Schnittstelle übernimmt deren Inhalt, daher ist die saubere Trennung alter und neuer RT-Segmente noch im Build-/Hardwaretest zu validieren.
+- `rdsAvailable` wird gesetzt, sobald ein empfangener RDS-Status vorliegt; tatsächliche Stabilität und Empfangsqualität müssen am Gerät geprüft werden.
+- Kein Firmware-Flash, kein Hardwaretest und keine Änderung der Partitionstabelle durchgeführt. Die 8-MB-Compile-Referenzpartition bleibt ausschließlich für CI.
