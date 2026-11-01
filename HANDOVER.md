@@ -347,3 +347,37 @@ Die SI4735-Antwort stellt Rohfelder bereit, um die Dekodierung von ECC, AF, TP/T
 
 ### Arbeitsgrenzen bleiben unverändert
 Nur öffentliche Quellen und Dokumentation. 13HN2709/ats-mini-dev und bestehende Firmware-Repositories bleiben unverändert; keine Firmwareimplementierung, Builds, GitHub Actions oder Flashvorgänge. Slot A und DiamondRadio in Slot B bleiben unangetastet.
+
+
+## 21. Erweiterte Schriftarten und Layout-Test (2026-11-01)
+
+Der Nutzer hat ausdrücklich freigegeben, die Vorbereitung bis unmittelbar vor den ersten Build fortzusetzen. Vor dem ersten Build muss der Nutzer verständlich informiert werden. Keine GitHub Actions starten und nichts flashen.
+
+### Schriftziele
+- Zusätzliche Schriftstile: Digital-Segment und Retro-/Terminal-Pixel.
+- Erweiterte lateinische Zeichen für Deutsch, Italienisch, Französisch, Spanisch, Portugiesisch, Polnisch, Tschechisch und Türkisch.
+- Griechische und kyrillische Zeichen, sofern der geprüfte Zeichensatz sie enthält.
+- Arabisch mit verbundener Buchstabenform, korrekter Schreibrichtung und gemischtem arabisch/lateinischem Text; Persisch/Urdu-Zeichen als zusätzlicher Prüfpunkt.
+- Keine manuellen Ersatzschreibweisen für Umlaute oder andere Sonderzeichen.
+
+### Dokumente auf dem Vorbereitungszweig
+- `docs/FONT_AND_SCRIPT_SUPPORT.md`: Kandidaten, Anforderungen und Zeichen-Abnahmetest.
+- `ui/layout-test/README.md`: separates Layout-Testdesign und Bedienidee.
+- `docs/DRIVER_AND_DEPENDENCY_PLAN.md`: Prüfplan für Treiber, Bibliotheken und Lizenz-/Speicherfragen.
+
+### Recherche-Kandidaten
+- DSEG / DSegstended für Digital-Segment-Schrift.
+- VT323 als Retro-/Terminal-Kandidat; Glyphenabdeckung muss geprüft werden.
+- ArabicGFX plus passende arabische Schriftdateien als Kandidat für LovyanGFX; Integration ist noch nicht verifiziert.
+- Font-Dateien und Code dürfen erst nach Lizenz-, Zeichenabdeckungs-, Speicher- und Kompatibilitätsprüfung übernommen werden.
+
+### Nächste Arbeitsschritte
+1. Bestehende Referenztreiber und exakte Hardwarekonfiguration weiter inventarisieren.
+2. Zeichensätze tatsächlich auf benötigte Codepoints prüfen.
+3. Prüfen, ob arabische Textformung und RTL mit der vorhandenen Display-Konfiguration kompatibel sind.
+4. Den separaten Testlayout-Code in einem isolierten Bereich vorbereiten, ohne bestehende Layouts anzufassen.
+5. Partitionen, Image-Format und Dual-Boot-/Recovery-Anforderungen vor dem ersten Build prüfen.
+6. Vor dem ersten Build anhalten und den Nutzer informieren.
+
+### Schutzgrenzen
+Slot A, DiamondRadio in Slot B und bestehende Firmware-Referenz-Repositories bleiben unangetastet. Die Arbeit erfolgt auf `dev/font-layout-test-prebuild`. Keine Builds, keine Actions und keine Flashvorgänge bis zur ausdrücklichen Freigabe des ersten Build-Schritts.
