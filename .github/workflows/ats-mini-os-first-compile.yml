@@ -28,6 +28,13 @@ jobs:
       - name: Checkout selected branch
         uses: actions/checkout@v4
 
+      - name: Free disk space for ESP32 platform packages
+        run: |
+          # ESP32 core installation unpacks libraries for several chip families.
+          # Remove unrelated preinstalled SDKs from this ephemeral runner only.
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/share/boost /usr/share/swift
+          df -h /
+
       - name: Install Arduino CLI
         uses: arduino/setup-arduino-cli@v2
         with:
