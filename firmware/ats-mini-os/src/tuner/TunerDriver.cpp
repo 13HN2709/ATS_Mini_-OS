@@ -46,6 +46,12 @@ bool TunerDriver::begin(uint32_t initialFrequencyKHz) {
                kDefaultSpacing10KHz);
   radio_.setVolume(kDefaultVolume);
 
+  // Enable FM RDS reception. Reading/decoding RDS data is handled by the
+  // radio service in a later step; keep tuner setup responsible for enabling
+  // the receiver and resetting the library's RDS buffers after each startup.
+  radio_.RdsInit();
+  radio_.setRdsConfig(1, 2, 2, 2, 2);
+
   ready_ = true;
   return true;
 }
