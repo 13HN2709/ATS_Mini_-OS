@@ -526,3 +526,14 @@ Der Nutzer bestätigte mit Screenshot den erfolgreichen manuellen Workflow-Lauf 
 - `ats-mini-os-compile-report-esp32s3-qspi` (6.78 KB)
 
 Beide Matrix-Jobs `Compile-only / esp32s3-ospi` und `Compile-only / esp32s3-qspi` sind erfolgreich abgeschlossen. GitHub zeigt pro Job eine Node.js 20 Deprecation-Warnung für eine Action; das sind Warnungen, keine Build-Fehler. Status ist **Compile erfolgreich**, aber es handelt sich weiterhin um den aktuellen modularen Scaffold und nicht um eine vollständige Radio-Firmware. Es wurde nichts geflasht; Partitionen, Boot-Slots, Recovery und bestehende Firmware sind unangetastet. Der nächste Schritt ist, die Artefakte/Build-Ausgabe zu prüfen und anschließend die tatsächliche Firmware modular zu implementieren, beginnend mit minimal stabilem FM-Radio. Nicht flashen ohne ausdrückliche Freigabe.
+
+
+## 34. Erste modulare FM-Radioimplementierung (2026-11-01; Compile ausstehend)
+
+Nach dem erfolgreichen Scaffold-Compile wurden die ersten Funktionsmodule angelegt:
+- `src/tuner/TunerDriver.h/.cpp`: einziger Besitzer des SI4735-Tunerobjekts und direkter Tunerzugriffe.
+- `src/radio/RadioCore.h/.cpp`: FM-Tuning, 100-kHz-Schritt, RadioSnapshot und periodisches Lesen von Frequenz/RSSI/SNR/Stereo.
+- `.ino` bleibt dünner Einstiegspunkt: Start auf 103,9 MHz und serielle Diagnoseausgabe alle 2 Sekunden.
+- Workflow installiert nun `PU2CLR SI4735` als Abhängigkeit.
+
+Verwendete Referenz-Pins: LDO GPIO15, Reset GPIO16, SDA GPIO18, SCL GPIO17. Diese Zuordnung basiert auf dem bestehenden ATS Mini V4 Referenzprojekt und ist im neuen OS noch nicht auf Hardware getestet. Display, Encoder, Audio-/RDS-UI sind noch nicht integriert. **Compile für diesen neuen Code steht noch aus; kein Workflow gestartet, kein Flash.** Nächster Schritt: manuellen Compile-only-Workflow ausführen und die tatsächlichen Compilerlogs auswerten. Erst danach Hardwaretest planen.
