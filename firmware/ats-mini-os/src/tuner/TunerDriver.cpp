@@ -20,7 +20,7 @@ bool TunerDriver::begin(uint32_t initialFrequencyKHz) {
   delay(10);
   Wire.begin(kI2cSdaPin, kI2cSclPin);
 
-  radio_.setup(kRadioResetPin, 0, SI4735_FM);
+  radio_.setup(kRadioResetPin, 0, FM_FUNCTION);
   radio_.setFM(kMinFrequency10KHz, kMaxFrequency10KHz,
                static_cast<uint16_t>(constrain(initialFrequencyKHz / 10UL,
                                                kMinFrequency10KHz,
@@ -60,5 +60,5 @@ int16_t TunerDriver::snr() const {
 
 bool TunerDriver::stereo() const {
   if (!ready_) return false;
-  return const_cast<SI4735&>(radio_).getCurrentStereo();
+  return const_cast<SI4735&>(radio_).getCurrentPilot();
 }
