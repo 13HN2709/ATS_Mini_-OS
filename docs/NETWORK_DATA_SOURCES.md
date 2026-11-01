@@ -114,3 +114,22 @@ Referenz:
 - Keine Builds, GitHub Actions oder Flash-Vorgänge ohne ausdrückliche Freigabe.
 - Slot A und DiamondRadio in Slot B bleiben unangetastet.
 - Die 8-MB-Konfiguration in der Referenz ist kein Beweis für die physische Flash-Größe des Geräts.
+
+
+## 7. Entscheidung aus der weiteren Planung: RadioDNS bevorzugt prüfen
+
+Der Nutzer hat zugestimmt, RadioDNS als bevorzugten Kandidaten für die automatische Senderlogo-Suche in die Planung aufzunehmen. Das ist eine Architektur-/Rechercheentscheidung, noch keine Implementierungsfreigabe.
+
+Geplanter Ablauf:
+1. RDS-Informationen des tatsächlich empfangenen Senders auslesen (insbesondere PI-Code, Frequenz/Band und Länderkennung/ECC; PS-Name nur ergänzend).
+2. Die Senderidentität nach der RadioDNS-Spezifikation auflösen und verfügbare Service-Informationen abrufen.
+3. Falls ein Logo referenziert wird, URL/Antwort, erlaubtes Format, Lizenzbedingungen und Bildgröße prüfen.
+4. Logo in einer begrenzten, displaygerechten Größe herunterladen und lokal cachen; bei erneutem Empfang aus dem Cache anzeigen.
+5. Bei fehlenden RadioDNS-Daten, ungültiger Zuordnung, fehlendem WLAN oder Fehlern auf Sendername/RDS-Text zurückfallen.
+
+Wichtige Einschränkungen:
+- Noch nicht bestätigt, dass die vom Nutzer verwendete TEF6686-App tatsächlich RadioDNS nutzt; das ist eine plausible Vermutung, kein verifizierter Fakt.
+- RadioDNS ist ein technischer Standard und keine Garantie, dass jeder Sender Logos veröffentlicht oder dass jeder Logo-Endpunkt kostenlos bzw. unter denselben Bedingungen nutzbar ist.
+- Zuerst mit einem bekannten deutschen Sender testen und die Zuordnung über PI/Frequenz verifizieren. Radio-Browser bleibt optionaler Fallback, falls später sinnvoll.
+- Vor Implementierung Spezifikation, Lizenz-/Nutzungsbedingungen, HTTPS und Decoder-/Speicherbedarf erneut prüfen.
+- Weiterhin keine Builds, GitHub Actions, Flashvorgänge oder Änderungen an bestehenden Firmware-Repositories ohne ausdrückliche Freigabe.
