@@ -586,3 +586,10 @@ Workflow angepasst in Commit `bbdd150de4d749034b81e6f8624c433d94b88c57`:
 - Header-Prüfung gibt jetzt den tatsächlich gefundenen vollständigen Pfad aus.
 - Compile bekommt den Library-Ordner explizit über `--libraries "$HOME/Arduino/libraries"`.
 - Workflow wurde nicht gestartet; der Nutzer startet den nächsten Compile manuell. Kein Flash, keine Hardware-/Partitionsänderung.
+
+
+## 41. Compile-Lauf 41266976434 – Bibliothek explizit an Compiler übergeben (2026-11-01)
+
+OSPI-Job `124731702901` und QSPI-Job `124731703117` schlagen weiterhin mit `fatal error: SI4735.h: No such file or directory` fehl. Logs bestätigen, dass die Datei vorhanden ist unter `$HOME/Arduino/libraries/PU2CLR_SI4735/src/SI4735.h`; auch `--libraries "$HOME/Arduino/libraries"` hat die Abhängigkeit nicht aufgelöst.
+
+Nächste Workflow-Korrektur in Commit `63e3a85b5973ac5bb137ac11c3848756cbd6e3df`: statt der Sammlung mehrerer Libraries wird der konkrete Library-Root über `--library "$HOME/Arduino/libraries/PU2CLR_SI4735"` direkt an Arduino CLI übergeben. Grundlage ist die Arduino-CLI-Dokumentation zur expliziten Auswahl einer einzelnen Library. Noch kein neuer Workflow gestartet; der Nutzer startet manuell. Kein Flash und keine Geräteänderung.
