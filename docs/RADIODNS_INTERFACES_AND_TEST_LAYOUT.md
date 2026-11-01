@@ -143,31 +143,45 @@ Das Testlayout ist ein Entwicklungswerkzeug, kein endgültiger Hauptbildschirm. 
 
 ## 4. Digitalschrift für das Testlayout
 
-### Primärer Kandidat: Oxanium
+### Ausgewählter Kandidat: DSEGstended, 14-Segment
 
-Für die Testansicht wird **Oxanium** als bevorzugter digitaler Display-Font vorgeschlagen. Die Google-Fonts-Metadaten führen Oxanium als Display-Schrift unter SIL Open Font License (OFL) mit den Subsets `latin` und `latin-ext`. Latin Extended ist für die gewünschte Abdeckung deutscher Umlaute und erweiterter lateinischer Zeichen wesentlich.
+Für das erste RadioDNS-/RDS-Diagnose-Testlayout wird **DSEGstended in einer 14-Segment-Variante** als bevorzugter digitaler Display-Font ausgewählt. Der 14-Segment-Look ist für Frequenz, Zahlen und Buchstaben geeigneter als eine reine 7-Segment-Anzeige. DSEGstended erweitert die DSEG-Familie um zusätzliche lateinische Akzentzeichen sowie griechische und kyrillische Großbuchstaben und enthält unter anderem `Æ/æ`, `Œ/œ`, `Ø/ø` und `ß`.
 
-- Quelle/Metadaten: https://github.com/google/fonts/tree/main/ofl/oxanium
-- Lizenzdatei/Projektquelle: https://github.com/sevmeyer/oxanium
-- Google-Fonts-Projekt wird unter OFL geführt; die konkrete verwendete Fontdatei und Lizenz müssen später zusammen im Repository dokumentiert werden.
+- Projekt und Quellcode: https://github.com/ZeusOfTheCrows/DSegstended
+- Lizenz laut Projekt: SIL Open Font License 1.1 (OFL); die Lizenzdatei muss zusammen mit den tatsächlich übernommenen Fontdateien dokumentiert werden.
+- Als erster Kandidat wird eine **Regular-Variante** geprüft. Falls der Quellstand mehrere 14-Segment-Stile und -Größen enthält, werden Regular/Modern/Classic und mögliche Mini-Varianten anhand Lesbarkeit auf dem ATS-Display verglichen, statt ungeprüft eine Datei festzulegen.
+- Die tatsächliche TTF-/Bitmap-Datei ist noch nicht in dieses Repository übernommen. Die Projektseite ist eine Quellreferenz, keine Bestätigung einer bereits integrierten Schrift.
 
-Vor dem Einbinden muss eine echte Glyphenprüfung an der heruntergeladenen Datei erfolgen: `Ä Ö Ü ä ö ü ß`, `À È É Ì Ò Ù`, `à è é ì ò ù`, Ziffern, Satzzeichen und Hexwerte `A–F`. Nur das Vorhandensein des Subsets ersetzt diesen Test nicht.
+#### Pflicht-Glyphentest vor Integration
+
+Mindestens folgende Zeichen müssen in der konkreten Datei vorhanden sein und bei der vorgesehenen Displaygröße lesbar gerendert werden:
+
+- Deutsch: `Ä Ö Ü ä ö ü ß`
+- Italienisch/lateinisch erweitert: `À È É Ì Ò Ù à è é ì ò ù ç`
+- Radio-/Diagnosezeichen: `0123456789 . : - + / MHz`
+- Hexadezimalwerte: `A–F a–f`
+
+Die Metadaten oder ein Screenshot der Fontfamilie ersetzen diesen Test nicht. Fehlende Zeichen dürfen nicht stillschweigend durch leere Kästchen oder falsche Ersatzzeichen erscheinen.
+
+#### Vorgesehene Größen im Layout
+
+- **Groß:** Frequenzziffern (z. B. `107.90`), wenn die 14-Segment-Form bei der realen Displayauflösung gut lesbar bleibt.
+- **Mittel:** Sendername/PS und zentrale Statuswerte.
+- **Klein:** `MHz`, PI/ECC/GCC, PTY, DNS/SRV/SI-Status und Diagnosemeldungen.
+
+Die Schriftgröße ist pro Textrolle zu wählen. Die Fontfamilie selbst garantiert keine frei skalierbaren oder optisch optimalen Bitmap-Größen; bei Bedarf werden aus der Quelldatei passende Bitmap-Größen erzeugt. Speicherbedarf, Glyphenumfang und Renderer-Kompatibilität sind vor dem Einbau zu messen.
 
 ### Arabische Schrift: Noto Sans Arabic
 
-Für spätere arabische UI-Texte wird **Noto Sans Arabic** als separate Schriftfamilie vorgemerkt. Die Google-Fonts-Metadaten führen Arabisch sowie Latin/Latin Extended als Subsets und die SIL Open Font License (OFL).
-
-- Quelle/Metadaten: https://github.com/google/fonts/tree/main/ofl/notosansarabic
+Für einen späteren separaten Test arabischer UI-Texte bleibt **Noto Sans Arabic** vorgemerkt:
+- Quelle: https://github.com/google/fonts/tree/main/ofl/notosansarabic
 - Upstream: https://github.com/notofonts/arabic
 
-Wichtige technische Grenze: arabische Schrift benötigt kontextabhängige Zeichenformen und bidirektionale Textverarbeitung. Das bloße Vorhandensein von Arabisch-Glyphen in einer Schriftdatei garantiert keine korrekte Darstellung durch die aktuelle Displaybibliothek. Im ersten Testlayout wird deshalb Oxanium für lateinische/digitale Diagnosetexte verwendet; Noto Sans Arabic bleibt ein eigener späterer Rendering-Test und wird nicht ohne geprüfte Shaping-/RTL-Unterstützung als funktionsfähig behauptet.
+Arabisch erfordert kontextabhängige Zeichenformen und Rechts-nach-links-Verarbeitung. Die Fontdatei allein garantiert nicht, dass die vorhandene Displaybibliothek diese Funktionen unterstützt. Noto Sans Arabic wird daher erst nach einem eigenen RTL-/Shaping-Test als verwendbar eingestuft.
 
-### Font-Renderer und Speicher
+### Einbindungsstatus
 
-- Das ATS-Display verwendet in bisherigen Referenzständen LovyanGFX, aber die konkrete ATS Mini OS Render-Integration ist noch nicht implementiert.
-- Vor dem Festlegen des Fontformats müssen LovyanGFX-API, FreeFont/TTF-Unterstützung, Glyphenabdeckung, RAM-/Flashkosten und eine mögliche Konvertierung zu kompakten Bitmap-Fonts geprüft werden.
-- Keine Schriftdatei wird unbesehen als „bereits integriert“ behandelt. Quelle, Version, Lizenz und tatsächlich verwendete Zeichenabdeckung werden in einem Font-Inventar dokumentiert.
-- Der Test muss mindestens die deutsche Zeichenfolge **„ÄÖÜ äöü ß – Empfang: 103,9 MHz – Grüße aus Münster“** ohne Ersatzzeichen, abgeschnittene Akzente oder Layoutüberlauf darstellen.
+**Noch nicht integriert oder gerendert.** Vor dem Kopieren von Fontdateien müssen die konkrete 14-Segment-Regular-Datei, ihr Lizenztext, ihr Glyphenumfang und ihre Größe geprüft werden. Keine Builds oder GitHub Actions starten; keine bestehende Firmware und keine anderen Firmware-Repositories verändern.
 
 ## 5. Abnahmekriterien für spätere Implementierung
 
