@@ -621,3 +621,12 @@ Nächste Workflow-Korrektur in Commit `63e3a85b5973ac5bb137ac11c3848756cbd6e3df`
 - Korrektur in Commit `bde7559eaab5270c84d4133e978caa10892b5e17`: Der Treiber verwendet nun den lokal dokumentierten `constexpr uint8_t kFmFunction = 0` statt des nicht aufgelösten Symbols. `getCurrentPilot()` bleibt für die Stereo-Pilot-Abfrage erhalten.
 - **Nächster Schritt:** Nutzer startet den manuellen Compile-only-Workflow erneut; der Fix ist noch nicht durch einen neuen Build verifiziert.
 - Kein Workflow von uns gestartet, keine Firmware geflasht und keine Partitionen, Bootloader oder Geräteslots verändert.
+
+## Build-Fehlerstand – 2026-11-01 (Run 41270376115)
+
+- Beide Compile-only-Jobs (OSPI und QSPI) erreichten den Linker, scheiterten dort aber mit `undefined reference` auf SI4735-Konstruktor und -Methoden (`SI4735()`, `setup`, `setFM`, `setVolume`).
+- Die installierte Bibliothek PU2CLR SI4735 2.1.8 enthält `library.properties` sowie `src/SI4735.h` und `src/SI4735.cpp`; die Header-Prüfung allein hatte zuvor nicht bestätigt, dass die Implementierungsdatei Teil der Bibliothekserkennung ist.
+- Workflowkorrektur in Commit `7885d2eaca4a35a1636af70ccb4dfd8bebfc6d3a`: statt einer expliziten Einzelbibliotheks-/Header-Include-Überschreibung wird jetzt das Bibliotheksverzeichnis über `--libraries "$HOME/Arduino/libraries"` eingebunden. Die Vorprüfung verlangt zusätzlich Metadaten, Header und `SI4735.cpp`.
+- Die offizielle Arduino-CLI-Dokumentation beschreibt `--libraries` als Verzeichnis-Sammlung für Bibliotheken und bestätigt, dass die `src`-Quellen einer korrekt strukturierten Library kompiliert und gelinkt werden. Der Fix ist noch nicht durch einen neuen Lauf verifiziert.
+- Nächster Schritt: Nutzer startet den manuellen Compile-only-Workflow. Wir starten keinen Workflow selbst.
+- Kein Flashen, keine Hardwareänderungen und keine Änderungen an Bootloader, Partitionen, APP0 oder APP1.
