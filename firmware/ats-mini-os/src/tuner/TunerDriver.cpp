@@ -99,8 +99,7 @@ bool TunerDriver::pollRds(TunerRdsData& out) {
       lastTextFlag_ = flag;
       // PU2CLR 2.1.8 does not automatically clear the RT buffers when the
       // A/B flag changes. Clear both before accepting segments from the new text.
-      radio_.clearRdsBuffer2A();
-      radio_.clearRdsBuffer2B();
+      radio_.clearRadioTextBuffers();
     }
     const char* rt = radio_.getRdsVersionCode() == 0
                          ? radio_.getRdsText2A()
