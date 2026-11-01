@@ -5,13 +5,14 @@ Ein neues, modular geplantes OS-/Firmwareprojekt für den ATS Mini V4 und perspe
 ## Projektstatus
 
 **Phase:** Bestandsaufnahme und Architekturplanung  
-**Firmware-Code:** Noch nicht implementiert  
+**Firmware-Code:** Erste modulare Scaffold-Dateien angelegt; Radio-/Displaybetrieb noch nicht implementiert  
 **Builds / GitHub Actions / Flashen:** Nicht freigegeben
 
 Dieses Repository ist ein neues, getrenntes Projekt. Bestehende Firmware-Repositories sowie die installierte Firmware in Slot A und DiamondRadio in Slot B bleiben unangetastet.
 
 ## Dokumentation
 
+- [Firmware-Grundgerüst](firmware/ats-mini-os/README.md)
 - [Vorbereitung bis zum ersten Build](docs/FIRST_BUILD_READINESS.md)
 - [Hardware-, Build- und Dual-Boot-Recherche für OSPI/QSPI](docs/HARDWARE_BUILD_DUALBOOT_RESEARCH.md)
 
