@@ -218,3 +218,42 @@ Geprüfte externe Quellen (read-only): offizielles Repository `pu2clr/SI4735`, T
 - In der SI4735-2.1.8-Implementierung untersuchen, wie FIFO-Gruppen ausgelesen und welche Blockdaten exponiert werden.
 - Danach prüfen, ob Gruppe 1A (ECC), Gruppe 0A/0B (TP/TA/AF) und Gruppe 3A (RT+) anhand der gelieferten Daten zuverlässig dekodiert werden können.
 - Noch keine Implementierung, kein Build, keine GitHub Actions und kein Flashen.
+
+
+## 11. Vertiefte Prüfung: SI4735-RDS-FIFO und Rohblöcke (2026-11-01)
+
+### Verifizierter Datenpfad in PU2CLR SI4735 2.1.8
+
+Die Dateien src/SI4735.h und src/SI4735.cpp im offiziellen Repository, Tag 2.1.8, wurden read-only geprüft. Die Statusantwort si47x_rds_status ist 13 Byte lang und enthält neben Status/FIFO-Zähler die vollständigen 16-Bit-Blöcke A, B, C und D sowie die jeweiligen Block-Fehlerindikatoren (BLEA–BLED).
+
+Die Implementierung von SI4735::getRdsStatus(INTACK, MTFIFO, STATUSONLY) liest alle 13 Antwortbytes in das interne Mitglied currentRdsStatus.raw[]. Damit sind die Rohblöcke in der Bibliothek vorhanden. Die Bibliothek bietet in den geprüften öffentlichen Deklarationen jedoch keinen direkten öffentlichen Getter für sämtliche vier Rohblöcke; currentRdsStatus ist ein internes Klassenmitglied und darf nicht ohne Prüfung der Zugriffsebene als von außen zugänglich angenommen werden.
+
+**Wichtige FIFO-Semantik laut Bibliotheksdokumentation/AN332:**
+- STATUSONLY=0: Die Blöcke A–D gehören zum ältesten Eintrag in der RDS-FIFO; ein FIFO-Eintrag wird gelesen/entfernt, wenn die FIFO nicht leer ist.
+- STATUSONLY=1: Statusdaten liefern die zuletzt gültigen A-/B-Blöcke des aktuellen Senders; das ist kein Ersatz für den vollständigen ältesten FIFO-Gruppeneintrag, insbesondere nicht für C/D.
+- Die Statusantwort enthält Blockfehlerindikatoren. Rohdaten müssen vor dem Dekodieren anhand der BLE-Werte und der eingestellten Fehlerschwellen bewertet werden.
+- Die Standardbibliotheksfunktion getRdsPI() in Version 2.1.8 liefert laut Quellcode nur BLOCKAL. Der ATS-Wrapper kombiniert High- und Low-Byte und korrigiert dies; diese Korrektur darf nicht verloren gehen.
+
+### Datenfeldmatrix
+
+| Feld | RDS-Quelle | Status nach Quellcodeprüfung |
+|---|---|---|
+| PI | Block A, 16 Bit | Rohdaten im Statusobjekt; ATS-Wrapper kombiniert High + Low Byte. |
+| PS | Gruppe 0A, Block B und D | Vorhandene Bibliotheks-/Anwendungsfunktionen. |
+| PTY | Block B | Vorhandene Bibliotheks-/Anwendungsfunktionen. |
+| RT | Gruppe 2A/2B, C/D und Segmentbits | Vorhandene Textverarbeitung; RT+ ist damit nicht automatisch abgedeckt. |
+| TP/TA | Block B in passenden Gruppen | Aus Rohblock B prinzipiell dekodierbar; eigene validierte Auswertung nötig. |
+| AF | typischerweise Gruppe 0A, Block C | Rohblock C ist in der FIFO-Antwort enthalten; Gruppentyp/Version und Fehlerstatus prüfen. |
+| ECC | Gruppe 1A, Block C | Rohblock C ist vorhanden; ECC-Extraktion normativ prüfen. Nicht jede Station sendet ECC. |
+| RT+ | ODA-Zuordnung über Gruppe 3A und zugeordnete Anwendungsgruppen | Rohblöcke B/C/D sind verfügbar, aber ein RT+-Parser muss ODA-Ankündigung und Tags korrekt behandeln. Nicht implementiert. |
+| CT | Gruppe 4A | Bestehende Bibliotheks-/Anwendungsfunktion vorhanden. |
+
+Diese Tabelle beschreibt Datenquellen und den Stand der Quellcodeprüfung, nicht bereits implementierte Unterstützung in ATS Mini OS. Rohdaten vorhanden bezieht sich auf die Bibliotheksantwort bzw. ihr internes Statusobjekt. Für ATS Mini OS muss vor einer späteren Umsetzung entschieden werden, wie Rohgruppen sauber und ohne konkurrierende Aufrufe aus dem bestehenden FIFO-Pfad bereitgestellt werden. Nicht einfach zusätzlich getRdsStatus() aufrufen: das könnte FIFO-Einträge konsumieren und die bestehende RDS-Textverarbeitung stören.
+
+### Referenzen und nächster Prüfpunkt
+- PU2CLR SI4735 2.1.8: https://github.com/pu2clr/SI4735/tree/2.1.8
+- PU2CLR RDS API: https://pu2clr.github.io/SI4735/extras/apidoc/html/group__group16.html
+- Silicon Labs AN332: https://strawberry-linux.com/pub/Si4735%20Programming%20Guide.pdf
+- RadioDNS Core Lookup/GCC: https://radiodns.org/technical/documentation/ ; https://radiodns.org/technical/libraries/gcc-library/
+
+Nächster Schritt bleibt reine Quellenprüfung: Bitfelder von Gruppe 0A/0B, 1A und 3A anhand eines normativen RDS-Standards/Herstellerdokuments gegenprüfen; danach Datenmodell und sichere Integrationsstrategie für genau einen FIFO-Leser dokumentieren. Keine Implementierung, Builds, Actions oder Flashvorgänge.
