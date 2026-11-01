@@ -207,3 +207,15 @@ Vorläufige Auswahl:
 - **Netzwerkarchitektur:** gemeinsame Netzwerkdienste, HTTPS-Zertifikatsprüfung, begrenzte Downloads, Cache und nicht blockierende Abläufe vorsehen. AP Only allein hat keinen Internetzugang; für externe Wetter-/Logo-Daten muss STA-Internet verfügbar sein.
 
 Die Ergebnisse sind Recherche-Hinweise und noch keine Implementierung oder endgültige Anbieterfreigabe. Alle Schutzgrenzen aus diesem Dokument bleiben bestehen: Referenz-Repositories read-only, keine Builds/Actions/Flashvorgänge und keine Änderungen an Slot A oder Slot B.
+
+
+## 14. Entscheidung: RadioDNS als bevorzugten Logo-Kandidaten aufnehmen
+
+Der Nutzer hat zugestimmt, RadioDNS für die geplante automatische RDS-Senderlogo-Funktion weiterzuverfolgen. Die Details und Quellen stehen in `docs/NETWORK_DATA_SOURCES.md`, Abschnitt 7.
+
+- RadioDNS ist der bevorzugte erste Kandidat für die Recherche/Erprobung der Senderlogo-Suche.
+- Als Identität sollen PI-Code, Frequenz/Band und Länderkennung/ECC nach Spezifikation verwendet werden; der PS-Sendername ist nur ergänzend.
+- Logo-Downloads müssen begrenzt, geprüft und lokal gecacht werden. Ohne Treffer oder WLAN bleibt Sendername/RDS-Text sichtbar.
+- Es ist nicht verifiziert, dass die TEF6686-App des Nutzers RadioDNS tatsächlich nutzt; dies bleibt eine Vermutung.
+- RadioDNS ist keine Garantie für Logos bei allen Sendern und ersetzt nicht die Prüfung von Lizenzbedingungen, HTTPS, Bildformaten und Speicherbedarf.
+- Dies ist eine Planungsentscheidung, keine Freigabe für ausführbaren Code, Builds, Actions oder Flashvorgänge. Bestehende Firmware-Repositories bleiben unangetastet.
