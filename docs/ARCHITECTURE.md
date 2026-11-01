@@ -153,10 +153,13 @@ Erste Quellcodeprüfung des Referenz-Repositories `13HN2709/ats-mini-dev` (main)
 **Anforderung des Nutzers (2026-11-01):** Die Endfirmware soll eine mehrstufige CPU-Taktoption besitzen. Nutzer können entweder einen Taktmodus fest einstellen oder automatische Anpassung je nach Layout/Funktion aktivieren.
 
 ### Bedienmodell
-- **Fester Modus:** ein vom Nutzer ausgewähltes CPU-Leistungsprofil bleibt aktiv, unabhängig vom aktuell geöffneten Layout. Der Nutzer kann es jederzeit ändern.
-- **Automatikmodus:** Layouts und Dienste melden begrenzte Leistungsanforderungen an einen zentralen Performance Manager. Kein Layout setzt selbst direkt den CPU-Takt.
-- Die auswählbaren Stufen und konkreten Frequenzwerte werden erst festgelegt, nachdem die ESP32-S3-/Arduino-Core-API und deren unterstützte Takte verifiziert wurden. Nicht ungeprüft beliebige Frequenzen oder APIs einbauen.
-- In Automatik darf eine Anforderung den fest eingestellten Nutzermodus nicht überschreiben. Automatik ist eine eigene, explizit auswählbare Betriebsart.
+Im Menü werden genau **vier Einträge** angeboten:
+1. **Auto** – Layouts und Dienste melden begrenzte Leistungsanforderungen an den zentralen Performance Manager; die CPU-Leistung wird bei Bedarf angepasst.
+2. **Taktstufe 1** – feste, niedrigste unterstützte CPU-Leistungsstufe.
+3. **Taktstufe 2** – feste, mittlere unterstützte CPU-Leistungsstufe.
+4. **Taktstufe 3** – feste, höchste unterstützte CPU-Leistungsstufe.
+
+Die drei festen Stufen bleiben aktiv, unabhängig vom aktuell geöffneten Layout; automatische Anforderungen dürfen sie nicht überschreiben. Die konkreten Frequenzwerte werden erst nach Prüfung der ESP32-S3-/Arduino-Core-API festgelegt. Nicht ungeprüft beliebige Frequenzen oder APIs einbauen. In **Auto** darf der Performance Manager temporär auf eine höhere Stufe schalten und nach Abschluss aller aktiven Anforderungen wieder zurückkehren.
 
 ### Beispiel: RadioDNS-Senderlogo
 1. FM/RDS liefert stabile Senderidentität (insbesondere PI und Frequenz; nötige Länder-/GCC-Informationen werden validiert).
