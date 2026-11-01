@@ -291,3 +291,12 @@ Wichtig für die Implementierung:
 - Ein koordinierter RDS-FIFO-Leser bleibt zwingend; zusätzliche parallele FIFO-Aufrufe könnten die bestehende Datenverarbeitung stören.
 
 Diese Ergänzung ist Planung/Dokumentation. Sie stellt keine Freigabe zur Implementierung, zu Builds, Actions oder Flashvorgängen dar.
+
+
+## 14. RadioDNS-Transport und Schnittstellen präzisiert
+
+Die aktuelle RadioDNS-Dokumentation wurde erneut geprüft. Der aktuelle Core-Lookup-Standard ist ETSI TS 103 270 v1.4.1; für Senderlogos gilt die SPI/SI-Spezifikation TS 102 818 v3.5.1. Ältere RDNS01-/XSI-Pfade sind nicht als Implementierungsgrundlage zu verwenden.
+
+Die offizielle Project-Logo-Anleitung beschreibt den SI-Endpunkt `/radiodns/spi/3.1/SI.xml` über HTTP. Daher darf der spätere Client nicht voraussetzen, dass jeder Metadatenserver HTTPS anbietet. Transport, Redirects und Fehlerverhalten sind explizit zu begrenzen; HTTPS wird genutzt, wenn der korrekte Serverpfad es unterstützt. Das ist keine pauschale Freigabe für unsichere Redirects oder beliebige URLs.
+
+Die konkrete Schnittstellenplanung und die Anforderungen für das Testlayout stehen in [RADIODNS_INTERFACES_AND_TEST_LAYOUT.md](RADIODNS_INTERFACES_AND_TEST_LAYOUT.md). Dort sind RDS Snapshot Provider, Identity Builder, Discovery, SI Parser/Bearer Matcher, Logo Selector/Cache und das Diagnose-UI getrennt. Alle Interfaces bleiben Vorschläge, keine implementierten APIs.
