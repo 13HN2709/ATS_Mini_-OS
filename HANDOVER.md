@@ -637,3 +637,10 @@ Nächste Workflow-Korrektur in Commit `63e3a85b5973ac5bb137ac11c3848756cbd6e3df`
 - Korrektur in Commit `a2064d10359c06d8d2a7c5c62bbee161afe0dce8`: neben `--libraries` werden wieder explizit `--library "$HOME/Arduino/libraries/PU2CLR_SI4735"` und der Include-Pfad zur `src`-Ebene gesetzt. Der neue Lauf muss zeigen, ob damit sowohl Header als auch Bibliotheksimplementierung korrekt gebaut und gelinkt werden.
 - Referenz zur Arduino-CLI-Abhängigkeitsauflösung: https://docs.arduino.cc/arduino-cli/sketch-build-process
 - Nutzer startet Workflows selbst; kein Workflow wurde von uns gestartet. Kein Flashen und keine Änderung an Bootloader, Partitionen, APP0 oder APP1.
+## Build-Fehlerstand – 2026-11-01 (Run 41271303901)
+
+- Beide Profile (OSPI und QSPI) scheiterten im Linker erneut mit `undefined reference` auf den SI4735-Konstruktor und Methoden (`setup`, `setFM`, `setVolume`). Header, library.properties und `SI4735.cpp` wurden erfolgreich gefunden; das Problem bleibt, dass die Bibliotheksimplementierung nicht in den Link gelangt.
+- Arduino CLI Dokumentation beschreibt, dass Dateien unter `src/` einer Arduino-Bibliothek normalerweise kompiliert und gelinkt werden; siehe https://docs.arduino.cc/arduino-cli/library-specification. Da der explizite `--library`-Pfad das Problem nicht beseitigt hat, wurde ein gezielter CI-Workaround ergänzt.
+- Workflow-Fix in Commit `be6fbe391038c8a872918d717dbb1e611e712dd6`: Vor dem Kompilieren kopiert der Workflow die installierte Upstream-Quelldatei `SI4735.cpp` in `firmware/ats-mini-os/src/vendor/SI4735Library.cpp`. Damit wird sie als Sketch-Quelldatei kompiliert; der ursprüngliche SI4735-Header und Include-Pfad bleiben eingebunden.
+- Dieser Workaround ist noch nicht durch einen neuen Lauf bestätigt. Nutzer startet den manuellen Compile-only-Workflow; wir starten keinen Workflow selbst.
+- Kein Flashen und keine Änderungen an Hardware, Bootloader, Partitionen, APP0 oder APP1.
