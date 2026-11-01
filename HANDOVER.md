@@ -576,3 +576,13 @@ Job `124729519289` (OSPI) scheiterte im Compile mit `fatal error: SI4735.h: No s
 ## 39. Manueller Compile-Workflow ohne Texteingabe (2026-11-01)
 
 Auf Wunsch des Nutzers wurde die Pflicht-Eingabe `COMPILE` aus `.github/workflows/ats-mini-os-first-compile.yml` entfernt (Commit `2eb7767fbacb8ddc5729a5e4e423799c4dacf8cb`). Der Workflow bleibt ausschließlich manuell über `workflow_dispatch` startbar; die bedingte Job-Abfrage auf `inputs.confirm_compile == 'COMPILE'` wurde entfernt. Beim Start muss nun kein Bestätigungswort mehr eingetragen werden. Der Workflow führt weiterhin nur die beiden Compile-Jobs für OSPI/QSPI aus und enthält keinen Flash-Schritt. APP0, APP1, Bootloader, Recovery und Partitionen wurden nicht verändert. Die neue Workflow-Version wurde noch nicht gestartet; der Nutzer startet Builds weiterhin selbst.
+
+
+## 40. Compile-Lauf 41266579591 – SI4735 weiterhin nicht im Compiler-Suchpfad (2026-11-01)
+
+Beide Jobs (OSPI `124730525213` und QSPI `124730525405`) scheiterten beim Compile weiterhin mit `fatal error: SI4735.h: No such file or directory`. Die Library-Installation und der Prüfschritt liefen erfolgreich; `arduino-cli lib list` zeigt `PU2CLR SI4735 2.1.8`. Damit ist der Fehler nicht mehr einfach eine fehlgeschlagene Installation, sondern wahrscheinlich die Bibliotheksauflösung beim Compile.
+
+Workflow angepasst in Commit `bbdd150de4d749034b81e6f8624c433d94b88c57`:
+- Header-Prüfung gibt jetzt den tatsächlich gefundenen vollständigen Pfad aus.
+- Compile bekommt den Library-Ordner explizit über `--libraries "$HOME/Arduino/libraries"`.
+- Workflow wurde nicht gestartet; der Nutzer startet den nächsten Compile manuell. Kein Flash, keine Hardware-/Partitionsänderung.
