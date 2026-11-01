@@ -61,7 +61,7 @@ jobs:
           arduino-cli compile \
             --fqbn "esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=8M,PSRAM=${{ matrix.psram }},CPUFreq=80,USBMode=hwcdc,FlashMode=qio,PartitionScheme=custom,DebugLevel=none" \
             --warnings all \
-            --libraries "$HOME/Arduino/libraries" \
+            --library "$HOME/Arduino/libraries/PU2CLR_SI4735" \
             firmware/ats-mini-os
 
       - name: Preserve compile report
