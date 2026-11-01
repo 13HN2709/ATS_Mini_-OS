@@ -4,7 +4,7 @@
 
 namespace {
 constexpr uint32_t SERIAL_BAUD = 115200;
-constexpr uint32_t DEFAULT_FM_FREQUENCY_KHZ = 103900;
+constexpr uint32_t DEFAULT_FM_FREQUENCY_KHZ = 95400;
 
 PerformanceManager performance;
 RadioCore radio;
