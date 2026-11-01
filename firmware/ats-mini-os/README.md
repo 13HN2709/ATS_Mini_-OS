@@ -21,3 +21,7 @@ Do not flash this scaffold to a radio. It is intended for the first compile chec
 ## Dauerhafte Entwicklungsregel: Modularität
 
 Jede fachlich eigenständige Funktion bekommt ihre eigenen `.h`- und `.cpp`-Dateien unter `src/`. Die `.ino`-Datei bleibt ein dünner Einstiegspunkt. Keine `.cpp`-Datei per `#include` einbinden. Module dürfen nur über dokumentierte Schnittstellen miteinander kommunizieren; Änderungen an einem Modul sollen keine unabhängigen Funktionen verändern. Bei Schnittstellenänderungen sind alle Aufrufer zu prüfen und die Übergabe in `HANDOVER.md` zu aktualisieren.
+
+## Compile workflow
+
+A manual-only compile workflow is prepared at `.github/workflows/ats-mini-os-first-compile.yml`. It requires the input `COMPILE` and builds OSPI/QSPI as separate jobs. It has no flash or device-write step and has not been run. The current partition CSV is a reference only and must not be used to flash the user's 16 MB dual-boot device.
