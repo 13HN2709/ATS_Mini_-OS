@@ -47,3 +47,31 @@ Layouts melden einen Bedarf bzw. ein Leistungsprofil; sie setzen nicht eigenstä
 ## Speicherzugriff
 
 Nur die vorgesehenen OSPI-/QSPI-Pfade berücksichtigen. Treiber und Pins erst nach der Hardwareprüfung festlegen.
+
+
+## RadioDNS / Senderlogo (Schnittstellenentwurf)
+
+Die detaillierten, noch unverbindlichen Verträge stehen in [RADIODNS_INTERFACES_AND_TEST_LAYOUT.md](RADIODNS_INTERFACES_AND_TEST_LAYOUT.md).
+
+Vorgesehene Verantwortlichkeiten:
+1. **RDS Snapshot Provider:** genau ein FIFO-Leser, der gültige Gruppen an einen gemeinsamen Snapshot verteilt.
+2. **RadioDNS Identity Builder:** normalisiert FM-Frequenz, vollständigen PI und GCC; erstellt FQDN, ServiceIdentifier und Bearer. Keine Netzwerkzugriffe in diesem Modul.
+3. **RadioDNS Discovery:** DNS-CNAME und SRV-Auflösung, asynchron, abbrechbar und an eine Sendergeneration gebunden.
+4. **SI Parser / Bearer Matcher:** begrenzt SI-XML lesen und den exakt passenden FM-Bearer zuordnen.
+5. **Logo Selector / Cache:** Logo-Variante wählen, Ressource prüfen, begrenzt herunterladen und vorhandene gültige Cachedatei schützen.
+6. **Diagnostic Layout:** zeigt Daten und Status an; Frequenzänderungen gehen ausschließlich über den Radio Core.
+
+### Gemeinsame Regeln
+- Keine direkte RDS-FIFO-Lesung aus RadioDNS/UI.
+- Keine Identität nur aus PS oder der festen EU-Region ableiten.
+- Keine alten DNS-/Logo-Ergebnisse nach Frequenzwechsel übernehmen: jede Anfrage trägt die Snapshot-/Sendergeneration.
+- Netzwerkfehler dürfen Radio, Audio oder Encoder nicht blockieren.
+- Interfaces bleiben Entwurf, bis Framework, DNS-/HTTP-Stack, Display-API und Font-Renderer verifiziert sind.
+
+## Diagnoselayout und Schrift
+
+- Das Testlayout soll Frequenz oben links groß zeigen; der Encoder stimmt über den Radio Core ab.
+- RDS-/RadioDNS-Zwischenschritte und Logo-Status werden separat dargestellt.
+- **Oxanium** ist als digitale Schrift für den lateinischen Diagnosetext vorgesehen; die Google-Fonts-Metadaten führen `latin` und `latin-ext` sowie OFL. Die tatsächliche Datei muss auf `Ä Ö Ü ä ö ü ß` und italienische Akzente getestet werden.
+- **Noto Sans Arabic** ist für einen separaten arabischen Rendering-Test vorgemerkt. Ohne verifizierte RTL-/Shaping-Unterstützung darf Arabisch nicht als korrekt unterstützt gelten.
+- Siehe [RadioDNS-Schnittstellen und Diagnose-Testlayout](RADIODNS_INTERFACES_AND_TEST_LAYOUT.md).
