@@ -20,7 +20,23 @@ bool TunerDriver::begin(uint32_t initialFrequencyKHz) {
   pinMode(kRadioLdoPin, OUTPUT);
   digitalWrite(kRadioLdoPin, HIGH);
   delay(10);
-  Wire.begin(kI2cSdaPin, kI2cSclPin);
+
+  // PU2CLR SI4735 2.1.8 calls Wire.begin() internally. Configure the custom
+  // ATS Mini pins first so its internal begin() uses SDA=18 and SCL=17.
+  if (!Wire.setPins(kI2cSdaPin, kI2cSclPin)) {
+    Serial.println("[TUNER] ERROR: I2C pin configuration failed");
+    return false;
+  }
+
+  // This library method pulses RESET, probes both supported SI47XX addresses
+  // (0x11 and 0x63), and returns 0 if no device responds.
+  const int16_t i2cAddress = radio_.getDeviceI2CAddress(kRadioResetPin);
+  if (i2cAddress == 0) {
+    Serial.println("[TUNER] ERROR: SI4735 not detected on I2C (0x11/0x63)");
+    return false;
+  }
+  Serial.printf("[TUNER] SI47XX detected at I2C address 0x%02X\\n",
+                static_cast<unsigned>(i2cAddress));
 
   radio_.setup(kRadioResetPin, 0, kFmFunction);
   radio_.setFM(kMinFrequency10KHz, kMaxFrequency10KHz,
