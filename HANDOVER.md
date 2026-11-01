@@ -439,3 +439,13 @@ Der Nutzer hat ausdrücklich festgelegt, dass diese Regel **immer** gelten muss 
 - Bei jeder Übergabe Branch, Commits, Fortschritt, offene Punkte und Build-/Flash-Status ergänzen.
 
 Diese Regel ist verbindlich für alle weiteren Arbeiten am ATS Mini OS.
+
+## 26. Vorbereitung des ersten Compile-Workflows
+
+- Manuell startbarer Workflow angelegt: `.github/workflows/ats-mini-os-first-compile.yml`.
+- Workflow hat nur `workflow_dispatch`; als zusätzliche Schutzmaßnahme muss der Eingabewert `COMPILE` sein. Er baut getrennte Matrix-Jobs für `esp32s3-ospi` und `esp32s3-qspi`.
+- Der Workflow führt nur Compile-/Report-Schritte aus; kein Flash-Schritt und kein Upload auf ein Gerät.
+- **Workflow wurde nicht gestartet.** Es gab keinen Build, keinen Flashvorgang und keine Änderung an installierten Boot-Slots.
+- Firmwaremodule liegen unter `firmware/ats-mini-os/src/`; die `.ino`-Datei ist nur Einstiegspunkt. Module bekommen eigene `.h`-/`.cpp`-Dateien.
+- Vor dem Start sind im Review insbesondere Arduino-CLI-Profilauflösung, `sketch.yaml`, `PartitionScheme=custom` und der nur vorläufige 8-MB-Partitions-Referenzstand zu beachten. Ein Compile-Test darf nicht als Freigabe zum Flashen verstanden werden.
+
