@@ -452,3 +452,18 @@ Diese Regel ist verbindlich für alle weiteren Arbeiten am ATS Mini OS.
 
 
 CPU-Profilbezeichnungen im Code wurden an die bestätigte Menüvorgabe angepasst: `Auto`, `Taktstufe 1`, `Taktstufe 2`, `Taktstufe 3`. Die tatsächlichen MHz-Werte und die dynamische Taktumschaltung bleiben bis zur technischen Prüfung deaktiviert.
+
+
+## 28. CPU-Taktvorgabe anhand DiamondRadio-Foto bestätigt (2026-11-01)
+
+Der Nutzer hat ein Foto des DiamondRadio-Menüs `CPU CLOCK` bereitgestellt. Sichtbar sind die drei Stufen **80 MHz / 160 MHz / 240 MHz**. Damit ist die feste Taktstufen-Zuordnung für ATS Mini OS bestätigt:
+- `Auto`: zentral verwaltete dynamische Leistungsregelung.
+- `Taktstufe 1`: 80 MHz.
+- `Taktstufe 2`: 160 MHz.
+- `Taktstufe 3`: 240 MHz.
+
+Espressif dokumentiert für den ESP32-S3 dieselben CPU-Frequenzpunkte für Dynamic Frequency Scaling: https://docs.espressif.com/projects/esp-idf/en/v5.5.3/esp32s3/api-reference/system/power_management.html. Die Arduino-ESP32-CPU-HAL stellt `setCpuFrequencyMhz()`, `getSupportedCpuFrequencyMhz()` und `getCpuFrequencyMhz()` bereit: https://github.com/espressif/arduino-esp32/blob/master/cores/esp32/esp32-hal-cpu.h. Die konkrete Laufzeitumschaltung bleibt deaktiviert, bis Verhalten und Timing mit der tatsächlich eingesetzten Arduino-ESP32-Version sowie OSPI/QSPI geprüft wurden.
+
+Im Modus `Auto` dürfen Waterfall, RadioDNS/WLAN und Bilddekodierung zeitlich begrenzte Anforderungen über den Performance Manager stellen. Parallele Aufgaben dürfen kein vorzeitiges Heruntertakten verursachen. Feste Stufen werden niemals von solchen Anforderungen überschrieben. Der alte Hinweis „Encoderaktivität schaltet auf 240 MHz, nach zehn Sekunden Inaktivität auf 80 MHz“ ist noch nicht am DiamondRadio-Originalquellcode verifiziert.
+
+Außerdem wurde in `PerformanceManager.cpp` ein irreführender Kommentar korrigiert: Anfragen in festen Modi werden akzeptiert, erzeugen aber absichtlich keine Lease und verändern den festen Takt nicht. Änderung: Commit `2ac60fc4f203a837ca45bf4d9ba3abcba3e8a6aa`. CPU-Recherche in Readiness-Dokument: Commit `93e02023a1f90d53b95a8d9a1008b48f13c8ed82`.
