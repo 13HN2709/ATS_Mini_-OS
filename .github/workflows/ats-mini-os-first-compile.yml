@@ -49,7 +49,9 @@ jobs:
       - name: Verify SI4735 header was installed
         run: |
           arduino-cli lib list
-          find "$HOME/Arduino/libraries" -name SI4735.h -print -quit | grep -q SI4735.h
+          SI4735_HEADER="$(find "$HOME/Arduino/libraries" -name SI4735.h -print -quit)"
+          test -n "$SI4735_HEADER"
+          echo "Found SI4735 header: $SI4735_HEADER"
 
       - name: Verify ESP32-S3 target is available
         run: arduino-cli board details -b esp32:esp32:esp32s3
@@ -59,6 +61,7 @@ jobs:
           arduino-cli compile \
             --fqbn "esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=8M,PSRAM=${{ matrix.psram }},CPUFreq=80,USBMode=hwcdc,FlashMode=qio,PartitionScheme=custom,DebugLevel=none" \
             --warnings all \
+            --libraries "$HOME/Arduino/libraries" \
             firmware/ats-mini-os
 
       - name: Preserve compile report
