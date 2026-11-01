@@ -2,18 +2,12 @@ name: ATS Mini OS - First Compile (manual only)
 
 on:
   workflow_dispatch:
-    inputs:
-      confirm_compile:
-        description: "Type COMPILE to confirm a compile-only test (no flashing)"
-        required: true
-        type: string
 
 permissions:
   contents: read
 
 jobs:
   compile:
-    if: ${{ inputs.confirm_compile == 'COMPILE' }}
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
