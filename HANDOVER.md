@@ -4,7 +4,7 @@
 >
 > **Stand:** 2026-11-01  
 > **Repository:** https://github.com/13HN2709/ATS_Mini_-OS  
-> **Status:** Compile-only-Build für OSPI und QSPI erfolgreich (Run `41272465032`); keine Hardwaretests, kein Flash und kein Radio-/Displaybetrieb bestätigt
+> **Status:** Compile-only-Build für OSPI und QSPI nach RDS-Initialisierung erfolgreich (Run `41274168929`); keine Hardwaretests, kein Flash und kein Radio-/Displaybetrieb bestätigt
 
 ## 1. Aktueller Auftrag
 
@@ -740,7 +740,7 @@ Sources:
 - In `TunerDriver.cpp` wurde danach RDS-Initialisierung ergänzt: `radio_.RdsInit()` und `radio_.setRdsConfig(1, 2, 2, 2, 2)`.
 - Commit für diese RDS-Initialisierung: `0bb00c68f3e1e9848e1e5c13291bcf01b2afc6a7`.
 - Bereits im Code vorhanden ist `refreshSignalQuality()`, das vor dem Lesen von RSSI/SNR/Pilot `getCurrentReceivedSignalQuality()` aufruft. `RadioCore` ruft diese Methode bei der Initialisierung und bei seinem 500-ms-Poll auf.
-- Der aktuelle Commit mit RDS-Initialisierung wurde noch nicht durch einen neuen Compile-only-Lauf bestätigt. Die RDS-Daten (PS, PI, PTY, Radiotext) werden noch nicht aktiv in den Snapshot übernommen; die RDS-Initialisierung allein bedeutet noch keine fertige RDS-Anzeige.
+- **Erfolgreicher Compile-only-Nachweis:** GitHub Actions Run [41274168929](https://github.com/13HN2709/ATS_Mini_-OS/actions/runs/41274168929) ist für beide Jobs erfolgreich: `esp32s3-qspi` und `esp32s3-ospi`. Damit ist die RDS-Initialisierung im aktuellen Build kompilierbar. Die RDS-Daten (PS, PI, PTY, Radiotext) werden noch nicht aktiv in den Snapshot übernommen; die RDS-Initialisierung allein bedeutet noch keine fertige RDS-Anzeige.
 
 ### Referenz aus `13HN2709/ats-mini-dev`
 - Alte `Station.cpp` verarbeitet RDS-Gruppen in begrenzten Batches (Limit 25) und behandelt Sendername/PS, PI, PTY und Radiotext getrennt.
@@ -749,9 +749,8 @@ Sources:
 - Ziel ist ein eigener, modularer RDS-Service mit stabilem Sendernamen-Puffer und getrenntem Radiotext-Puffer. Vor Implementierung sind die tatsächlichen RDS-Methoden der im neuen OS verwendeten PU2CLR-SI4735-Version zu verifizieren.
 
 ### Nächste Schritte
-1. Nutzer startet manuell den Compile-only-Workflow: https://github.com/13HN2709/ATS_Mini_-OS/actions/workflows/ats-mini-os-first-compile.yml
-2. Prüfen, ob der aktuelle Branch mit RDS-Initialisierung und Signalqualitätsabfrage kompiliert; Fehler anhand der tatsächlichen Joblogs beheben.
-3. Danach die installierte SI4735-API verifizieren und einen separaten RDS-Service ergänzen (PS, PI, PTY, RT), ohne die alte Firmware zu verändern.
+1. Der Compile-only-Workflow wurde vom Nutzer manuell gestartet und ist in Run [41274168929](https://github.com/13HN2709/ATS_Mini_-OS/actions/runs/41274168929) für QSPI und OSPI erfolgreich durchgelaufen.
+2. Als Nächstes die installierte SI4735-API verifizieren und einen separaten RDS-Service ergänzen (PS, PI, PTY, RT), ohne die alte Firmware zu verändern.
 4. Kein Firmware-Flash und keine Änderung an Bootloader, APP0/APP1, Recovery oder Partitionen ohne ausdrückliche Freigabe. Die 8-MB-Partitionsdatei bleibt ausschließlich Compile-Referenz und darf nicht auf das 16-MB-Gerät geflasht werden.
 
-**Verifikationsstatus:** RDS-Initialisierung committed; neuer Build ausstehend; RDS-Decodierung und Hardwaretest noch offen.
+**Verifikationsstatus:** RDS-Initialisierung committed und durch Compile-only-Run `41274168929` für QSPI und OSPI bestätigt; RDS-Decodierung und Hardwaretest noch offen.
