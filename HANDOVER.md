@@ -593,3 +593,12 @@ Workflow angepasst in Commit `bbdd150de4d749034b81e6f8624c433d94b88c57`:
 OSPI-Job `124731702901` und QSPI-Job `124731703117` schlagen weiterhin mit `fatal error: SI4735.h: No such file or directory` fehl. Logs bestätigen, dass die Datei vorhanden ist unter `$HOME/Arduino/libraries/PU2CLR_SI4735/src/SI4735.h`; auch `--libraries "$HOME/Arduino/libraries"` hat die Abhängigkeit nicht aufgelöst.
 
 Nächste Workflow-Korrektur in Commit `63e3a85b5973ac5bb137ac11c3848756cbd6e3df`: statt der Sammlung mehrerer Libraries wird der konkrete Library-Root über `--library "$HOME/Arduino/libraries/PU2CLR_SI4735"` direkt an Arduino CLI übergeben. Grundlage ist die Arduino-CLI-Dokumentation zur expliziten Auswahl einer einzelnen Library. Noch kein neuer Workflow gestartet; der Nutzer startet manuell. Kein Flash und keine Geräteänderung.
+
+
+## Build-Fehlerstand – 2026-11-01 (Run 41267328096)
+
+- Der manuell gestartete Compile-only-Lauf ist in beiden Profilen fehlgeschlagen: [QSPI-Job](https://github.com/13HN2709/ATS_Mini_-OS/actions/runs/41267328096/job/124732757205) und [OSPI-Job](https://github.com/13HN2709/ATS_Mini_-OS/actions/runs/41267328096/job/124732757271).
+- Beide Jobs finden die installierte Datei laut vorgeschaltetem Header-Check, scheitern aber beim Übersetzen von `TunerDriver.h` weiterhin mit `fatal error: SI4735.h: No such file or directory`.
+- Der direkte `--library`-Pfad allein hat das Problem nicht behoben. Neuer Workflow-Commit `c78e8488729f3f83ce4aa6ee303312d5802cbbe6` ergänzt zusätzlich den expliziten Include-Pfad `.../PU2CLR_SI4735/src` als `compiler.cpp.extra_flags`. Das ist eine weitere Build-Konfigurationskorrektur, noch nicht verifiziert.
+- **Nächster Schritt:** Nutzer startet den Workflow erneut manuell. Keine Actions selbst starten. Falls der Header-Fehler verschwindet, die dann sichtbaren Compilerfehler als nächsten Schritt bearbeiten.
+- Keine Firmware wurde geflasht; keine Partitionen, Bootloader oder Geräte-Slots wurden verändert.
