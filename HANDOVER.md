@@ -566,3 +566,8 @@ Umgesetzt als erster Schritt:
 - `RadioCore` nutzt das Modul. Die erste Standardfrequenz bleibt Antenne Münster 95,4 MHz; eine gültig gespeicherte Frequenz hat beim Neustart Vorrang.
 
 Technische Einschränkung: NVS ist persistent und vermeidet die Abhängigkeit von LittleFS, aber Slots, die dieselbe Firmware und denselben NVS-Namespace nutzen, würden dieselben Werte sehen. Unterschiedliche Firmware-Projekte müssen eigene Namespaces verwenden; echte Slot-Trennung kann bei Bedarf explizit anhand einer bestätigten Slot-ID ergänzt werden. Weitere Einstellungen wie CPU-Profil, Lautstärke und Betriebsart sind noch nicht gespeichert. **Noch kein Compile dieses neuen Codes, kein Hardwaretest, kein Flash.**
+
+
+## 38. Compile-Lauf 41266238739 – SI4735-Header fehlt (2026-11-01)
+
+Job `124729519289` (OSPI) scheiterte im Compile mit `fatal error: SI4735.h: No such file or directory`. Vorherige Schritte einschließlich Runner-Cleanup, ESP32-Core-Installation, SI4735-Library-Install-Step und Board-Erkennung liefen formal erfolgreich; das Library-Installieren per Name `arduino-cli lib install "PU2CLR SI4735"` hat jedoch nicht zu einem auffindbaren Header geführt. QSPI-Job `124729519108` war beim Auslesen noch `in_progress`, daher kein Endergebnis behaupten. Offizielle PU2CLR-Repository-Anleitung dokumentiert CLI-Installation per `arduino-cli lib install --git-url https://github.com/pu2clr/SI4735` mit `ARDUINO_LIBRARY_ENABLE_UNSAFE_INSTALL=true`. Workflow-Commit `7f917516312a7d61d1b7cbbe2cdb9a9d5d6b9ca1` ersetzt die Bibliotheksinstallation durch diesen Upstream-Git-Weg und ergänzt einen Header-Existenzcheck, damit fehlende Abhängigkeiten vor dem Compile klar scheitern. Noch kein erneuter Lauf gestartet. Kein Flash.
