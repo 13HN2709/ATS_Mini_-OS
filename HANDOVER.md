@@ -193,3 +193,17 @@ Der Nutzer hat ausdrücklich darum gebeten, diesen Plan dauerhaft festzuhalten u
 - `docs/source/development.md`
 
 **Weiterhin strikt ausgeschlossen:** Builds, Auslösen von GitHub Actions, Flashen sowie Änderungen an `13HN2709/ats-mini-dev` oder anderen bestehenden Firmware-Repositories. Die bisherige Untersuchung war ausschließlich lesend. Die drei Punkte sind Bestandsaufnahme, keine Freigabe für Implementierung.
+
+## 13. Erste Web-/GitHub-Recherche zu Wetterdaten und RDS-Logos
+
+Die erste Recherche ist in `docs/NETWORK_DATA_SOURCES.md` dokumentiert:
+https://github.com/13HN2709/ATS_Mini_-OS/blob/main/docs/NETWORK_DATA_SOURCES.md
+
+Vorläufige Auswahl:
+- **Wetter:** Open-Meteo ist der bevorzugte erste Kandidat, weil Geocoding Ortsnamen/Postleitzahlen unterstützt und die Wetter-API aktuelle Bedingungen, Wettercodes, Bewölkung, Niederschlagswahrscheinlichkeit und Wind liefert. Nutzung für nicht kommerzielle Zwecke grundsätzlich ohne API-Schlüssel; Daten-Attribution und Terms beachten.
+- **RDS-Logos:** RadioDNS Project Logo ist der fachlich passende Standardkandidat, weil Sender über Frequenz, PI-Code und Länderkennung auf Service-Informationen mit Metadaten/Logo-Referenzen auflösen können. Die Verfügbarkeit ist abhängig davon, ob der jeweilige Sender RadioDNS korrekt veröffentlicht.
+- **Fallback-Kandidat:** Radio-Browser kann Sendername, Homepage und Favicon liefern, ist aber nicht garantiert eindeutig mit dem terrestrischen RDS-Sender verknüpft. Treffer müssen bewertet werden.
+- **Bilddarstellung:** LovyanGFX nennt TJpgDec und Pngle als mögliche technische Referenzen; Espressif zeigt Decoderbeispiele für ESP32-S3. Es ist noch nicht bestätigt, dass ein allgemeiner Bilddecoder in der bestehenden ATS-Referenzfirmware bereits eingebunden ist.
+- **Netzwerkarchitektur:** gemeinsame Netzwerkdienste, HTTPS-Zertifikatsprüfung, begrenzte Downloads, Cache und nicht blockierende Abläufe vorsehen. AP Only allein hat keinen Internetzugang; für externe Wetter-/Logo-Daten muss STA-Internet verfügbar sein.
+
+Die Ergebnisse sind Recherche-Hinweise und noch keine Implementierung oder endgültige Anbieterfreigabe. Alle Schutzgrenzen aus diesem Dokument bleiben bestehen: Referenz-Repositories read-only, keine Builds/Actions/Flashvorgänge und keine Änderungen an Slot A oder Slot B.
