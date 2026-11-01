@@ -537,3 +537,8 @@ Nach dem erfolgreichen Scaffold-Compile wurden die ersten Funktionsmodule angele
 - Workflow installiert nun `PU2CLR SI4735` als Abhängigkeit.
 
 Verwendete Referenz-Pins: LDO GPIO15, Reset GPIO16, SDA GPIO18, SCL GPIO17. Diese Zuordnung basiert auf dem bestehenden ATS Mini V4 Referenzprojekt und ist im neuen OS noch nicht auf Hardware getestet. Display, Encoder, Audio-/RDS-UI sind noch nicht integriert. **Compile für diesen neuen Code steht noch aus; kein Workflow gestartet, kein Flash.** Nächster Schritt: manuellen Compile-only-Workflow ausführen und die tatsächlichen Compilerlogs auswerten. Erst danach Hardwaretest planen.
+
+
+## 35. FM-Testfrequenz gesetzt: Antenne Münster 95,4 MHz (2026-11-01)
+
+Der Standardstart der ersten FM-Diagnose wurde auf **95,4 MHz (95400 kHz)** gesetzt, auf Wunsch des Nutzers als Testsender Antenne Münster. Änderung in `firmware/ats-mini-os/ats-mini-os.ino`, Commit `dfc44dd016b88a84fd340be60d6ac3353f4efcc6`. Der Compile-Workflow für diesen Stand ist noch nicht erneut gestartet. Dies ist eine Test-Startfrequenz, kein Nachweis von Empfang oder RDS auf dem Gerät. Kein Flash.
