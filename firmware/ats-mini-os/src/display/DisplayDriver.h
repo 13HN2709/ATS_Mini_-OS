@@ -243,3 +243,5 @@ private:
   uint32_t lastDrawMs_ = 0;
   void draw(const RadioSnapshot& state, bool radioReady);
 };
+
+#endif // ATS_MINI_OS_DISPLAY_DRIVER_H
