@@ -33,3 +33,8 @@ A manual-only compile workflow is prepared at `.github/workflows/ats-mini-os-fir
 - The `.ino` now initializes the radio at 103.9 MHz and prints diagnostic status over serial every two seconds. Display and encoder are deliberately not active yet.
 - Compile workflow installs `PU2CLR SI4735` before compiling.
 - Hardware assumptions are based on the ATS Mini V4 reference pin map: LDO 15, reset 16, SDA 18, SCL 17. Must validate compile first, then validate on hardware with serial diagnostics. Do not flash until explicitly approved. No workflow run has been started for this code yet.
+
+
+## Persistente Einstellungen
+
+`src/settings/SettingsStore.h/.cpp` verwaltet OS-eigene Einstellungen über ESP32 NVS (`Preferences`) in der separaten Namespace `atsmini_os`. Die letzte FM-Frequenz wird beim Start geladen, auf 87,5–108,0 MHz validiert und nach drei Sekunden ohne weiteres Abstimmen gespeichert, um unnötige Flash-Schreibvorgänge zu reduzieren. Wenn NVS nicht verfügbar ist, startet das Radio mit der definierten Standardfrequenz. Aktuell ist die Frequenz die erste persistente Einstellung; weitere Werte (CPU-Profil, Lautstärke, Stummschaltung, Betriebsart) sollen über dasselbe Modul ergänzt werden. NVS ist bewusst gewählt, um nicht von einer gemeinsam genutzten LittleFS-Partition oder deren Layout abhängig zu sein. Noch nicht kompiliert/getestet.
