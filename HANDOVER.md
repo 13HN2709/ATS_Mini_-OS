@@ -151,3 +151,45 @@ Zu Beginn jeder neuen Sitzung:
 - **2026-11-01:** Nicht ausführbares Projektgerüst angelegt: Root-README, Architektur-, Hardware-, Boot-/Partitions-, Modul-/Schnittstellen- und Risiko-Dokumentation sowie README-Platzhalter unter `app/`, `hal/`, `drivers/`, `radio/`, `modules/`, `ui/`, `services/`, `tests/` und `tools/`. Keine Builds, Workflows oder Flashvorgänge ausgeführt.
 
 - **2026-11-01:** WLAN-Erweiterung als Planungsanforderung ergänzt: Wetterbericht per Postleitzahl, lokale Wetter-Icons, Offline-Cache/Status, späterer Bilddownload/-decoder mit begrenzten Ressourcen. Neue README-Platzhalter unter modules/weather/ und services/image-cache/; keine Firmware implementiert und keine Builds/Actions/Flashvorgänge ausgeführt.
+
+## 12. Verbindlicher 3-Punkteplan für die Bestandsaufnahme
+
+Der Nutzer hat ausdrücklich darum gebeten, diesen Plan dauerhaft festzuhalten und bei der Fortsetzung wiederzuverwenden:
+
+1. **WLAN / Netzwerk / HTTPS (nur lesend):** vorhandene Verbindungsmodi, Internetzugang, HTTP(S)-Client, Zertifikatsprüfung, Zeitdienst und nicht blockierende Netzwerkabläufe untersuchen.
+2. **Display / Bilddarstellung:** vorhandene Zeichen- und Sprite-Funktionen prüfen, feststellen, ob ein Bilddecoder bereits vorhanden ist, und mögliche Formate erst nach Quellcode-/Bibliotheksprüfung festlegen.
+3. **Flash / Partitionen / Speicher:** Build-Konfiguration und Partitionstabelle mit Vorsicht auswerten; App-Slots, Dateisystem, NVS und Grenzen dokumentieren. Eine konfigurierte Flash-Größe ist kein Beweis für die tatsächlich bestückte Flash-Hardware.
+
+### Erste Ergebnisse aus der rein lesenden Prüfung von `13HN2709/ats-mini-dev`
+
+**Punkt 1 – WLAN/HTTPS**
+- `ats-mini/Network.cpp` verwendet `WiFi.h`, `WiFiMulti.h`, `WiFiUdp.h`, `AsyncTCP.h`, `ESPAsyncWebServer.h`, `NTPClient.h` und `ESPmDNS.h`.
+- Vorhandene Modi umfassen laut `netInit()` unter anderem AP Only, AP+STA und STA. **AP Only allein stellt keinen Internetzugang bereit**; für Wetterdaten muss eine funktionierende Verbindung zu einem Router/Internet vorhanden sein.
+- Ein NTP-Zeitdienst und ein asynchroner Webserver auf Port 80 sind vorhanden.
+- `ats-mini/Ota.cpp` nutzt `HTTPClient` und `NetworkClientSecure` mit dem im ESP32-Core enthaltenen CA-Zertifikatsbundle. Das belegt eine vorhandene HTTPS-Technik für OTA; es ist noch keine fertige Wetter-API-Integration.
+- Netzwerkzugriffe für neue Module müssen begrenzt und so entworfen werden, dass Radio, Tuning, Encoder, Scanner und Dual RX nicht durch lange Wartezeiten blockiert werden.
+
+**Punkt 2 – Display/Bilder**
+- `ats-mini/Display.h` definiert den LovyanGFX-basierten Displaytreiber. In `ats-mini/ats-mini.ino` wird ein 320×170-Sprite mit 16-Bit-Farbtiefe und PSRAM-Nutzung angelegt.
+- `ats-mini/Draw.cpp` zeigt derzeit vor allem text- und primitivebasierte Darstellung. In den bisher geprüften Dateien wurde noch kein allgemeiner JPEG-/PNG-/BMP-Decoder bestätigt.
+- `Network.cpp` enthält einen Web-Upload-Pfad für eine Splash-Datei mit einer Grenze von 512 KiB. Das allein beweist **nicht**, welche Bildformate decodiert oder auf dem Display angezeigt werden können. Decoder, Dateiformat, Speicherbedarf und Lizenz müssen separat geprüft werden.
+- Für den ersten Wetter-Prototyp bleiben lokale Wetter-Icons die ressourcenschonende Ausgangsidee; heruntergeladene Bilder sind ein späterer, separat zu prüfender Schritt.
+
+**Punkt 3 – Flash/Partitionen**
+- `ats-mini/sketch.yaml` setzt sowohl im Profil `esp32s3-ospi` als auch `esp32s3-qspi` die Build-Option `FlashSize=8M`. Das ist eine Build-Konfiguration und bestätigt nicht die physische Flash-Größe des konkreten Geräts.
+- `ats-mini/partitions.csv` definiert zwei OTA-App-Partitionen `app0` und `app1`, jeweils `0x300000` (3 MiB), sowie `littlefs` mit `0x1d0000` (1.8125 MiB), dazu NVS-/Settings- und Core-Dump-Partitionen. Die Tabelle reicht bis Offset `0x800000` (8 MiB).
+- Das muss vor jeder späteren Speicher-/Bootplanung mit dem tatsächlichen Gerät, dem Bootmanager und der aktuellen Sicherung abgeglichen werden. Keine Partitionsdatei ändern und nichts flashen.
+
+**Geprüfte Referenzpfade**
+- `ats-mini/sketch.yaml`
+- `ats-mini/partitions.csv`
+- `ats-mini/Network.cpp`
+- `ats-mini/Ota.cpp`
+- `ats-mini/Storage.cpp`
+- `ats-mini/Display.h`
+- `ats-mini/Draw.cpp`
+- `ats-mini/ats-mini.ino`
+- `docs/source/flash.md`
+- `docs/source/development.md`
+
+**Weiterhin strikt ausgeschlossen:** Builds, Auslösen von GitHub Actions, Flashen sowie Änderungen an `13HN2709/ats-mini-dev` oder anderen bestehenden Firmware-Repositories. Die bisherige Untersuchung war ausschließlich lesend. Die drei Punkte sind Bestandsaufnahme, keine Freigabe für Implementierung.
