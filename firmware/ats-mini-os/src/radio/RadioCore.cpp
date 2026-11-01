@@ -2,14 +2,18 @@
 
 namespace {
 constexpr uint32_t kFrequencySaveDelayMs = 3000;
+
+void copyField(char* dst, size_t capacity, const char* src) {
+  if (!capacity || !src) return;
+  size_t i = 0;
+  for (; i + 1 < capacity && src[i] != '\0'; ++i) dst[i] = src[i];
+  dst[i] = '\0';
+}
 }
 
 bool RadioCore::begin(uint32_t initialFrequencyKHz) {
-  // Settings storage is optional: radio operation still proceeds with the
-  // supplied default if NVS cannot be opened.
   settings_.begin();
   const uint32_t startupFrequency = settings_.lastFmFrequencyKHz(initialFrequencyKHz);
-
   ready_ = tuner_.begin(startupFrequency);
   if (!ready_) return false;
 
@@ -20,6 +24,7 @@ bool RadioCore::begin(uint32_t initialFrequencyKHz) {
   snapshot_.stereo = tuner_.stereo();
   snapshot_.generation = ++generation_;
   lastPollMs_ = millis();
+  lastRdsPollMs_ = lastPollMs_;
   lastTuneChangeMs_ = lastPollMs_;
   Serial.printf("[SETTINGS] NVS=%s savedFM=%lu kHz\n",
                 settings_.isReady() ? "ready" : "unavailable",
@@ -30,7 +35,6 @@ bool RadioCore::begin(uint32_t initialFrequencyKHz) {
 void RadioCore::update() {
   if (!ready_) return;
   const uint32_t now = millis();
-
   if (now - lastPollMs_ >= 500) {
     lastPollMs_ = now;
     tuner_.refreshSignalQuality();
@@ -40,8 +44,18 @@ void RadioCore::update() {
     snapshot_.stereo = tuner_.stereo();
   }
 
-  // Defer NVS writes until tuning has been idle for a short period to reduce
-  // flash wear when a user spins the encoder quickly.
+  if (now - lastRdsPollMs_ >= kRdsPollIntervalMs) {
+    lastRdsPollMs_ = now;
+    TunerRdsData rds;
+    if (tuner_.pollRds(rds)) {
+      if (rds.piValid) snapshot_.piCode = rds.piCode;
+      if (rds.ptyValid) snapshot_.pty = rds.pty;
+      if (rds.stationNameUpdated) copyField(snapshot_.stationName, sizeof(snapshot_.stationName), rds.stationName);
+      if (rds.radioTextUpdated) copyField(snapshot_.radioText, sizeof(snapshot_.radioText), rds.radioText);
+      snapshot_.rdsAvailable = true;
+    }
+  }
+
   if (frequencySavePending_ && now - lastTuneChangeMs_ >= kFrequencySaveDelayMs) {
     const bool saved = settings_.saveLastFmFrequencyKHz(snapshot_.frequencyKHz);
     Serial.printf("[SETTINGS] FM frequency save: %s (%lu kHz)\n",
@@ -52,12 +66,8 @@ void RadioCore::update() {
 }
 
 bool RadioCore::tune(uint32_t frequencyKHz) {
-  if (!ready_ || frequencyKHz < kMinFrequencyKHz ||
-      frequencyKHz > kMaxFrequencyKHz ||
-      !tuner_.tune(frequencyKHz)) {
-    return false;
-  }
-
+  if (!ready_ || frequencyKHz < kMinFrequencyKHz || frequencyKHz > kMaxFrequencyKHz ||
+      !tuner_.tune(frequencyKHz)) return false;
   snapshot_.frequencyKHz = tuner_.frequencyKHz();
   snapshot_.generation = ++generation_;
   lastTuneChangeMs_ = millis();
