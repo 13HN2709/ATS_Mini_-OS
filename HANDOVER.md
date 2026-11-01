@@ -4,7 +4,7 @@
 >
 > **Stand:** 2026-11-01  
 > **Repository:** https://github.com/13HN2709/ATS_Mini_-OS  
-> **Status:** Erste Firmware-Scaffold-Dateien im Branch `dev/first-build-preparation` angelegt; noch kein getesteter Build und noch kein Radio-/Displaybetrieb
+> **Status:** Compile-only-Build für OSPI und QSPI erfolgreich (Run `41272465032`); keine Hardwaretests, kein Flash und kein Radio-/Displaybetrieb bestätigt
 
 ## 1. Aktueller Auftrag
 
@@ -652,3 +652,34 @@ Nächste Workflow-Korrektur in Commit `63e3a85b5973ac5bb137ac11c3848756cbd6e3df`
 - Zusätzlich zeigten Compilerwarnungen, dass `TunerDriver.h` die Grenzen 87500 und 108000 kHz als `int16_t` definierte; beide Werte liegen außerhalb des Wertebereichs dieses Typs. In Commit `44b4681492c229142ad24000f8cfc0bb97238a27` wurden die beiden Konstanten auf `uint32_t` geändert.
 - Nächster Schritt: manuellen Workflow erneut starten, damit der aktuelle Workflow samt SI4735-Staging-Schritt und der korrigierten Frequenztypen getestet wird. Wir starten keine Actions selbst.
 - Weiterhin Compile-only: kein Flashen und keine Änderungen an Bootloader, Partitionen, APP0, APP1 oder Recovery.
+
+
+## 42. Erster erfolgreicher Compile des modularen FM-Scaffolds – Run 41272465032 (2026-11-01)
+
+Der Nutzer hat den manuellen Workflow-Lauf [41272465032](https://github.com/13HN2709/ATS_Mini_-OS/actions/runs/41272465032) bereitgestellt. Beide Jobs sind erfolgreich abgeschlossen:
+- QSPI: Job `124747871639`, Ergebnis `success`.
+- OSPI: Job `124747871789`, Ergebnis `success`.
+
+Der Job-Verlauf bestätigt, dass der Schritt `Stage SI4735 implementation in sketch source tree` tatsächlich ausgeführt wurde. Die SI4735-Implementierung wurde im kurzlebigen CI-Workspace als Sketch-Quelldatei bereitgestellt, sodass der vorherige Linkerfehler überwunden wurde. Die gestagte Vendor-Datei ist ein CI-Schritt und wird nicht als dauerhaftes Vendor-File im Repository vorausgesetzt.
+
+Compilerberichte aus den Logs:
+- QSPI: Programmcode 334.712 Byte; globale Variablen 24.224 Byte.
+- OSPI: Programmcode 337.008 Byte; globale Variablen 24.624 Byte.
+- Beide Builds geben eine Warnung in der Upstream-SI4735-Implementierung aus: Variable `mjd` könnte uninitialisiert verwendet werden. Das blockiert den Build nicht, sollte später geprüft werden. Node.js-/Action-Deprecation-Warnungen sind separat von Firmware-Compilerfehlern zu betrachten.
+
+**Interpretation:** Dies ist die erste erfolgreiche Compile-Basis für den aktuellen modularen FM-Scaffold, kein Beleg für Hardwarefunktion. Die Pinbelegung, Tunerinitialisierung, Audio, Empfang, RSSI/SNR/Stereo und Persistenz sind noch nicht am ATS Mini V4 getestet. Kein Flashen; APP0, APP1, Bootloader, Recovery und Partitionen wurden nicht verändert. Die 8-MB-Partition-CSV bleibt Compile-Referenz und darf nicht auf das 16-MB-Gerät geflasht werden.
+
+**Nächster sicherer Schritt:** Compile-Basis dokumentieren und Quellcode/Build-Konfiguration gezielt prüfen, dann einen kleinen nächsten Entwicklungsumfang festlegen. Der Nutzer startet jeden Workflow manuell; wir starten keine GitHub Actions selbst.
+
+## 43. Menü-Konzept – Fullscreen-Hauptmenü mit Untermenüs (2026-11-01)
+
+Der Nutzer hat das gewünschte Bedienprinzip beschrieben. Dies ist eine Planungsanforderung; noch keine Menüimplementierung.
+
+- Echtes Fullscreen-Menü statt vieler unabhängig aufgebauter Einzelmenüs.
+- Ein Hauptmenü mit einer vertikal scrollbaren Liste. Einträge öffnen passende Untermenüs.
+- Gemeinsame Menü-Engine und einheitliche Encoder-Bedienung, um doppelte Darstellung und Steuerlogik zu vermeiden und möglichst Code zu sparen.
+- Menü-Darstellung und Funktionalität werden getrennt: Ein Menüeintrag ruft ein zuständiges Funktionsmodul auf, das seine eigentliche Arbeit unabhängig ausführt.
+- Für passende Ein-/Aus-Einstellungen wird unter dem Namen eine Statuszeile angezeigt, beispielsweise `Aktueller Status: Ein` oder `Aktueller Status: Aus`. Der Beispieltext des Nutzers (Licht Ein/Aus) war nur eine Illustration und ist kein festgelegter Menüpunkt.
+- Der Status muss den tatsächlichen Zustand der jeweiligen Funktion anzeigen und nach Änderungen aktualisiert werden.
+- Konkrete Haupt- und Untermenüpunkte, Layout und Farben werden später gemeinsam festgelegt.
+- Menüarbeit beginnt erst nach Stabilisierung der aktuellen Firmware-Grundlage; sie darf die laufenden Build-/Radio-Schritte nicht unnötig vermischen.
