@@ -11,7 +11,7 @@ public:
   bool begin();
   void end();
 
-  uint32_t lastFmFrequencyKHz(uint32_t fallbackKHz) const;
+  uint32_t lastFmFrequencyKHz(uint32_t fallbackKHz);
   bool saveLastFmFrequencyKHz(uint32_t frequencyKHz);
   bool isReady() const { return ready_; }
 
