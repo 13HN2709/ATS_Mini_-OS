@@ -122,3 +122,13 @@ Die Struktur wird bei Bedarf um weitere Module ergänzt; die Beispiele sind kein
 ## Initial FM bring-up module implementation (2026-11-01; compile pending)
 
 Added `src/tuner/TunerDriver.h/.cpp` to own SI4735 access, and `src/radio/RadioCore.h/.cpp` to own public FM state, tuning and a `RadioSnapshot`. `.ino` is now a thin serial bring-up entry point: initializes at 103.9 MHz and logs frequency, RSSI, SNR, stereo and CPU frequency every two seconds. Encoder/display are not wired yet. The compile workflow installs `PU2CLR SI4735` before compile. Pin assumptions: radio LDO GPIO15, reset GPIO16, SDA GPIO18, SCL GPIO17, from existing ATS Mini V4 reference. These are not yet hardware-validated in the new OS. Next: user starts manual compile-only workflow; fix compile issues from actual logs, then plan an explicit hardware test. No flash.
+
+
+## Persistenz und Firmware-Isolation
+
+- Jede Firmware-Komponente speichert ihre eigenen Einstellungen über `SettingsStore` statt global verstreuter Dateizugriffe.
+- Erste Implementierung: ESP32 NVS/Preferences mit Namespace `atsmini_os`, Schlüssel `fm_freq`; die gespeicherte Frequenz wird beim Start geladen und auf den FM-Bereich validiert.
+- Nach Abstimmung wird die Frequenz erst nach 3 s Ruhe gespeichert, damit schnelles Drehen am Encoder nicht für jeden Schritt in den Flash schreibt.
+- Bei fehlendem NVS läuft der Radio-Core mit Standardfrequenz weiter.
+- NVS vermeidet die Abhängigkeit von der gemeinsam genutzten LittleFS-Partition. Verschiedene Firmware-Projekte sollten unterschiedliche Namespaces verwenden. Zwei Slots, die dieselbe Firmware mit demselben Namespace ausführen, teilen weiterhin dieselben NVS-Werte; falls später slotgetrennte Einstellungen erforderlich sind, muss die Slot-/Firmware-ID explizit Teil der Namespace-Strategie werden.
+- Die aktuelle Implementierung wurde noch nicht kompiliert oder auf Hardware verifiziert.
