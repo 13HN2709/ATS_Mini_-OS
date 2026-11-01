@@ -9,6 +9,8 @@ constexpr uint16_t kMinFrequency10KHz = 8750;
 constexpr uint16_t kMaxFrequency10KHz = 10800;
 constexpr uint16_t kDefaultSpacing10KHz = 10;
 constexpr uint8_t kDefaultVolume = 35;
+// PU2CLR SI4735 setup() defaultFunction: 0 = FM, 1 = AM.
+constexpr uint8_t kFmFunction = 0;
 }
 
 bool TunerDriver::begin(uint32_t initialFrequencyKHz) {
@@ -20,7 +22,7 @@ bool TunerDriver::begin(uint32_t initialFrequencyKHz) {
   delay(10);
   Wire.begin(kI2cSdaPin, kI2cSclPin);
 
-  radio_.setup(kRadioResetPin, 0, FM_FUNCTION);
+  radio_.setup(kRadioResetPin, 0, kFmFunction);
   radio_.setFM(kMinFrequency10KHz, kMaxFrequency10KHz,
                static_cast<uint16_t>(constrain(initialFrequencyKHz / 10UL,
                                                kMinFrequency10KHz,
