@@ -302,3 +302,29 @@ Am 1. November 2026 wurde die erste Tuner-/RDS-Codeprüfung im Referenz-Reposito
 
 ### Nächster Schritt
 Die exakt verwendete PU2CLR-SI4735-Version 2.1.8 und die RDS-Rohblock-/FIFO-Semantik prüfen, um festzustellen, ob ECC, AF, TP/TA und RT+ über Bibliotheks- oder Rohdatenzugriff erschlossen werden können. Anschließend RadioDNS-Identitätsbildung gemäß offizieller Spezifikation prüfen. Weiterhin: keine Builds, keine GitHub Actions, kein Flashen und keine Änderungen an bestehenden Firmware-Repositories ohne ausdrückliche Freigabe.
+
+
+## 18. Recherchefreigabe des Nutzers: externe Quellen selbständig nutzen
+
+Der Nutzer hat ausdrücklich freigegeben, dass für ATS Mini OS alle erforderlichen Informationen selbständig recherchiert werden dürfen: öffentliche GitHub-Repositories, Quellcodes, Releases/Tags, Wikis, Dokumentationen, Standards, Hersteller-Datenblätter, Webseiten und andere geeignete öffentliche Informationsquellen. Die Recherche soll nicht auf das Referenz-Repository beschränkt sein.
+
+Diese Freigabe gilt für Informationsbeschaffung und read-only Prüfung. Die bestehenden Projektgrenzen bleiben bestehen: `13HN2709/ats-mini-dev` und alle vorhandenen Firmware-Repositories bleiben unverändert; keine Builds starten, keine GitHub Actions auslösen, nichts flashen und keine ausführbare Firmware implementieren, solange der Nutzer das nicht ausdrücklich freigibt. Dokumentationsänderungen im neuen Repository `13HN2709/ATS_Mini_-OS` sind im bisherigen Planungsumfang zulässig.
+
+## 19. Ergebnis: PU2CLR SI4735 2.1.8 und RadioDNS-Standards geprüft
+
+Öffentliche Quellcodeprüfung am Tag `2.1.8` des offiziellen `pu2clr/SI4735`-Repositorys: `src/SI4735.h` und `src/SI4735.cpp` wurden gelesen. Die Release-Seite bestätigt, dass 2.1.8 eine veröffentlichte Bibliotheksversion ist. Es wurde nichts aus diesem Repository geändert.
+
+### API-Funktionen in Version 2.1.8
+- RDS-Status und FIFO: `getRdsStatus(...)`, `getRdsReceived()`, `getRdsSync()`, `getRdsSyncFound()`, `getRdsSyncLost()`, `getGroupLost()`, `getNumRdsFifoUsed()`.
+- Dekodierte Felder: `getRdsPI()`, `getRdsGroupType()`, `getRdsVersionCode()`, `getRdsProgramType()`, `getRdsText0A()` (PS), `getRdsText2A()` und `getRdsText2B()` (RT), `getRdsTime()`.
+- In den geprüften öffentlichen API-Deklarationen wurde kein fertiger Getter/Parser für ECC, AF, TP/TA oder RT+ gefunden. Die API stellt Status-/Gruppeninformationen bereit, sodass zusätzliche Rohgruppen-Auswertung grundsätzlich untersucht werden kann; die genaue Verfügbarkeit der nötigen Rohdaten im FIFO und die Decoderlogik sind noch nicht vollständig verifiziert.
+- Daher RT+ nicht als fertige Bibliotheksfunktion annehmen. ECC, AF, TP/TA nicht als unmöglich einstufen; zuerst prüfen, ob die Rohgruppen mit den verfügbaren Status-/FIFO-Mechanismen korrekt entnommen werden können und welche Datenfelder der Chip tatsächlich liefert.
+
+### RadioDNS-Kernanforderungen aus offizieller Dokumentation
+- Offizielle Dokumentation: https://radiodns.org/technical/documentation/ und Core Lookup TS 103 270.
+- FM-Lookup braucht Frequenz, PI und einen Global Country Code (GCC) bzw. die standardkonforme Länder-Fallback-Variante. GCC wird aus dem Country Code (erstes Nibble des RDS-PI) und ECC gebildet. ECC wird nicht zwingend von jeder Station ausgestrahlt; RadioDNS empfiehlt eine normgerechte GCC-Fallback-Strategie, z. B. über die offizielle GCC-Library/Geolocation, statt ECC blind zu erraten.
+- Frequenzformat und DNS-Namensbildung müssen exakt der aktuellen TS 103 270 folgen. Alte RDNS01-Dokumente sind nur historischer Kontext; bei der Implementierung ist die aktuelle Spezifikation maßgeblich.
+- Offizielle Referenzen: https://radiodns.org/technical/libraries/gcc-library/ ; https://radiodns.org/technical/documentation/ ; https://radiodns.org/technical/documentation/howto/ .
+
+### Nächster Schritt
+Die SI4735-2.1.8-RDS-FIFO-Implementierung und den offiziellen AN332-Datenpfad gezielt prüfen, um festzustellen, welche Blockdaten aus dem FIFO zugänglich sind und ob Gruppe 1A (ECC), Gruppe 0A/0B (TP/TA/AF) und Gruppe 3A (RT+) sauber verarbeitet werden können. Danach eine getrennte, quellenbelegte Datenfeldmatrix in `docs/NETWORK_DATA_SOURCES.md` ergänzen. Weiterhin nur Recherche/Dokumentation; keine Implementierung, Builds, Actions oder Flashvorgänge.
