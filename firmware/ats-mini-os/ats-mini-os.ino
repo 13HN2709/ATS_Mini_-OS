@@ -44,6 +44,12 @@ void loop() {
                   state.snr,
                   state.stereo ? "yes" : "no",
                   static_cast<unsigned>(getCpuFrequencyMhz()));
+    Serial.printf("[RDS] available=%s PI=%04X PTY=%u PS=\"%s\" RT=\"%s\"\n",
+                  state.rdsAvailable ? "yes" : "no",
+                  static_cast<unsigned>(state.piCode),
+                  static_cast<unsigned>(state.pty),
+                  state.stationName,
+                  state.radioText);
   }
   delay(10);
 }
