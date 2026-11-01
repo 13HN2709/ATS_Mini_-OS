@@ -71,6 +71,10 @@ Geplante zentrale Stelle für CPU-Leistungsprofile.
 
 Für den betrachteten Umfang sind ausschließlich **OSPI und QSPI** vorgesehen. Welche Controller, Geräte und Treiber tatsächlich benötigt werden, ist anhand der Zielhardware zu verifizieren.
 
+## Buildbasis – vorläufige Vorauswahl
+
+Das lesend geprüfte Referenzprojekt `13HN2709/ats-mini-dev` nutzt Arduino CLI mit Arduino-ESP32 3.3.12, PU2CLR SI4735 2.1.8 und LovyanGFX 1.2.32. Für den ersten ATS-Mini-Prototyp ist diese Toolchain der naheliegende Kandidat, weil die Hardware-/Tuner-Anbindung dort bereits vorhanden ist. Sie wird erst nach Abgleich der Lizenzbedingungen, Display-Konfiguration und der OS-Boot-/Partitionsanforderungen verbindlich festgelegt. Kein Code soll ohne Prüfung in das neue OS kopiert werden.
+
 ## Offene Entscheidungen
 
 - Arduino-ESP32 oder ESP-IDF als Buildbasis.
