@@ -93,16 +93,23 @@ bool TunerDriver::pollRds(TunerRdsData& out) {
     }
   } else if (group == 2) {
     const uint8_t flag = radio_.getRdsFlagAB();
-    if (!haveTextFlag_ || flag != lastTextFlag_) {
+    const bool textChanged = !haveTextFlag_ || flag != lastTextFlag_;
+    if (textChanged) {
       haveTextFlag_ = true;
       lastTextFlag_ = flag;
-      out.radioText[0] = '\0';
-      out.radioTextUpdated = true;
+      // PU2CLR 2.1.8 does not automatically clear the RT buffers when the
+      // A/B flag changes. Clear both before accepting segments from the new text.
+      radio_.clearRdsBuffer2A();
+      radio_.clearRdsBuffer2B();
     }
     const char* rt = radio_.getRdsVersionCode() == 0
                          ? radio_.getRdsText2A()
                          : radio_.getRdsText2B();
-    if (rt) {
+    if (textChanged) {
+      // Publish the freshly cleared/rebuilt buffer, never the previous message.
+      copyRdsText(out.radioText, sizeof(out.radioText), rt);
+      out.radioTextUpdated = true;
+    } else if (rt) {
       copyRdsText(out.radioText, sizeof(out.radioText), rt);
       out.radioTextUpdated = true;
     }
