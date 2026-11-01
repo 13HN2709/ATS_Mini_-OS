@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include "system/PerformanceManager.h"
+#include "src/system/PerformanceManager.h"
 
 namespace {
 constexpr uint32_t SERIAL_BAUD = 115200;
