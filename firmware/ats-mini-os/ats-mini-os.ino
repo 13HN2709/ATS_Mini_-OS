@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "system/PerformanceManager.h"
+#include "system/PerformanceManager.cpp"  // Keep the module compiled by Arduino CLI while source folders are staged.
 
 namespace {
 constexpr uint32_t SERIAL_BAUD = 115200;
