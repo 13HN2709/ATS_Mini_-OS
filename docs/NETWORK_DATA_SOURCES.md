@@ -168,3 +168,32 @@ Der Nutzer hat ausdrücklich festgelegt: Bevor RadioDNS gesucht wird, sollen all
 - Welche maximalen Größen, Formate und URLs akzeptiert der Logo-Cache?
 
 Die offizielle RadioDNS-Spezifikation ist maßgeblich; keine DNS-Namen oder Feldkodierungen aus Vermutung zusammensetzen.
+
+
+## 9. Ergebnis der ersten Tuner-/RDS-Inventarisierung (read-only, 2026-11-01)
+
+Die folgenden Aussagen stammen aus der Sichtung der Dateien `ats-mini/SI4735-fixed.h`, `ats-mini/Station.cpp`, `ats-mini/Common.h` und `ats-mini/ats-mini.ino` im Referenz-Repository `13HN2709/ats-mini-dev` (main). Das Referenz-Repository blieb unverändert.
+
+### Im Anwendungscode nachgewiesen
+- **PI:** `SI4735_fixed::getRdsPI()` setzt BLOCKAH und BLOCKAL zu einem 16-Bit-Wert zusammen. Der Wrapper dokumentiert dies als Korrektur eines Fehlers in der Basisbibliothek.
+- **PS:** `getRdsStationName()` verwendet Gruppe 0A; vollständiger Sendername wird aus vier geordneten 2-Zeichen-Segmenten gebildet.
+- **PTY:** `getRdsProgramTypeX()` liest die fünf PTY-Bits aus Block B; Anzeige nutzt RDS- bzw. optional RBDS-Tabellen.
+- **RT:** Gruppe 2A/2B wird über die SI4735-API verarbeitet und als RadioText bereitgestellt.
+- **CT:** `getRdsUTCEpoch()` dekodiert Gruppe 4A als RDS-Uhrzeit.
+- **RDS-Abruf/Status:** `checkRds()` prüft die FIFO-Belegung und verarbeitet begrenzt Gruppen pro Schleifendurchlauf. Die RDS-Konfiguration wird im FM-Pfad aktiviert.
+
+### Nicht nachgewiesen / offene Prüfung
+- **RT+:** kein RT+-Parser oder RT+-Tag-Handling in den geprüften Anwendungspfaden gefunden.
+- **ECC:** keine eindeutige ECC-Extraktion/Getter-Funktion in den geprüften Anwendungspfaden gefunden.
+- **AF:** keine explizite AF-Dekodierung/-Sammlung in den geprüften Anwendungspfaden gefunden.
+- **TP/TA:** keine eigene Auswertung/Anzeige in den geprüften Anwendungspfaden gefunden; der Wrapper kommentiert explizit, dass Gruppe 0 Bit 4 TA ist und nicht das RadioText-A/B-Flag.
+- **RadioDNS-Validierung:** es gibt noch keinen vollständigen Datensatz aus PI + Frequenz + ECC mit Stabilitäts-/Validitätsprüfung und keine RadioDNS-Abfrage.
+
+### Technische Einschränkung
+Dies belegt nur, was in den geprüften Anwendungspfaden sichtbar ist. Es beweist nicht, dass die SI4735-Hardware oder die PU2CLR-Bibliothek die übrigen Felder grundsätzlich nicht liefern kann. Vor Implementierung sind die exakt verwendete PU2CLR-Version 2.1.8, der SI4735-Datenpfad und die RadioDNS-Spezifikation zu prüfen. Fehlende API-Funktionen dürfen nicht geraten werden.
+
+### Konsequenz für die Planung
+1. Vorhandene Basis: PS, PI, PTY, RT und CT weiterverwenden bzw. in ATS Mini OS bewusst neu kapseln.
+2. RT+, ECC, AF und TP/TA als Recherche-/Implementierungsfragen offen halten, bis die zugrunde liegenden RDS-Gruppen und API-Zugriffe verifiziert sind.
+3. RadioDNS erst planen, wenn Identitätsdaten valide/stabil erfasst werden und die normgerechte Frequenz-/Länderkennung geklärt ist.
+4. Diese Bestandsaufnahme ist read-only und keine Freigabe für ausführbaren Code, Builds, GitHub Actions oder Flashvorgänge.
