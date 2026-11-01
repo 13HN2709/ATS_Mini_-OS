@@ -219,3 +219,23 @@ Der Nutzer hat zugestimmt, RadioDNS für die geplante automatische RDS-Senderlog
 - Es ist nicht verifiziert, dass die TEF6686-App des Nutzers RadioDNS tatsächlich nutzt; dies bleibt eine Vermutung.
 - RadioDNS ist keine Garantie für Logos bei allen Sendern und ersetzt nicht die Prüfung von Lizenzbedingungen, HTTPS, Bildformaten und Speicherbedarf.
 - Dies ist eine Planungsentscheidung, keine Freigabe für ausführbaren Code, Builds, Actions oder Flashvorgänge. Bestehende Firmware-Repositories bleiben unangetastet.
+
+
+## 15. Erstes Entwicklungsziel und schrittweiser Aufbau
+
+Der Nutzer hat festgelegt, dass wir das ATS Mini OS zuerst als einfaches **UKW-Radio mit RDS, RT, PTY und RadioDNS** aufbauen und anschließend Schritt für Schritt erweitern. Der Umfang und die Stufen sind auch in `docs/ARCHITECTURE.md` dokumentiert.
+
+### Geplante Reihenfolge
+1. **Inventarisierung:** Hardware, Tuner, Pins, Audioausgabe, Display, Eingabe, WLAN/HTTPS und Zeitdienst anhand von Quellen bestätigen.
+2. **UKW-Grundbetrieb:** FM-Abstimmung und Audio stabil zum Laufen bringen.
+3. **RDS:** Sendername/PS und PI-Code auslesen und auf Stabilität prüfen.
+4. **RT und PTY:** Radiotext und Programmtyp darstellen, sofern der Sender sie ausstrahlt und die Hardware sie liefert.
+5. **RadioDNS:** Senderidentität nach Spezifikation auflösen und verfügbare Metadaten/Logos abrufen; zuerst mit einem bekannten deutschen Sender testen.
+6. **Stabilität:** WLAN-Ausfall, fehlende Daten, Timeouts und Cache prüfen. Netzwerkfehler dürfen Radio und Bedienung nicht blockieren.
+7. **Erst danach** weitere Funktionen wie Wetter, Web Control, Spectrum Scanner oder Dual RX planen/ergänzen.
+
+### Regeln
+- RDS/RT/PTY/Logo sind abhängig von Senderdaten und Hardwareunterstützung; fehlende Daten dürfen kein Fehler für das Radio sein.
+- RadioDNS bleibt der bevorzugte erste Logo-Kandidat, ist aber keine Garantie, dass jeder Sender ein Logo veröffentlicht.
+- Die Architektur-/Reihenfolgeentscheidung ist noch keine Freigabe für ausführbaren Code, Builds, Actions oder Flashvorgänge.
+- Bestehende Slot-A- und Slot-B-Firmware und Referenz-Repositories bleiben unangetastet. Der aktuelle Status bleibt Planung/Inventarisierung.
