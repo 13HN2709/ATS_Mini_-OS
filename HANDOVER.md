@@ -328,3 +328,22 @@ Diese Freigabe gilt für Informationsbeschaffung und read-only Prüfung. Die bes
 
 ### Nächster Schritt
 Die SI4735-2.1.8-RDS-FIFO-Implementierung und den offiziellen AN332-Datenpfad gezielt prüfen, um festzustellen, welche Blockdaten aus dem FIFO zugänglich sind und ob Gruppe 1A (ECC), Gruppe 0A/0B (TP/TA/AF) und Gruppe 3A (RT+) sauber verarbeitet werden können. Danach eine getrennte, quellenbelegte Datenfeldmatrix in `docs/NETWORK_DATA_SOURCES.md` ergänzen. Weiterhin nur Recherche/Dokumentation; keine Implementierung, Builds, Actions oder Flashvorgänge.
+
+
+## 20. Ergebnis: RDS-Rohblockzugriff in PU2CLR SI4735 2.1.8 genauer geprüft
+
+Am 1. November 2026 wurden die offizielle Bibliotheksversion pu2clr/SI4735 Tag 2.1.8 und Silicon Labs AN332 read-only geprüft. Details und Datenfeldmatrix: [docs/NETWORK_DATA_SOURCES.md, Abschnitt 11](docs/NETWORK_DATA_SOURCES.md#11-vertiefte-prüfung-si4735-rds-fifo-und-rohblöcke-2026-11-01).
+
+### Gesicherte Ergebnisse
+- Die SI4735-Statusantwort hat 13 Bytes und enthält Status/FIFO-Zähler, die 16-Bit-RDS-Blöcke A, B, C und D sowie Fehlerindikatoren BLEA–BLED.
+- getRdsStatus(...) kopiert die vollständige Antwort in currentRdsStatus.raw[]. Das Rohmaterial existiert also im internen Statusobjekt.
+- Das Objekt ist nicht als öffentlicher Rohblock-Getter verfügbar. Für ATS Mini OS muss ein sauberer Zugriffspfad vorgesehen werden; externe Module dürfen nicht einfach als zugriffsberechtigt angenommen werden.
+- STATUSONLY=0 liefert den ältesten FIFO-Gruppeneintrag, wenn die FIFO nicht leer ist; STATUSONLY=1 dient dem letzten gültigen Status für A/B und ist nicht für vollständige Gruppenauswertung A–D geeignet.
+- Ein zusätzlicher unabhängiger Aufruf von getRdsStatus() könnte die FIFO leeren/weiterdrehen und den vorhandenen RDS-Parser beeinflussen. Bei späterer Implementierung muss genau ein koordinierter FIFO-Leser die Daten an PS/RT/PTY/ECC/AF/TP/TA/RT+ verteilen.
+- Die Standardbibliotheksfunktion getRdsPI() liefert in Version 2.1.8 laut Quellcode nur BLOCKAL; im ATS-Referenzprojekt existiert ein Wrapper, der High- und Low-Byte kombiniert. Diese Korrektur nicht verlieren.
+
+### Folgerung
+Die SI4735-Antwort stellt Rohfelder bereit, um die Dekodierung von ECC, AF, TP/TA und RT+ weiterzuverfolgen. Das bedeutet noch nicht, dass diese Felder im bestehenden ATS-Anwendungscode verfügbar oder korrekt dekodiert sind. Gruppenbitbelegung, Fehlerprüfung und ODA-Zuordnung für RT+ müssen vor einer Implementierung normativ geprüft werden.
+
+### Arbeitsgrenzen bleiben unverändert
+Nur öffentliche Quellen und Dokumentation. 13HN2709/ats-mini-dev und bestehende Firmware-Repositories bleiben unverändert; keine Firmwareimplementierung, Builds, GitHub Actions oder Flashvorgänge. Slot A und DiamondRadio in Slot B bleiben unangetastet.
