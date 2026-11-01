@@ -277,3 +277,17 @@ Referenzen:
 - Silicon Labs AN332: https://strawberry-linux.com/pub/Si4735%20Programming%20Guide.pdf
 - PU2CLR SI4735 2.1.8: https://github.com/pu2clr/SI4735/tree/2.1.8
 - RadioDNS GCC: https://radiodns.org/technical/libraries/gcc-library/
+
+
+## 13. Vollständige RadioDNS-Logo-Daten- und Diagnoseanforderungen
+
+Die separate Datei [RADIODNS_LOGO_DATA_REQUIREMENTS.md](RADIODNS_LOGO_DATA_REQUIREMENTS.md) bündelt den geplanten Ende-zu-Ende-Datenfluss: RDS-Gültigkeit → Frequenz/PI/ECC/GCC → RadioDNS-FQDN → DNS-CNAME → SRV-Metadatenserver → SI.xml → exakter FM-Bearer → Logo-Metadaten → validierter Download → Cache.
+
+Wichtig für die Implementierung:
+- Die RadioDNS-FM-Identität benötigt Frequenz, vollständigen PI und GCC. PS, PTY, RT, RT+, AF, TP/TA und CT sind Zusatzinformationen bzw. Diagnosefelder.
+- Eine feste EU-RDS-Region ersetzt nicht den GCC. Valide ausgestrahlte ECC-Daten haben Vorrang; falls ECC fehlt, ist die RadioDNS-GCC-Fallback-Strategie vorgesehen.
+- Der Sender muss in der SI-Datei über einen exakt passenden Bearer zugeordnet werden. Ein PS-Textvergleich allein ist kein zuverlässiger Identitätsnachweis.
+- Die SI kann mehrere Logo-Varianten referenzieren. Die spätere Auswahl muss zur tatsächlichen Displayfläche passen und URL, MIME-Typ, Abmessungen, Dateigröße, Nutzungsbedingungen und Cacheverhalten berücksichtigen.
+- Ein koordinierter RDS-FIFO-Leser bleibt zwingend; zusätzliche parallele FIFO-Aufrufe könnten die bestehende Datenverarbeitung stören.
+
+Diese Ergänzung ist Planung/Dokumentation. Sie stellt keine Freigabe zur Implementierung, zu Builds, Actions oder Flashvorgängen dar.
