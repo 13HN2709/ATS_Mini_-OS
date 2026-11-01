@@ -705,3 +705,28 @@ Nach Run `41272465032` wurden die aktuellen Dateien im Branch `dev/first-build-p
 4. Hardwareverhalten erst separat testen, nachdem ein sicheres, ausdrücklich freigegebenes APP1-Image-/Bootverfahren anhand der realen 16-MB-Partitionierung verifiziert wurde.
 
 **Sicherheitsstatus:** kein Flash, keine Änderungen an APP0/APP1, Bootloader, Recovery oder Partitionen; keine GitHub Actions durch den Assistenten gestartet.
+
+
+## 45. SI4735 2.1.8: hardware detection and I2C pin setup
+
+Read-only source inspection of the official PU2CLR `2.1.8` release confirmed:
+
+- `SI4735::setup(...)` returns `void`; calling it cannot by itself prove that a tuner answered.
+- `SI4735::getDeviceI2CAddress(resetPin)` pulses RESET, checks I2C addresses `0x11` and `0x63`, sets the library address when found, and returns `0` if neither address responds.
+- The library's `setup()` calls `Wire.begin()` internally. Arduino-ESP32 documents `Wire.setPins(SDA, SCL)` as the way to configure custom pins before a library calls `Wire.begin()`.
+
+### Code change
+
+`firmware/ats-mini-os/src/tuner/TunerDriver.cpp` now configures SDA=18/SCL=17 with `Wire.setPins()`, checks its return value, then calls `getDeviceI2CAddress()` before normal tuner setup. If the bus setup fails or no SI47XX responds at either supported address, `begin()` returns false and `ready_` remains false; diagnostic messages are printed to Serial. The detected address is logged on success.
+
+Sources:
+- PU2CLR SI4735 release 2.1.8: https://github.com/pu2clr/SI4735/releases/tag/2.1.8
+- SI4735 2.1.8 source: https://github.com/pu2clr/SI4735/blob/2.1.8/src/SI4735.cpp
+- Arduino-ESP32 I2C pin configuration: https://docs.espressif.com/projects/arduino-esp32/en/latest/api/i2c.html
+
+### Verification status and caveats
+
+- Code change is committed, but no new compile has been run; the user starts GitHub Actions manually.
+- Hardware detection is now based on an I2C address acknowledgement, not a complete proof that FM audio/tuning works.
+- The library's internal setup sequence still uses void-returning commands, so further runtime verification would need to be carefully designed against the exact library status/command behavior.
+- No firmware was flashed. APP0, APP1, bootloader, recovery, and the device's 16 MB partition layout were not changed. The repository's 8 MB partition CSV remains compile-reference-only and must not be flashed to the device.
