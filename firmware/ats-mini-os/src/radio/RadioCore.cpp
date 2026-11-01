@@ -13,6 +13,7 @@ bool RadioCore::begin(uint32_t initialFrequencyKHz) {
   ready_ = tuner_.begin(startupFrequency);
   if (!ready_) return false;
 
+  tuner_.refreshSignalQuality();
   snapshot_.frequencyKHz = tuner_.frequencyKHz();
   snapshot_.rssi = tuner_.rssi();
   snapshot_.snr = tuner_.snr();
@@ -32,6 +33,7 @@ void RadioCore::update() {
 
   if (now - lastPollMs_ >= 500) {
     lastPollMs_ = now;
+    tuner_.refreshSignalQuality();
     snapshot_.frequencyKHz = tuner_.frequencyKHz();
     snapshot_.rssi = tuner_.rssi();
     snapshot_.snr = tuner_.snr();
