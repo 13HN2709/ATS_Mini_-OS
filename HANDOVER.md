@@ -552,3 +552,17 @@ Der Nutzer bestätigt den aktuellen Gerätezustand: Die gut funktionierende aktu
 - Vollständiges Backup `ATSMiniFULLBackup.nbin` (16 MB) und Recovery erhalten.
 - Die bisherige OS-Konfiguration/Partition-CSV ist nur für Compile-Tests und darf nicht als Flash-/Upload-Konfiguration verwendet werden. Vor einem ersten Flash müssen Binärformat, Flash-Offsets, Bootloader-/OTA-Mechanismus und 3.5-MiB-Slotgröße verifiziert werden. Keine Firmware auf Offset `0x0`, kein Clean Install, keine Änderung an Bootmanager/Recovery.
 - Der Nutzer hat APP1 als Testplatz vorgesehen; dies ist noch keine ausdrückliche Freigabe, jetzt zu flashen. Bis zur gesonderten Freigabe nur Compile-/Artefaktprüfung.
+
+
+## 37. Selbstständige Prüfung und persistente Einstellungen (2026-11-01; Compile ausstehend)
+
+Nutzerwunsch: Firmware soll beim Start relevante Zustände selbst prüfen und Einstellungen unabhängig vom App-Slot zuverlässig speichern, statt dass Frequenzen je nach Firmware/Slot verloren gehen.
+
+Umgesetzt als erster Schritt:
+- Neues isoliertes Modul `src/settings/SettingsStore.h/.cpp` auf Basis von ESP32 NVS/Preferences mit eigener Namespace `atsmini_os`.
+- Letzte FM-Frequenz wird beim Start geladen und auf den gültigen FM-Bereich 87,5–108,0 MHz geprüft; ungültige Werte fallen auf die Standardfrequenz zurück.
+- Nach einer Abstimmung wartet die Firmware drei Sekunden ohne weitere Frequenzänderung, bevor sie speichert (Flash-Verschleiß reduzieren).
+- Falls NVS nicht geöffnet werden kann, bleibt der Radio-Start mit Standardfrequenz möglich.
+- `RadioCore` nutzt das Modul. Die erste Standardfrequenz bleibt Antenne Münster 95,4 MHz; eine gültig gespeicherte Frequenz hat beim Neustart Vorrang.
+
+Technische Einschränkung: NVS ist persistent und vermeidet die Abhängigkeit von LittleFS, aber Slots, die dieselbe Firmware und denselben NVS-Namespace nutzen, würden dieselben Werte sehen. Unterschiedliche Firmware-Projekte müssen eigene Namespaces verwenden; echte Slot-Trennung kann bei Bedarf explizit anhand einer bestätigten Slot-ID ergänzt werden. Weitere Einstellungen wie CPU-Profil, Lautstärke und Betriebsart sind noch nicht gespeichert. **Noch kein Compile dieses neuen Codes, kein Hardwaretest, kein Flash.**
