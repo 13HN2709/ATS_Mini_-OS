@@ -66,6 +66,12 @@ uint32_t TunerDriver::frequencyKHz() const {
   return static_cast<uint32_t>(const_cast<SI4735&>(radio_).getCurrentFrequency()) * 10UL;
 }
 
+void TunerDriver::refreshSignalQuality() {
+  if (!ready_) return;
+  // PU2CLR requires an RSQ_STATUS query before reading RSSI/SNR/pilot values.
+  radio_.getCurrentReceivedSignalQuality();
+}
+
 int16_t TunerDriver::rssi() const {
   if (!ready_) return -1;
   return const_cast<SI4735&>(radio_).getCurrentRSSI();
