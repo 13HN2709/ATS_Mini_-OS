@@ -75,3 +75,12 @@ Noch erforderlich:
 Die Datei `.github/workflows/ats-mini-os-first-compile.yml` ist angelegt. Sie startet nur manuell, verlangt die explizite Eingabe `COMPILE` und erstellt getrennte Compile-Jobs für OSPI und QSPI. Sie enthält keinen Flash-Schritt.
 
 Der Workflow ist **noch nicht gestartet**. Vor der ersten Freigabe ist der Review des Workflow-/Profilpfads erforderlich. Der bestehende 16-MB-Dual-Boot-Aufbau wird nicht verändert; die mitgelieferte Partitionstabelle ist nur eine 8-MB-Referenz und ausdrücklich keine Freigabe zum Flashen.
+
+
+## CPU-Takt: feste Vorgabe (2026-11-01)
+
+Das vom Nutzer bereitgestellte Foto des DiamondRadio-Menüs bestätigt direkt die drei angebotenen Stufen: 80 MHz, 160 MHz und 240 MHz. Diese Werte stimmen mit der Espressif-Dokumentation zum ESP32-S3 überein; ESP-IDF nennt 80/160/240 MHz als unterstützte maximale CPU-Frequenzwerte bei Dynamic Frequency Scaling. Quellen: https://docs.espressif.com/projects/esp-idf/en/v5.5.3/esp32s3/api-reference/system/power_management.html und https://github.com/espressif/arduino-esp32/blob/master/cores/esp32/esp32-hal-cpu.h.
+
+Verbindliche OS-Menülogik: `Auto`, `Taktstufe 1` = 80 MHz, `Taktstufe 2` = 160 MHz, `Taktstufe 3` = 240 MHz. Im Auto-Modus dürfen Waterfall, RadioDNS/WLAN und Bilddekodierung über den zentralen Performance Manager zeitlich begrenzte Leistungs-Leases anfordern. Erst wenn alle aktiven Anforderungen enden, darf Auto wieder absenken. Feste Stufen bleiben von solchen Anforderungen unberührt. Die im alten Chat erwähnte Regel „Encoderaktivität → 240 MHz, nach 10 Sekunden Inaktivität → 80 MHz“ ist für DiamondRadio noch nicht anhand des Originalquellcodes verifiziert.
+
+Die derzeitige Laufzeitumschaltung bleibt deaktiviert, bis die Arduino-ESP32-3.3.12-API und die Stabilität auf OSPI und QSPI geprüft wurden. Ein unterstützter Taktwert allein beweist noch keine Stabilität der konkreten Hardware-/Timing-Konfiguration.
