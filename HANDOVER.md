@@ -425,3 +425,17 @@ Branch `dev/first-build-preparation` enthält jetzt:
 Dies ist nur ein Compile-/Bring-up-Scaffold. Es implementiert noch keinen nutzbaren UKW-Empfänger, kein Display, keine SI4735-Initialisierung, kein RDS/RadioDNS und keine Menüauswahl für CPU-Profile. Der tatsächliche CPU-Takt wird nicht umgestellt.
 
 **Build-Status:** Kein lokaler Build ausgeführt, kein GitHub Actions Workflow gestartet, nichts geflasht. Vor dem ersten Build muss die Arduino-CLI-Profilauflösung und die Behandlung von `PartitionScheme=custom` mit der bereitgestellten `partitions.csv` abgesichert werden. Ein erfolgreicher Scaffold-Compile wäre nur ein Toolchain-/Profiltest, kein Nachweis der finalen Firmware- oder Dual-Boot-Funktion.
+
+
+## 25. Dauerhafte Regel des Nutzers: strikt modulare Entwicklung
+
+Der Nutzer hat ausdrücklich festgelegt, dass diese Regel **immer** gelten muss und in Übergaben bei vollen Chats festgehalten werden soll:
+
+- Jede fachlich eigenständige Funktion erhält eigene `.h`- und `.cpp`-Dateien.
+- `.ino` bleibt möglichst klein und enthält nur Einstiegspunkt sowie Setup-/Loop-Verdrahtung.
+- Eine Änderung an einer Funktion darf unabhängige Funktionen nicht kaputtmachen. Keine Sammeldateien, keine direkten Eingriffe in fremde Modul-Interna und keine versteckten Seiteneffekte.
+- Module interagieren über klar definierte Schnittstellen; gemeinsame Ressourcen haben genau einen Besitzer.
+- Vor Änderungen Abhängigkeiten/Aufrufer prüfen, betroffene Module gezielt anpassen und Prüfungen dokumentieren.
+- Bei jeder Übergabe Branch, Commits, Fortschritt, offene Punkte und Build-/Flash-Status ergänzen.
+
+Diese Regel ist verbindlich für alle weiteren Arbeiten am ATS Mini OS.
