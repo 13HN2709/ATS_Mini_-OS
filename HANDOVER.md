@@ -408,3 +408,6 @@ Am 1. November 2026 wurde `docs/RADIODNS_INTERFACES_AND_TEST_LAYOUT.md` ergänzt
 - Schriftkandidat für das Testlayout: DSEGstended 14-Segment Regular; Quelle und SIL OFL 1.1 sind dokumentiert. Fontdatei und tatsächliche Glyphen-/Speicherprüfung stehen noch aus.
 - Nächster Weg: Referenzdisplay-/Tuner-Initialisierung und Lizenz/Pin-Konfiguration vollständig nachvollziehen; dann minimale, klar getrennte Radio-Core- und UI-Grundlage auf dem Arbeitszweig anlegen und statisch prüfen.
 - **Noch nicht durchgeführt:** Build, GitHub Actions, Flashen oder Änderungen an bestehenden Firmware-Repositories. Slot A und DiamondRadio Slot B bleiben geschützt.
+
+
+- Ergänzung: `docs/FIRST_BUILD_READINESS.md` bündelt die Quellcode-Erkenntnisse, offene Build-Blocker und den sicheren Ablauf bis zum ersten Compile.
