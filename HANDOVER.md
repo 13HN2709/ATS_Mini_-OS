@@ -602,3 +602,12 @@ Nächste Workflow-Korrektur in Commit `63e3a85b5973ac5bb137ac11c3848756cbd6e3df`
 - Der direkte `--library`-Pfad allein hat das Problem nicht behoben. Neuer Workflow-Commit `c78e8488729f3f83ce4aa6ee303312d5802cbbe6` ergänzt zusätzlich den expliziten Include-Pfad `.../PU2CLR_SI4735/src` als `compiler.cpp.extra_flags`. Das ist eine weitere Build-Konfigurationskorrektur, noch nicht verifiziert.
 - **Nächster Schritt:** Nutzer startet den Workflow erneut manuell. Keine Actions selbst starten. Falls der Header-Fehler verschwindet, die dann sichtbaren Compilerfehler als nächsten Schritt bearbeiten.
 - Keine Firmware wurde geflasht; keine Partitionen, Bootloader oder Geräte-Slots wurden verändert.
+
+
+## Build-Fehlerstand – 2026-11-01 (Run 41267717924)
+
+- Der Header-Include-Fehler ist behoben: Beide Profile finden `SI4735.h` und kompilieren nun weiter bis zur Tuner-Implementierung.
+- Beide Jobs melden dieselben zwei API-Fehler in `src/tuner/TunerDriver.cpp`: `SI4735_FM` ist kein definierter Bezeichner und `getCurrentStereo()` existiert nicht in PU2CLR SI4735 2.1.8.
+- Korrektur in Commit `c021e99bf9c73c6107fa71a5fa0593b2872f0687`: Initialisierung verwendet jetzt `FM_FUNCTION`; Stereo-/Pilotstatus wird über die in der Bibliothek vorhandene Methode `getCurrentPilot()` abgefragt. Referenz: PU2CLR-SI4735-API-Dokumentation und `src/SI4735.h`.
+- **Nächster Schritt:** Nutzer startet den Compile-only-Workflow erneut manuell. Diese Korrektur ist noch nicht durch einen neuen Lauf verifiziert.
+- Keine Firmware geflasht; keine Partitionen, Bootloader oder Geräteslots verändert.
