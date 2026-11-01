@@ -15,11 +15,21 @@ struct EncoderEvent {
   uint32_t timestampMs = 0;
 };
 
-// Hardware-independent event contract. GPIO/debounce implementation will be
-// added only after the ATS Mini V4 pin map and encoder behavior are verified.
+// Polling GPIO driver for ATS Mini V4 encoder (A=GPIO2, B=GPIO1, push=GPIO21).
 class EncoderInput {
 public:
   void begin();
   void update();
   bool poll(EncoderEvent& event);
+
+private:
+  void queueEvent(EncoderEventType type, int16_t delta);
+  uint8_t previousAB_ = 0;
+  int8_t transitionAccumulator_ = 0;
+  bool rawButtonPressed_ = false;
+  bool stableButtonPressed_ = false;
+  bool longPressSent_ = false;
+  uint32_t buttonChangedMs_ = 0;
+  uint32_t pressStartedMs_ = 0;
+  EncoderEvent pendingEvent_{};
 };
