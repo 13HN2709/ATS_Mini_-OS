@@ -48,7 +48,14 @@ jobs:
           arduino-cli core install esp32:esp32@3.3.12
 
       - name: Install SI4735 tuner library
-        run: arduino-cli lib install "PU2CLR SI4735"
+        env:
+          ARDUINO_LIBRARY_ENABLE_UNSAFE_INSTALL: "true"
+        run: arduino-cli lib install --git-url https://github.com/pu2clr/SI4735
+
+      - name: Verify SI4735 header was installed
+        run: |
+          arduino-cli lib list
+          find "$HOME/Arduino/libraries" -name SI4735.h -print -quit | grep -q SI4735.h
 
       - name: Verify ESP32-S3 target is available
         run: arduino-cli board details -b esp32:esp32:esp32s3
