@@ -683,3 +683,25 @@ Der Nutzer hat das gewünschte Bedienprinzip beschrieben. Dies ist eine Planungs
 - Der Status muss den tatsächlichen Zustand der jeweiligen Funktion anzeigen und nach Änderungen aktualisiert werden.
 - Konkrete Haupt- und Untermenüpunkte, Layout und Farben werden später gemeinsam festgelegt.
 - Menüarbeit beginnt erst nach Stabilisierung der aktuellen Firmware-Grundlage; sie darf die laufenden Build-/Radio-Schritte nicht unnötig vermischen.
+
+
+## 44. Quellcode-Audit nach erfolgreichem Compile – FM-Grundgerüst (2026-11-01)
+
+Nach Run `41272465032` wurden die aktuellen Dateien im Branch `dev/first-build-preparation` lesend geprüft. Es wurden keine Firmwaredateien geändert und kein Workflow gestartet.
+
+### Bestätigte Beobachtungen
+- `ats-mini-os.ino` startet `RadioCore` mit 95,4 MHz als Fallback und gibt Diagnosedaten seriell aus; Display und Encoder sind noch nicht integriert.
+- `RadioCore` lädt die letzte Frequenz aus NVS, pollt Frequenz/RSSI/SNR/Pilotstatus alle 500 ms und verschiebt das Speichern nach Abstimmaktivität um drei Sekunden.
+- `TunerDriver` kapselt direkte SI4735-Aufrufe; die dokumentierte Referenzbelegung ist SDA GPIO18, SCL GPIO17, LDO GPIO15, Reset GPIO16. Diese Pins sind weiterhin nicht am konkreten Gerät validiert.
+- `TunerDriver::begin()` setzt `ready_ = true` unmittelbar nach `setup()`, `setFM()` und `setVolume()`. Aus dem aktuellen Code allein folgt nicht, dass der Chip tatsächlich geantwortet hat. Der Status `ready` bedeutet daher derzeit nur, dass die Initialisierungssequenz aufgerufen wurde, nicht dass Empfang hardwareseitig bestätigt ist.
+- Der aktuelle Tuner-Treiber pollt SI4735-Abfragen über `const_cast`, weil die Bibliotheksmethoden nicht als `const` verfügbar sind. Das ist kompilierbar, aber beim nächsten Treiber-Refactoring auf eine klarere Schnittstelle zu prüfen.
+- Die NVS-Frequenz wird auf 87,5–108,0 MHz und 10-kHz-Raster validiert. Die aktuellen Benutzer-Tuning-Schritte im RadioCore betragen 100 kHz.
+- Die beiden Profile in `sketch.yaml` nutzen weiterhin `FlashSize=8M` und `PartitionScheme=custom`; diese Einstellungen gelten ausschließlich für Compile-Tests. Die 8-MB-Referenz-`partitions.csv` ist inkompatibel mit dem dokumentierten 16-MB-Geräte-IST-Layout und darf nicht als Flashkonfiguration verwendet werden.
+
+### Nächster Schritt
+1. Die tatsächlich installierte PU2CLR SI4735 2.1.8 API gezielt gegen die Initialisierungs-/Fehlererkennung prüfen; nicht raten, welche Methoden eine erfolgreiche Hardwareantwort bestätigen.
+2. Einen minimalen, aussagekräftigen Fehlerstatus für Tunerinitialisierung definieren und die serielle Diagnose klar zwischen `init sequence issued` und `hardware response confirmed` unterscheiden.
+3. Erst danach einen kleinen Codepatch vorbereiten, dann den Nutzer den manuellen Compile-only-Workflow ausführen lassen.
+4. Hardwareverhalten erst separat testen, nachdem ein sicheres, ausdrücklich freigegebenes APP1-Image-/Bootverfahren anhand der realen 16-MB-Partitionierung verifiziert wurde.
+
+**Sicherheitsstatus:** kein Flash, keine Änderungen an APP0/APP1, Bootloader, Recovery oder Partitionen; keine GitHub Actions durch den Assistenten gestartet.
