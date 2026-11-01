@@ -30,9 +30,9 @@ bool PerformanceManager::setProfile(CpuProfile profile) {
 const char* PerformanceManager::profileName() const {
   switch (selectedProfile_) {
     case CpuProfile::Auto: return "Auto";
-    case CpuProfile::FixedLow: return "FixedLow";
-    case CpuProfile::FixedMedium: return "FixedMedium";
-    case CpuProfile::FixedHigh: return "FixedHigh";
+    case CpuProfile::FixedLow: return "Taktstufe 1";
+    case CpuProfile::FixedMedium: return "Taktstufe 2";
+    case CpuProfile::FixedHigh: return "Taktstufe 3";
   }
   return "Unknown";
 }
