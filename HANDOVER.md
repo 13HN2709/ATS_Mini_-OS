@@ -881,3 +881,12 @@ Die Header- und Implementierungsdateien der offiziellen PU2CLR-Version 2.1.8 wur
 - Nächster Schritt: Nutzer startet den Compile-only-Workflow manuell erneut und sendet den Run-Link. Der Assistent startet keine GitHub Actions selbst.
 - Nutzer hat bestätigt, dass die Pinbelegung aus ATS Mini DEV auf seinem ATS Mini funktioniert. Die neue OS-Treiberintegration braucht trotzdem noch einen erfolgreichen Compile und anschließend einen vorsichtigen Hardwaretest.
 - Kein Flashen und keine Änderung an Bootloader, APP0/APP1, Recovery oder Partitionen. Die 8-MB-Partitionsdatei bleibt Compile-Referenz-only und darf nicht auf das 16-MB-Gerät geflasht werden.
+
+## 55. LovyanGFX-Linkerfehler aus Run 41282435431 eingegrenzt (2026-11-01)
+
+- Run: https://github.com/13HN2709/ATS_Mini_-OS/actions/runs/41282435431
+- Beide Profile erreichen jetzt den Linker; die Headerdatei wird gefunden und der fehlende Headerguard ist behoben.
+- Linker meldet zahlreiche `undefined reference`-Symbole aus `lgfx::LGFXBase`, `Panel_Device` und `LGFX_Device`. Die Compile-Ausgabe listet LovyanGFX nicht unter den tatsächlich verwendeten/kompilierten Bibliotheken.
+- Korrektur in Commit `2ef743515afa5eb39bbd90873ca862f1c863dcc7`: die zwei singulären `--library`-Argumente entfernt; Arduino CLI soll LovyanGFX über den angegebenen Bibliotheksordner `--libraries "$HOME/Arduino/libraries"` regulär erkennen und dessen Implementierungsdateien mitkompilieren.
+- Diese Änderung ist noch nicht verifiziert. Nutzer startet den manuellen Compile-only-Workflow erneut und teilt den Run-Link; Assistent startet keine Actions.
+- Kein Flashen und keine Änderungen an Bootloader, APP0/APP1, Recovery oder Partitionen.
