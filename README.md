@@ -58,3 +58,9 @@ Die Verzeichnisse enthalten zunächst nur Beschreibungen und Platzhalter. Konkre
 - Geprüft werden deutsche Umlaute und `ß`, italienische Akzente, Buchstaben, Ziffern und passende Darstellungsgrößen für Frequenz, MHz, Sendername und RadioDNS-Diagnose.
 - Arabisch bleibt ein separater späterer Rendering-Test mit Noto Sans Arabic; RTL-/Shaping-Unterstützung muss nachgewiesen werden.
 - Fontdateien sind noch nicht integriert; keine Builds oder GitHub Actions gestartet.
+
+## Firmware scaffold status
+
+The modular bring-up scaffold is now under `firmware/ats-mini-os/`. Each independent module uses its own `.h` and `.cpp` under `src/`; the sketch remains a thin entry point. A manual-only compile workflow is prepared at `.github/workflows/ats-mini-os-first-compile.yml`, with OSPI and QSPI jobs. It has **not** been started.
+
+The first compile is intentionally compile-only. It must not flash a device or modify boot slots. The current partition CSV is a reference layout and is not approved as the final 16 MB dual-boot layout.
