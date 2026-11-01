@@ -347,3 +347,20 @@ Die SI4735-Antwort stellt Rohfelder bereit, um die Dekodierung von ECC, AF, TP/T
 
 ### Arbeitsgrenzen bleiben unverändert
 Nur öffentliche Quellen und Dokumentation. 13HN2709/ats-mini-dev und bestehende Firmware-Repositories bleiben unverändert; keine Firmwareimplementierung, Builds, GitHub Actions oder Flashvorgänge. Slot A und DiamondRadio in Slot B bleiben unangetastet.
+
+
+## 21. RadioDNS-Logo-Datenfluss und Diagnoseanforderungen dokumentiert
+
+Am 1. November 2026 wurde `docs/RADIODNS_LOGO_DATA_REQUIREMENTS.md` neu angelegt. Grundlage sind die aktuelle RadioDNS-Dokumentation zu Project Logo, Core Lookup/GCC sowie die vorherige read-only Prüfung von PU2CLR SI4735 2.1.8. Die Datei beschreibt die notwendigen Empfangsdaten, Identitätsnormalisierung, DNS-/SI-Auflösung, Logo-Auswahl, Cache-/Sicherheitsgrenzen und Diagnosezustände.
+
+### Wesentliche Festlegungen
+- Für den FM-Lookup sind die tatsächliche Frequenz, der vollständige 16-Bit-PI und der GCC entscheidend. PS/PTY/RT/RT+/AF/TP/TA/CT bleiben nützliche Zusatz- und Diagnosefelder, ersetzen aber die Identität nicht.
+- Eine feste EU-RDS-Region ist keine RadioDNS-Länderkennung. ECC hat Vorrang, sofern valide empfangen; andernfalls muss die RadioDNS-GCC-Fallback-Strategie genutzt werden, ohne das Senderland blind aus Gerätestandort oder Region abzuleiten.
+- Der Diagnoseablauf soll RDS-Gültigkeit, PI/ECC/GCC, normalisierte Frequenz, FQDN, DNS-CNAME, SRV, SI-Datei, Bearer-Match, Logo-Metadaten, Downloadprüfung und Cache-Status getrennt sichtbar machen.
+- SI-Dateien enthalten Service-/Bearer-Zuordnung und Logo-Metadaten. Das Logo wird nur für den exakt passenden FM-Bearer ausgewählt; URLs, MIME-Typ, Abmessungen, Dateigröße, Nutzungsbedingungen und Cache-Regeln müssen geprüft werden.
+- Wegen der SI4735-RDS-FIFO-Semantik bleibt ein einziger koordinierter FIFO-Leser erforderlich; das RadioDNS-Modul darf den Tuner-FIFO nicht separat konsumieren.
+
+### GitHub-Änderung
+- Neue Datei: [docs/RADIODNS_LOGO_DATA_REQUIREMENTS.md](docs/RADIODNS_LOGO_DATA_REQUIREMENTS.md)
+- Dokumentationscommit: `b9b8f42353b104df8b31e69c89a50f80de4392eb`
+- Keine Firmwareimplementierung, Builds, GitHub Actions oder Flashvorgänge ausgeführt.
