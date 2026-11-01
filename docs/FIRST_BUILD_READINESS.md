@@ -113,3 +113,10 @@ Der erste Lauf (41263944157) scheiterte in der Toolchain-Installation: `Platform
 ## Ergebnis Lauf 41264295954 und nächste Korrektur
 
 Arduino CLI Setup und ESP32-S3-Board-Erkennung waren erfolgreich. Beide Profile scheiterten beim Entpacken von ESP32-3.3.12-Bibliotheken mit `no space left on device`; freier Speicher fiel auf 47 MB, danach fehlten ESP32-S3-Bootloader-Dateien. Das ist ein Ressourcenproblem des GitHub-Runner-Images, nicht ein bestätigter C++-Fehler. Workflow-Commit `4a46f8032b8ca553725c3a3ef697fd1a6421c8ba` entfernt vor Installation ungenutzte vorinstallierte SDKs auf dem ephemeren Runner und protokolliert danach `df -h /`. Noch kein dritter Lauf gestartet.
+
+
+## Erfolgreicher erster Compile-Test – 2026-11-01
+
+Der Nutzer bestätigte per Screenshot, dass Workflow-Lauf **#5** auf `dev/first-build-preparation` erfolgreich ist. Commit `f8d80de`; Gesamtdauer 4m 45s. Beide Profile (`esp32s3-ospi`, `esp32s3-qspi`) sind erfolgreich; zwei Compile-Report-Artefakte mit je 6.78 KB vorhanden. Die angezeigten Node.js-20-Deprecation-Hinweise sind Warnungen, kein Build-Fehler.
+
+**Bedeutung:** Der aktuelle ATS Mini OS Scaffold besteht den Compile-Test für beide PSRAM-Profile. Das bedeutet noch nicht, dass die vollständige Radio-Firmware implementiert oder Hardware getestet ist. Es wurde nichts geflasht. Der nächste sichere Schritt ist die Prüfung der Build-Reports und danach die modulare Implementierung der minimalen FM-Radio-Funktion. Bestehende Partitionierung, Boot-Slots und Recovery bleiben unverändert.
