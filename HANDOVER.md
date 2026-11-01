@@ -364,3 +364,26 @@ Am 1. November 2026 wurde `docs/RADIODNS_LOGO_DATA_REQUIREMENTS.md` neu angelegt
 - Neue Datei: [docs/RADIODNS_LOGO_DATA_REQUIREMENTS.md](docs/RADIODNS_LOGO_DATA_REQUIREMENTS.md)
 - Dokumentationscommit: `b9b8f42353b104df8b31e69c89a50f80de4392eb`
 - Keine Firmwareimplementierung, Builds, GitHub Actions oder Flashvorgänge ausgeführt.
+
+
+## 22. RadioDNS-Schnittstellen und Font für das Testlayout dokumentiert
+
+Am 1. November 2026 wurde `docs/RADIODNS_INTERFACES_AND_TEST_LAYOUT.md` ergänzt. Es enthält den erneuten Abgleich der aktuellen RadioDNS-Standards, vorgeschlagene fachliche Verträge, Zuständigkeiten, Statusübergänge und das Layoutkonzept. Keine dieser Schnittstellen ist bereits als C++-API implementiert.
+
+### Protokollpunkte
+- Core Lookup: ETSI TS 103 270 v1.4.1; SI/SPI: TS 102 818 v3.5.1.
+- FM-Identität: fünfstellige Frequenz, vollständiger vierstelliger PI und dreistelliger GCC; Beispielwerte, ServiceIdentifier und Bearer sind in der neuen Spezifikation dokumentiert.
+- ECC bleibt optional im Broadcast; fehlendes ECC erfordert den RadioDNS-konformen GCC-Fallback, nicht die pauschale Annahme „EU“ oder Deutschland.
+- SI-Discovery folgt DNS-CNAME → SRV `_radioepg._tcp` → `/radiodns/spi/3.1/SI.xml` → exakter FM-Bearer → Logo-Metadaten. Die offizielle Project-Logo-Anleitung beschreibt den SI-Endpunkt über HTTP; HTTPS darf nicht als von jedem Sender garantiert vorausgesetzt werden.
+- Die RDS-FIFO bleibt bei einem koordinierten Leser. RadioDNS und UI konsumieren nur den Snapshot; Sendergeneration verhindert, dass Ergebnisse eines alten Senders übernommen werden.
+
+### Testlayout und Schrift
+- Frequenz groß oben links; Encoder-Tuning läuft ausschließlich über den Radio Core.
+- Diagnosefelder für PI/ECC/GCC, FQDN, DNS/SRV, SI, Bearer-Match, Logo-URL/Format/Abmessungen und Cache-/Fehlerstatus.
+- **Oxanium** als digitale Schrift für lateinische Diagnosetexte vorgemerkt. Google-Fonts-Metadaten weisen `latin` und `latin-ext` sowie OFL aus; deutsche Umlaute/ß und italienische Akzente müssen später an der konkreten Datei geprüft werden.
+- **Noto Sans Arabic** für einen separaten späteren Test vorgemerkt. Korrekte arabische Darstellung erfordert zusätzlich geprüfte RTL-/Shaping-Unterstützung; eine Fontdatei allein genügt nicht.
+
+### GitHub
+- Neue Datei: [docs/RADIODNS_INTERFACES_AND_TEST_LAYOUT.md](docs/RADIODNS_INTERFACES_AND_TEST_LAYOUT.md)
+- Commit der neuen Datei: `332f47c9a65eece2b32619512dc61059503e9567`
+- Schnittstellen, Fonts und Testlayout bleiben Planung. Keine Firmwareimplementierung, Builds, Actions oder Flashvorgänge.
