@@ -611,3 +611,13 @@ Nächste Workflow-Korrektur in Commit `63e3a85b5973ac5bb137ac11c3848756cbd6e3df`
 - Korrektur in Commit `c021e99bf9c73c6107fa71a5fa0593b2872f0687`: Initialisierung verwendet jetzt `FM_FUNCTION`; Stereo-/Pilotstatus wird über die in der Bibliothek vorhandene Methode `getCurrentPilot()` abgefragt. Referenz: PU2CLR-SI4735-API-Dokumentation und `src/SI4735.h`.
 - **Nächster Schritt:** Nutzer startet den Compile-only-Workflow erneut manuell. Diese Korrektur ist noch nicht durch einen neuen Lauf verifiziert.
 - Keine Firmware geflasht; keine Partitionen, Bootloader oder Geräteslots verändert.
+
+
+## Build-Fehlerstand – 2026-11-01 (Run 41268473208)
+
+- Beide Compile-only-Jobs sind fehlgeschlagen: OSPI Job `124736141818`, QSPI Job `124736141968`.
+- Die SI4735-Bibliothek wird gefunden; der einzige bestätigte Compilerfehler in beiden Logs ist `'FM_FUNCTION' was not declared in this scope` in `src/tuner/TunerDriver.cpp`.
+- Ursache: Der in den offiziellen PU2CLR-Beispielen dokumentierte Symbolname ist in der konkret installierten Bibliotheks-/Compile-Konfiguration nicht verfügbar. Die API-Dokumentation beschreibt `setup(resetPin, interruptPin, defaultFunction)`, wobei `defaultFunction = 0` FM und `1` AM bedeutet.
+- Korrektur in Commit `bde7559eaab5270c84d4133e978caa10892b5e17`: Der Treiber verwendet nun den lokal dokumentierten `constexpr uint8_t kFmFunction = 0` statt des nicht aufgelösten Symbols. `getCurrentPilot()` bleibt für die Stereo-Pilot-Abfrage erhalten.
+- **Nächster Schritt:** Nutzer startet den manuellen Compile-only-Workflow erneut; der Fix ist noch nicht durch einen neuen Build verifiziert.
+- Kein Workflow von uns gestartet, keine Firmware geflasht und keine Partitionen, Bootloader oder Geräteslots verändert.
