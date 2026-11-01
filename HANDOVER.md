@@ -910,3 +910,13 @@ Die Header- und Implementierungsdateien der offiziellen PU2CLR-Version 2.1.8 wur
 - Workflow-Workaround in Commit `eea3684a0f4f56f558154e2ea9d54b396e16a5a6`: Die installierte LovyanGFX-Bibliothek wird im temporären GitHub-Runner zusätzlich nach `~/.arduino15/packages/esp32/hardware/esp32/3.3.12/libraries/LovyanGFX` kopiert. Der Sketch-Compile-Schritt kann die Bibliothek dann als ESP32-Core-Bibliothek auflösen und deren Quellen einbinden. Diese Kopie existiert ausschließlich im kurzlebigen CI-Runner, nicht auf dem Radio.
 - Noch ungetestet; Nutzer startet den Workflow manuell. Assistent startet keine GitHub Actions.
 - Keine Flash-Aktion und keine Änderung an Bootloader, APP0/APP1, Recovery oder Partitionen. Die 8-MB-Profile bleiben Compile-Referenz-only.
+
+
+## 58. Build #36 grün und Encoder-Modul angebunden (2026-11-02)
+
+- Nutzerbestätigter Run: https://github.com/13HN2709/ATS_Mini_-OS/actions/runs/41361949091
+- Commit ef26676c4fedb141855464d480024dd33d51065e; beide Compile-only-Profile esp32s3-qspi und esp32s3-ospi erfolgreich.
+- Der Fehler LGFX_Sprite.inl: No such file or directory ist für den aktuellen Workflow behoben.
+- Nächster isolierter Entwicklungsschritt: Encoder GPIO A=2, B=1, Push=21 per Polling integrieren; Drehen verändert FM-Frequenz in 100-kHz-Schritten über RadioCore::nextChannel(). Kurz-/Langdruck werden zunächst nur seriell protokolliert; keine Menüaktion ist damit verbunden.
+- Display-/Radio-Hardwareverhalten ist weiterhin nicht physisch bestätigt. Nach dem nächsten manuellen Compile-Lauf zunächst die Eingabeintegration compile-grün halten; Hardwaretest nur nach ausdrücklicher Nutzerentscheidung.
+- Der Nutzer startet den Workflow manuell. Keine Workflow-Auslösung durch den Assistenten, kein Flashen, keine Änderung an Bootloader, APP0/APP1, Recovery oder Partitionen. Die 8-MB-Compile-Profile bleiben ausschließlich CI-Referenz und dürfen nicht auf das 16-MB-Gerät geflasht werden.
