@@ -34,3 +34,18 @@ Für jeden Eintrag möglichst Quellcodepfad, Schaltplan, Herstellerdokument oder
 - Keine Flash- oder Boot-Experimente durchführen.
 - Bestehende Firmware-Slots nicht verändern.
 - OSPI/QSPI sind die einzigen im Projektumfang vorgesehenen Speicherbus-Optionen; tatsächliche Hardwareunterstützung ist noch zu prüfen.
+
+
+## Referenzprojekt – vorläufige Erkenntnisse (nur lesend)
+
+Referenz: https://github.com/13HN2709/ats-mini-dev, Branch `main`. Die folgenden Werte stammen aus dessen `ats-mini/Common.h` und `ats-mini/sketch.yaml`; sie sind Hinweise für ATS Mini V4, nicht automatisch freigegebene OS-Konfiguration.
+
+- Display im Referenzprojekt: 320×170.
+- Tuner: SI4735_fixed / SI4732-SI4735-Familie.
+- I²C: SCL GPIO17, SDA GPIO18; Reset GPIO16; Radio-LDO GPIO15.
+- Encoder: GPIO2/GPIO1; Push GPIO21.
+- Audio mute GPIO3, Verstärker enable GPIO10, Backlight GPIO38.
+- Arduino-ESP32 Plattform 3.3.12, PU2CLR SI4735 2.1.8, LovyanGFX 1.2.32.
+- Referenzprofile sind getrennt in ESP32-S3 OSPI und QSPI. Sie setzen unterschiedliche PSRAM-Konfigurationen voraus.
+
+**Vorläufig, noch nicht freigegeben:** Das Inventar muss vor einem echten Gerätebuild bestätigen, dass diese Pinbelegung zur konkreten ATS Mini V4 Hardware des Nutzers passt. Die Referenz-Profile dürfen nicht blind mit dem Boot-/Partitionslayout des neuen OS gleichgesetzt werden.
