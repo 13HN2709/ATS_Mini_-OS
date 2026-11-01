@@ -133,3 +133,38 @@ Wichtige Einschränkungen:
 - Zuerst mit einem bekannten deutschen Sender testen und die Zuordnung über PI/Frequenz verifizieren. Radio-Browser bleibt optionaler Fallback, falls später sinnvoll.
 - Vor Implementierung Spezifikation, Lizenz-/Nutzungsbedingungen, HTTPS und Decoder-/Speicherbedarf erneut prüfen.
 - Weiterhin keine Builds, GitHub Actions, Flashvorgänge oder Änderungen an bestehenden Firmware-Repositories ohne ausdrückliche Freigabe.
+
+
+
+## 8. RDS-Daten, die wir für RadioDNS erfassen müssen
+
+Der Nutzer hat ausdrücklich festgelegt: Bevor RadioDNS gesucht wird, sollen alle vom Tuner/RDS-Decoder verfügbaren Informationen erfasst werden, die für eine korrekte Senderauflösung benötigt werden. Das ist zunächst eine Anforderung für Inventarisierung und Datenmodell; noch keine Implementierung.
+
+### Unbedingt prüfen / erfassen
+- **PI-Code (Programme Identification):** zentrale Kennung aus RDS; Rohwert unverändert speichern und erst nach Prüfung des Standards interpretieren.
+- **Empfangsfrequenz:** aktuelle UKW-Frequenz in einer eindeutig festgelegten Einheit intern speichern; die RadioDNS-Abfrage muss die im Standard vorgeschriebene Frequenzdarstellung verwenden.
+- **ECC / Länderkennung:** Extended Country Code, sofern der Decoder ihn liefert. Nicht stillschweigend aus dem Standort des Nutzers ableiten; Verfügbarkeit und korrekte Erfassung im vorhandenen Tuner-Treiber prüfen.
+- **Band und Empfangsart:** für den ersten Schritt UKW/FM festhalten, damit keine nicht-terrestrischen oder anderen Banddaten in die UKW-RadioDNS-Auflösung geraten.
+- **RDS-PS / Sendername:** zur Anzeige und Plausibilitätsprüfung erfassen, aber nicht als alleinigen eindeutigen Schlüssel verwenden.
+
+### Weitere RDS-Daten – erfassen, wenn verfügbar
+- **PTY** (Program Type) und **TP/TA** (Traffic Programme/Announcement), falls vom Decoder bereitgestellt.
+- **AF** (Alternative Frequencies), sofern unterstützt; nützlich als Zusatzinformation, aber nicht ohne Prüfung als Ersatz für die aktuell empfangene Frequenz verwenden.
+- **RT** (RadioText) und **RT+** (strukturierte Tags, z. B. Titel/Interpret), für die Anzeige im Radio-UI. Diese sind nicht automatisch Voraussetzung für die grundlegende RadioDNS-Senderauflösung.
+- **RDS-Signal-/Decoderstatus** (z. B. gültiger PI, Synchronisation oder Empfangsqualität), sofern verfügbar, damit keine unvollständigen oder flackernden Daten unnötige Netzwerkabfragen auslösen.
+
+### Geplanter Ablauf
+1. RDS-Decoder-Datenmodell und tatsächliche Rückgabefunktionen der gewählten Tuner-Bibliothek inventarisieren.
+2. PI, Frequenz und ECC/Länderkennung als zusammengehörigen Senderidentitätsdatensatz führen; PS als Anzeige-/Plausibilitätsfeld ergänzen.
+3. RadioDNS erst dann abfragen, wenn die erforderlichen Werte valide und stabil genug sind. Senderwechsel oder wechselnde/ungültige PI-Werte müssen laufende Abfragen abbrechen oder deren Ergebnisse verwerfen.
+4. Die RadioDNS-Auflösung gemäß offizieller Spezifikation durchführen; DNS-/Metadatenfehler begrenzen und Ergebnisse anhand der Senderidentität plausibilisieren.
+5. Logo-Download und Bilddecodierung getrennt vom Empfangs-/Tuningpfad ausführen; Ergebnis cachen und bei Fehlschlag normal mit PS/RT weiterarbeiten.
+
+### Offene technische Prüfungen
+- Welche Felder liefert der konkrete ATS-Mini-Tuner und welche sind in der vorhandenen Bibliothek/API zugänglich?
+- Wie werden PI, ECC und Frequenz in der verwendeten Bibliothek repräsentiert und validiert?
+- Ist ECC im jeweiligen Empfangsfall verfügbar, oder braucht es einen definierten Fallback nach RadioDNS-Spezifikation?
+- Welche RadioDNS-DNS-Namensbildung, Antworttypen und SI-Versionen sind für den unterstützten FM-Dienst erforderlich?
+- Welche maximalen Größen, Formate und URLs akzeptiert der Logo-Cache?
+
+Die offizielle RadioDNS-Spezifikation ist maßgeblich; keine DNS-Namen oder Feldkodierungen aus Vermutung zusammensetzen.
