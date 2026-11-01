@@ -60,7 +60,7 @@ bool TunerDriver::tune(uint32_t frequencyKHz) {
 
 uint32_t TunerDriver::frequencyKHz() const {
   if (!ready_) return 0;
-  return static_cast<uint32_t>(const_cast<SI4735&>(radio_).getCurrentFrequency()) * 10UL;
+  return static_cast<uint32_t>(const_cast<TunerSI4735&>(radio_).getCurrentFrequency()) * 10UL;
 }
 
 void TunerDriver::refreshSignalQuality() {
@@ -117,11 +117,11 @@ bool TunerDriver::pollRds(TunerRdsData& out) {
 }
 
 int16_t TunerDriver::rssi() const {
-  return ready_ ? const_cast<SI4735&>(radio_).getCurrentRSSI() : -1;
+  return ready_ ? const_cast<TunerSI4735&>(radio_).getCurrentRSSI() : -1;
 }
 int16_t TunerDriver::snr() const {
-  return ready_ ? const_cast<SI4735&>(radio_).getCurrentSNR() : -1;
+  return ready_ ? const_cast<TunerSI4735&>(radio_).getCurrentSNR() : -1;
 }
 bool TunerDriver::stereo() const {
-  return ready_ && const_cast<SI4735&>(radio_).getCurrentPilot();
+  return ready_ && const_cast<TunerSI4735&>(radio_).getCurrentPilot();
 }
