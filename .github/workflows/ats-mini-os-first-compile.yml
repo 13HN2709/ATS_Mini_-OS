@@ -45,10 +45,10 @@ jobs:
 
       - name: Compile ATS Mini OS scaffold
         run: |
-          arduino-cli compile
-          --fqbn "esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=8M,PSRAM=${{ matrix.psram }},CPUFreq=80,USBMode=hwcdc,FlashMode=qio,PartitionScheme=custom,DebugLevel=none"
-          --warnings all
-          firmware/ats-mini-os
+          arduino-cli compile \
+            --fqbn "esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=8M,PSRAM=${{ matrix.psram }},CPUFreq=80,USBMode=hwcdc,FlashMode=qio,PartitionScheme=custom,DebugLevel=none" \
+            --warnings all \
+            firmware/ats-mini-os
 
       - name: Preserve compile report
         if: always()
