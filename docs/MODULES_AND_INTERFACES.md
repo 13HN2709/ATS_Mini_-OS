@@ -75,3 +75,45 @@ Vorgesehene Verantwortlichkeiten:
 - **DSEGstended 14-Segment Regular** ist der ausgewählte erste Digitalschriften-Kandidat. Die konkrete Fontdatei muss auf `Ä Ö Ü ä ö ü ß`, italienische Akzente, Zahlen und Renderer-Kompatibilität geprüft werden. Projekt und Lizenz: https://github.com/ZeusOfTheCrows/DSegstended (SIL OFL 1.1 laut Upstream). Noch nicht integriert.
 - **Noto Sans Arabic** ist für einen separaten arabischen Rendering-Test vorgemerkt. Ohne verifizierte RTL-/Shaping-Unterstützung darf Arabisch nicht als korrekt unterstützt gelten.
 - Siehe [RadioDNS-Schnittstellen und Diagnose-Testlayout](RADIODNS_INTERFACES_AND_TEST_LAYOUT.md).
+
+
+## Verbindlicher Dateiaufbau
+
+Für jedes unabhängige Modul gilt: **eigene Header- und Implementierungsdatei**. Beispiel:
+
+```text
+firmware/ats-mini-os/
+  ats-mini-os.ino              # nur Einstiegspunkt / setup / loop
+  src/
+    system/
+      PerformanceManager.h
+      PerformanceManager.cpp
+    radio/
+      RadioCore.h
+      RadioCore.cpp
+    tuner/
+      TunerDriver.h
+      TunerDriver.cpp
+    display/
+      DisplayDriver.h
+      DisplayDriver.cpp
+    input/
+      EncoderInput.h
+      EncoderInput.cpp
+    services/
+      RadioDnsService.h
+      RadioDnsService.cpp
+```
+
+Die Struktur wird bei Bedarf um weitere Module ergänzt; die Beispiele sind keine Behauptung, dass diese Module schon implementiert sind.
+
+## Änderungs- und Isolationsregeln
+
+1. Eine Funktion hat einen klaren fachlichen Besitzer.
+2. Header enthalten nur den öffentlichen Vertrag und notwendige Typen; Implementierung gehört in die passende `.cpp`.
+3. Keine direkte Änderung fremder interner Variablen, keine mehrfachen Besitzer eines Hardware- oder FIFO-Zugriffs.
+4. Module hängen von kleinen Schnittstellen ab; zirkuläre Includes und unnötige globale Zustände sind zu vermeiden.
+5. Bei einer Änderung zuerst Aufrufer/Abhängigkeiten ermitteln, dann nur nötige Module ändern.
+6. Neue/angepasste Funktionen bekommen mindestens einen dokumentierten Prüfweg; Schnittstellenänderungen erfordern die Prüfung aller Aufrufer.
+7. Bei einem Fehler wird die Ursache im verantwortlichen Modul behoben, statt einen Workaround in einem fremden Layout oder Dienst einzubauen.
+8. Vor Übergabe an eine neue Chat-Sitzung sind Branch, letzte Commits, offene Risiken, getestete/nicht getestete Teile und der genaue Build-/Flash-Status in `HANDOVER.md` festzuhalten.
