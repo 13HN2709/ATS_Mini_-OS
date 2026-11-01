@@ -754,3 +754,28 @@ Sources:
 4. Kein Firmware-Flash und keine Änderung an Bootloader, APP0/APP1, Recovery oder Partitionen ohne ausdrückliche Freigabe. Die 8-MB-Partitionsdatei bleibt ausschließlich Compile-Referenz und darf nicht auf das 16-MB-Gerät geflasht werden.
 
 **Verifikationsstatus:** RDS-Initialisierung committed und durch Compile-only-Run `41274168929` für QSPI und OSPI bestätigt; RDS-Decodierung und Hardwaretest noch offen.
+
+
+## 47. PU2CLR SI4735 2.1.8 RDS-API geprüft (2026-11-01)
+
+### Geprüfte Original-API
+Die Header- und Implementierungsdateien der offiziellen PU2CLR-Version 2.1.8 wurden direkt im Tag `2.1.8` geprüft:
+
+- Header: https://github.com/pu2clr/SI4735/blob/2.1.8/src/SI4735.h
+- Implementierung: https://github.com/pu2clr/SI4735/blob/2.1.8/src/SI4735.cpp
+- Verfügbare Funktionen sind unter anderem `getRdsStatus(0, 0, 0)`, `getRdsReceived()`, `getRdsNewBlockA()`, `getRdsNewBlockB()`, `getRdsPI()`, `getRdsGroupType()`, `getRdsProgramType()`, `getRdsText0A()` und `getRdsText2A()`.
+- Laut Bibliotheksheader muss vor dem Auslesen der RDS-Felder zuerst `getRdsStatus(...)` aufgerufen werden. `getRdsText0A()` verarbeitet nur Gruppe 0 und gibt bei nicht passender Gruppe `nullptr` zurück; `getRdsText2A()` verarbeitet Gruppe 2A und gibt sonst `nullptr` zurück.
+- Die RDS-Statusabfrage liest eine Antwort von 13 Bytes. Die Bibliotheksimplementierung wartet bei gesetztem Fehlerbit intern in einer Schleife; deshalb darf der Anwendungscode keine unbeschränkten eigenen RDS-Schleifen ergänzen. Die RDS-Abfrage soll mit einem festen Gruppen-/Zeitbudget pro Update erfolgen.
+- Die APIs der alten `ats-mini-dev`-Firmware dürfen nicht ungeprüft übernommen werden. Dort wurde eine abweichende SI4735-Fork verwendet.
+
+### Entwurf für den separaten RDS-Service
+- Der Treiber bleibt alleiniger Besitzer des `SI4735`-Objekts und kapselt alle direkten Bibliotheksaufrufe.
+- Der RDS-Service verarbeitet die gelieferten RDS-Daten getrennt vom Radio-Core und schreibt die Ergebnisse in den bestehenden `RadioSnapshot`.
+- Sendername (PS, maximal 8 Zeichen) und Radiotext (RT, maximal 64 Zeichen) bleiben getrennte Felder; ein fehlender/ungültiger neuer Text darf den zuletzt gültigen Sendernamen nicht löschen.
+- PI und PTY werden nur aktualisiert, wenn ein gültiger RDS-Block verfügbar ist. `rdsAvailable` soll tatsächlichen empfangenen RDS-Status widerspiegeln, nicht allein die erfolgreiche Initialisierung.
+- Radiotext benötigt zusätzlich die Behandlung von Text-Flag A/B und Textsegmenten, damit beim Wechsel einer Meldung keine Fragmente alter und neuer Texte vermischt werden.
+
+### Verifikationsstatus
+- Compile-only-Run [41274168929](https://github.com/13HN2709/ATS_Mini_-OS/actions/runs/41274168929) ist für QSPI und OSPI erfolgreich; er bestätigt die RDS-Initialisierung, aber noch keine RDS-Decodierung.
+- Diese API-Prüfung ist eine Quellcodeprüfung. Es wurde kein Gerät getestet, kein Firmware-Image geflasht und keine Partition oder Bootkomponente geändert.
+- Nächster Schritt: den RDS-Service und eine schmale Treiberschnittstelle implementieren; danach den Nutzer den manuellen Compile-only-Workflow erneut starten lassen.
