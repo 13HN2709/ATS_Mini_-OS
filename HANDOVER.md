@@ -449,3 +449,6 @@ Diese Regel ist verbindlich für alle weiteren Arbeiten am ATS Mini OS.
 - Firmwaremodule liegen unter `firmware/ats-mini-os/src/`; die `.ino`-Datei ist nur Einstiegspunkt. Module bekommen eigene `.h`-/`.cpp`-Dateien.
 - Vor dem Start sind im Review insbesondere Arduino-CLI-Profilauflösung, `sketch.yaml`, `PartitionScheme=custom` und der nur vorläufige 8-MB-Partitions-Referenzstand zu beachten. Ein Compile-Test darf nicht als Freigabe zum Flashen verstanden werden.
 
+
+
+CPU-Profilbezeichnungen im Code wurden an die bestätigte Menüvorgabe angepasst: `Auto`, `Taktstufe 1`, `Taktstufe 2`, `Taktstufe 3`. Die tatsächlichen MHz-Werte und die dynamische Taktumschaltung bleiben bis zur technischen Prüfung deaktiviert.
