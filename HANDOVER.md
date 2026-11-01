@@ -397,3 +397,14 @@ Am 1. November 2026 wurde `docs/RADIODNS_INTERFACES_AND_TEST_LAYOUT.md` ergänzt
 - Neue Datei: [docs/RADIODNS_INTERFACES_AND_TEST_LAYOUT.md](docs/RADIODNS_INTERFACES_AND_TEST_LAYOUT.md)
 - Commit der neuen Datei: `332f47c9a65eece2b32619512dc61059503e9567`
 - Schnittstellen, Fonts und Testlayout bleiben Planung. Keine Firmwareimplementierung, Builds, Actions oder Flashvorgänge.
+
+
+## 23. Vorbereitung des ersten Builds – Arbeitszweig
+
+- Nutzer hat freigegeben, die notwendigen Vorbereitungen bis unmittelbar vor den ersten Build auszuführen.
+- Arbeitszweig angelegt: `dev/first-build-preparation` (aus `main`).
+- Das Referenzrepository `13HN2709/ats-mini-dev` wird ausschließlich lesend untersucht. Aus `Common.h` und `sketch.yaml` wurden vorläufige Hinweise zu Displaygröße (320×170), SI473x, Pinbelegung und Arduino-ESP32-/Bibliotheksversionen gesammelt.
+- Diese Werte sind noch nicht als verifizierte Hardwarefakten oder finaler OS-Buildvertrag zu behandeln.
+- Schriftkandidat für das Testlayout: DSEGstended 14-Segment Regular; Quelle und SIL OFL 1.1 sind dokumentiert. Fontdatei und tatsächliche Glyphen-/Speicherprüfung stehen noch aus.
+- Nächster Weg: Referenzdisplay-/Tuner-Initialisierung und Lizenz/Pin-Konfiguration vollständig nachvollziehen; dann minimale, klar getrennte Radio-Core- und UI-Grundlage auf dem Arbeitszweig anlegen und statisch prüfen.
+- **Noch nicht durchgeführt:** Build, GitHub Actions, Flashen oder Änderungen an bestehenden Firmware-Repositories. Slot A und DiamondRadio Slot B bleiben geschützt.
