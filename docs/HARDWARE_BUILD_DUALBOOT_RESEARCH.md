@@ -121,3 +121,43 @@ Diese Werte sind transkribiert aus dem vom Nutzer gelieferten Screenshot. Sie si
 Der Nutzer berichtet, dass die Konfiguration aus `ATS-MINI-DEV` mit beiden Bootloadern funktioniert. Daher verwenden wir diese bewährten Buildprofile als Ausgangspunkt und nutzen die Screenshot-Werte nur als Referenz für die aktuelle Firmware-Partitionierung. Der Nutzer kann bei Bedarf auf das frühere Dual-Boot mit Recovery v4.2.2 zurückwechseln.
 
 **Wichtig:** Der Screenshot zeigt keine PSRAM-Information. Er bestätigt deshalb weiterhin nicht, ob das konkrete Gerät OSPI oder QSPI nutzt. Die Profiltrennung bleibt erforderlich. Keine Build-/Flash-Aktion wurde ausgeführt.
+
+
+## 9. Tatsächliche Partitionstabelle und Workflow aus `ats-mini-dev` (read-only geprüft)
+
+Dateien aus `13HN2709/ats-mini-dev`, Branch `main`:
+- `ats-mini/partitions.csv`
+- `ats-mini/sketch.yaml`
+- `.github/workflows/build.yml`
+
+### `ats-mini/partitions.csv` im Referenzprojekt
+
+```csv
+# Name,   Type, SubType,  Offset,   Size,     Flags
+nvs,      data, nvs,      0x9000,   0x5000,
+otadata,  data, ota,      0xe000,   0x2000,
+app0,     app,  ota_0,    0x10000,  0x300000,
+app1,     app,  ota_1,    0x310000, 0x300000,
+littlefs, data, littlefs, 0x610000, 0x1d0000,
+settings, data, nvs,      0x7e0000, 0x10000,
+coredump, data, coredump, 0x7f0000, 0x10000,
+```
+
+Diese Tabelle legt app0 und app1 jeweils auf **0x300000 = 3 MiB** fest. Sie beschreibt ein Layout bis etwa 8 MiB und passt damit zum `FlashSize=8M`-Profil des Referenzprojekts. Die im Nutzer-Screenshot gezeigten Partitionen sind dagegen anders: app0/app1 werden dort mit jeweils 3,5 MB angezeigt; zusätzlich existieren ffat, recovery, rec_settings und weitere Bereiche bis in den 16-MB-Flash. Die beiden Tabellen sind **nicht austauschbar** und dürfen nicht vermischt werden.
+
+### Workflow-Erkenntnisse
+
+`.github/workflows/build.yml`:
+- manuell über `workflow_dispatch` startbar; wurde von uns nicht gestartet.
+- Matrix baut getrennte Profile `esp32s3-ospi` und `esp32s3-qspi`.
+- FQBNs sind dieselben wie in `sketch.yaml`: `FlashSize=8M`, OSPI `PSRAM=opi`, QSPI `PSRAM=enabled`, CPUFreq 80 MHz, `PartitionScheme=custom`.
+- Arduino CLI wird über `arduino/compile-sketches@v1` (CLI 1.4.1) verwendet, mit `--profile <profil>` und `--export-binaries`.
+- Workflow validiert im bestehenden ATS-Mini-Build Firmwareversion, Projektname und ATSM OTA-Metadaten und exportiert die App-BIN plus zugehörige Build-Artefakte. Diese Checks sind projektspezifisch und dürfen für das neue OS nicht blind übernommen werden.
+
+### Konsequenz für ATS Mini OS
+
+1. Für OSPI/QSPI übernehmen wir die bewährte **Toolchain-/Profilstruktur** als Referenz, nicht automatisch die Referenz-Partitionstabelle.
+2. Das neue OS muss zwei App-BINs getrennt erzeugen. Welches App-Partitionslayout es benutzen soll, hängt davon ab, wie die Firmware über den tatsächlich gewählten Bootloader installiert wird.
+3. Für den ersten lokalen Build kann ein passendes Referenzprofil nützlich sein, aber ein erfolgreicher Compile ist kein Nachweis, dass das erzeugte Image sicher in app0/app1 der installierten Firmware passt.
+4. Die App-Image-Datei muss kleiner sein als die tatsächlich adressierte App-Partition mit ausreichendem Puffer. Wir vergleichen die exakte Binärgröße erst nach einem freigegebenen Build; vor diesem Build können wir keine fertige Größenbehauptung treffen.
+5. Das bestehende ATS-MINI-DEV-Repository blieb unverändert. Alle Dateien wurden nur gelesen. Keine Actions oder Builds gestartet.
