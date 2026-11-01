@@ -12,6 +12,8 @@ Dieses Repository ist ein neues, getrenntes Projekt. Bestehende Firmware-Reposit
 
 ## Dokumentation
 
+- [RadioDNS-Senderlogo: benötigte Daten und Diagnoseplan](docs/RADIODNS_LOGO_DATA_REQUIREMENTS.md)
+
 - [Übergabeprotokoll](HANDOVER.md)
 - [Architekturentwurf](docs/ARCHITECTURE.md)
 - [Hardware-Inventar](docs/HARDWARE_INVENTORY.md)
