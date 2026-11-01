@@ -42,7 +42,7 @@ bool PerformanceManager::request(PerformanceReason reason, uint32_t timeoutMs) {
   if (index >= static_cast<uint8_t>(PerformanceReason::Count) || timeoutMs == 0) {
     return false;
   }
-  // In fixed modes requests are recorded but must not override the user's clock.
+  // Fixed modes accept the request but intentionally do not create a lease or alter the user's selected clock.
   if (selectedProfile_ == CpuProfile::Auto) {
     leases_[index].active = true;
     leases_[index].expiresAt = millis() + timeoutMs;
