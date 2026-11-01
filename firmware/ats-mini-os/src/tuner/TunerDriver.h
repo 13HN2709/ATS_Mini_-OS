@@ -10,6 +10,7 @@ public:
   bool begin(uint32_t initialFrequencyKHz);
   bool tune(uint32_t frequencyKHz);
   uint32_t frequencyKHz() const;
+  void refreshSignalQuality();
   int16_t rssi() const;
   int16_t snr() const;
   bool stereo() const;
