@@ -27,9 +27,9 @@ Die Verzeichnisse enthalten zunächst nur Beschreibungen und Platzhalter. Konkre
 - `hal/` – Hardware-Abstraktionsschnittstellen
 - `drivers/` – Display-, Speicher- und Tuner-Treiber
 - `radio/` – gemeinsamer Radio-Kern
-- `modules/` – Spectrum, Dual RX und Web Control
+- `modules/` – Spectrum, Dual RX, Web Control und Wetter
 - `ui/` – Layouts und Bedienung
-- `services/` – Konfiguration, Logging und Performance-Verwaltung
+- `services/` – Konfiguration, Logging, Performance- und Netzwerkdienste
 - `tests/` – spätere Testspezifikation
 - `tools/` – spätere, nicht destruktive Hilfswerkzeuge
 
@@ -40,4 +40,5 @@ Die Verzeichnisse enthalten zunächst nur Beschreibungen und Platzhalter. Konkre
 3. Hardwarefähigkeiten explizit prüfen, insbesondere bei Dual RX.
 4. OSPI und QSPI sind die einzigen vorgesehenen Speicherbus-Optionen im betrachteten Umfang.
 5. CPU-Leistungsprofile zentral verwalten; rechenintensive Ansichten wie Waterfall dürfen einen Performance-Modus anfordern.
-6. Vor jeglichen Builds oder Flash-Vorgängen müssen Slotgrößen, Imageformat, Bootpfad und Wiederherstellung geprüft und separat freigegeben werden.
+6. WLAN-Funktionen wie Wetter und optionale Bilddownloads modular und nicht-blockierend entwerfen; Offline-Radio muss weiter funktionieren.
+7. Vor jeglichen Builds oder Flash-Vorgängen müssen Slotgrößen, Imageformat, Bootpfad und Wiederherstellung geprüft und separat freigegeben werden.
