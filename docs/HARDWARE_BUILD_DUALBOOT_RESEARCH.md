@@ -88,3 +88,36 @@ Referenzwerte aus `13HN2709/ats-mini-dev` (noch nicht unabhängig gegen das konk
 - Kein vorhandenes Firmware-Repository geändert.
 - Keine Slot-/Partition-Offets erfunden.
 - Kein Versprechen, dass ein Image bereits dual-boot-kompatibel ist.
+
+
+## 8. Tatsächlicher Diamond Bootloader v4.2.2 – Nutzer-Screenshot
+
+Am 2026-11-01 hat der Nutzer einen Screenshot des laufenden Recovery-/Bootloader-Informationsbildschirms übermittelt. Er zeigt:
+- Recovery: v4.2.2
+- Chip: ESP32-S3 rev 2
+- Flash: 16.0 MB
+- MAC wird als 00:00:00:00:00:00 angezeigt; daraus keine Hardware-ID ableiten.
+
+Angezeigte Partitionen (Offset / Größe):
+- `nvs`: `0x009000` / 20 KB
+- `otadata`: `0x00E000` / 8 KB
+- `app0`: `0x010000` / 3.5 MB
+- `app1`: `0x390000` / 3.5 MB
+- `ffat`: `0x710000` / 1.3 MB
+- `recovery`: `0x860000` / 1.6 MB
+- `littlefs`: `0xA00000` / 5.6 MB
+- `rec_settings`: `0xF95000` / 32 KB
+- `settings`: `0xF9D000` / 128 KB
+- `coredump`: `0xFDF000` / 128 KB
+
+Status im Screenshot:
+- `app0`: 1.8 MB used, 1.7 MB free (52%)
+- `app1`: 735 KB used, 2.8 MB free (20%)
+- `recovery`: 1.2 MB used, 416 KB free (75%)
+- `littlefs`: 3.0 MB used, 2.5 MB free (54%)
+
+Diese Werte sind transkribiert aus dem vom Nutzer gelieferten Screenshot. Sie sind ein konkreter Beleg für die aktuell angezeigte Partitionierung, aber noch kein Ersatz für die originale Partitionstabelle/CSV oder die Bootloader-Dokumentation. Die Angaben sind gerundet; vor einem Flash-Schritt müssen exakte Größen und Grenzwerte aus der Partitionstabelle bzw. dem Buildsystem verifiziert werden.
+
+Der Nutzer berichtet außerdem, dass seine bestehende Konfiguration aus `ATS-MINI-DEV` im Diamond Bootloader problemlos funktioniert. Das stärkt die Entscheidung, dessen bewährte Buildprofile als Ausgangspunkt zu verwenden, ohne `FlashSize=8M` eigenmächtig auf 16M zu ändern. Der Nutzer kann bei Bedarf alternativ wieder auf sein früheres Dual-Boot mit v4.2.2 umstellen.
+
+**Wichtig:** Der Screenshot zeigt keine PSRAM-Information. Er bestätigt deshalb weiterhin nicht, ob das konkrete Gerät OSPI oder QSPI nutzt. Die Profiltrennung bleibt erforderlich. Keine Build-/Flash-Aktion wurde ausgeführt.
