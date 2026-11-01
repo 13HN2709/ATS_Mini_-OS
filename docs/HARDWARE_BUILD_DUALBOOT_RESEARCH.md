@@ -32,8 +32,8 @@ Quellen:
 
 Für jeden der zwei Profile müssen wir die Artefakte nach dem Build getrennt halten und benennen, beispielsweise:
 
-- `ats-mini-os` – OSPI, nur wenn mit dem OSPI-Profil gebaut
-- `ats-mini-os` – QSPI, nur wenn mit dem QSPI-Profil gebaut
+- `build/ospi/ats-mini-os-app.bin` – OSPI, nur wenn mit dem OSPI-Profil gebaut
+- `build/qspi/ats-mini-os-app.bin` – QSPI, nur wenn mit dem QSPI-Profil gebaut
 
 Die tatsächlichen Arduino-Exportnamen werden zunächst von Arduino CLI bestimmt; nach erfolgreichem Export müssen sie in variantenspezifische Ausgabeordner kopiert/umbenannt werden, ohne Inhalte zu verändern, und mit einer Textdatei/Manifest versehen werden, das Git-Commit, Profil, Framework- und Bibliotheksversion, Größe und SHA-256 festhält. Nie ein loses `.bin` ohne Variantennachweis verteilen.
 
