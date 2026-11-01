@@ -25,3 +25,11 @@ Jede fachlich eigenständige Funktion bekommt ihre eigenen `.h`- und `.cpp`-Date
 ## Compile workflow
 
 A manual-only compile workflow is prepared at `.github/workflows/ats-mini-os-first-compile.yml`. It requires the input `COMPILE` and builds OSPI/QSPI as separate jobs. It has no flash or device-write step and has not been run. The current partition CSV is a reference only and must not be used to flash the user's 16 MB dual-boot device.
+
+
+## Modular FM bring-up (implementation added; compile pending)
+- Added `src/tuner/TunerDriver.h/.cpp` as the sole SI4735 library/hardware owner.
+- Added `src/radio/RadioCore.h/.cpp` as the radio-state API, with FM tune, 100 kHz channel stepping, a snapshot, and periodic RSSI/SNR/stereo reads.
+- The `.ino` now initializes the radio at 103.9 MHz and prints diagnostic status over serial every two seconds. Display and encoder are deliberately not active yet.
+- Compile workflow installs `PU2CLR SI4735` before compiling.
+- Hardware assumptions are based on the ATS Mini V4 reference pin map: LDO 15, reset 16, SDA 18, SCL 17. Must validate compile first, then validate on hardware with serial diagnostics. Do not flash until explicitly approved. No workflow run has been started for this code yet.
