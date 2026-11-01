@@ -4,7 +4,7 @@
 >
 > **Stand:** 2026-11-01  
 > **Repository:** https://github.com/13HN2709/ATS_Mini_-OS  
-> **Status:** Planung / Bestandsaufnahme – noch kein OS-Code angelegt
+> **Status:** Grundgerüst angelegt – weiterhin Bestandsaufnahme / Architekturplanung; kein ausführbarer OS-Code
 
 ## 1. Aktueller Auftrag
 
@@ -23,14 +23,15 @@ Ein eigenständiges, modular aufgebautes Betriebssystem-/Firmwareprojekt für de
 
 ## 3. Repository-Status
 
-Dieses Repository wurde neu erstellt und war bei der ersten Prüfung **leer**:
+Dieses Repository wurde neu erstellt und war bei der ersten Prüfung **leer**. Inzwischen wurde ein nicht ausführbares Dokumentations- und Ordnergerüst auf `main` angelegt:
 - Repository: `13HN2709/ATS_Mini_-OS`
 - Standardbranch: `main`
 - Sichtbarkeit: privat
-- Repository-Größe bei Prüfung: 0 KB
-- Daher liegen hier noch keine Projektquellen, Build-Konfigurationen oder Partitionsdateien zur technischen Prüfung vor.
+- Branch: `main`
+- Enthalten sind `README.md`, dieses Übergabeprotokoll, Architektur-/Hardware-/Boot-/Risiko-Dokumentation sowie README-Platzhalter für geplante Module.
+- Es gibt weiterhin keinen ausführbaren Firmware-Code, keine Build-Konfiguration und keine Partitionsdatei zur technischen Prüfung.
 
-Dieses Übergabeprotokoll ist der erste geplante Inhalt. Alle Aussagen zu vorhandener Quellcode-Architektur müssen erst nach dem Hinzufügen bzw. Prüfen von Quellcode bestätigt werden.
+Alle Aussagen zur tatsächlichen Quellcode-Architektur müssen erst nach dem Hinzufügen und Prüfen von Quellcode bestätigt werden.
 
 ## 4. Bestätigte Anforderungen und Grenzen
 
@@ -63,9 +64,9 @@ Vom Nutzer gewünschte Funktion für die Architekturplanung:
 - Ein Layout darf einen Performance-Wunsch melden (z. B. Waterfall benötigt Maximum); die zentrale Verwaltung entscheidet, ob und wie der Takt sicher angepasst wird. Beim Verlassen des Layouts muss der vorherige Modus wiederhergestellt werden.
 - Diese Funktion ist nur als Anforderung dokumentiert; noch keine Implementierung oder Messung vorgenommen.
 
-## 5. Vorgeschlagene Zielstruktur – noch nicht angelegt
+## 5. Repository-Struktur – Dokumentationsgerüst angelegt
 
-Dies ist ein Architekturvorschlag, keine Aussage über vorhandene Dateien:
+Die folgenden Dateien und Platzhalter sind angelegt. Sie dokumentieren die geplante Struktur, enthalten aber noch keine ausführbare Firmware:
 
 ```text
 ATS_Mini_-OS/
@@ -91,7 +92,7 @@ ATS_Mini_-OS/
 └── tools/
 ```
 
-Die Struktur darf erst nach Bestandsaufnahme und Architekturentscheidung tatsächlich angelegt werden.
+Weitere Unterordner und Dokumente können während der Inventarisierung ergänzt werden. Ausführbare Implementierungen bleiben bis zur Architekturentscheidung und separaten Freigabe zurückgestellt.
 
 ## 6. Geplante Funktionsmodule
 
@@ -109,13 +110,13 @@ Diese Module sind Zielideen. Verfügbarkeit und Aufwand werden erst nach der Inv
 
 ## 7. Inventarisierung – nächste Arbeitsschritte
 
-1. Dieses leere Repository und seinen Branch-Stand prüfen; dieses Protokoll als Ausgangspunkt verwenden.
+1. Repository und Branch-Stand prüfen; dieses Protokoll und die bereits angelegte Dokumentation als Ausgangspunkt verwenden.
 2. Mit Zustimmung des Nutzers relevante Referenzquellen **nur lesend** untersuchen, insbesondere `13HN2709/ats-mini-dev`.
 3. Hardware und Pinbelegung dokumentieren: ESP32-S3-Variante, Display/Controller, Tuner, Encoder, Speicher, Netzwerk und sonstige Peripherie.
 4. Buildsystem und Versionen ermitteln: Arduino-ESP32 oder ESP-IDF, Compiler, Framework, Bibliotheken und Toolchain.
 5. Partitionstabelle, App-Slotgrößen, Bootmanager-Metadaten, Image-Format, OTA-/Recovery-Pfade und Bootreihenfolge verifizieren.
 6. Vorhandene Funktionen und Treiber mit Quellcodepfaden sowie Status (bestätigt / vermutet / offen) dokumentieren.
-7. Architektur und Modulgrenzen schriftlich festlegen, bevor Quellcode angelegt wird.
+7. Architektur und Modulgrenzen schriftlich weiter ausarbeiten; vor ausführbarem Quellcode die relevanten Entscheidungen festlegen.
 8. Erst nach ausdrücklicher Freigabe einen minimalen Kern planen bzw. implementieren. Builds und Hardwaretests sind ein separater, später freizugebender Schritt.
 
 ## 8. Risikoregister
@@ -144,3 +145,4 @@ Zu Beginn jeder neuen Sitzung:
 ## 10. Änderungsverlauf
 
 - **2026-11-01:** Erstes Übergabeprotokoll erstellt. Neues Repository geprüft und als leer bestätigt. Planungsvorgaben, Schutz bestehender Slots, OSPI/QSPI-Einschränkung und nächste Inventarisierungsschritte dokumentiert.\n- **2026-11-01:** CPU-Takt-Auswahl und layoutabhängige Maximalleistung (insbesondere Waterfall) als Anforderungen ergänzt; Umsetzung bleibt bis zur Plattformprüfung offen.
+- **2026-11-01:** Nicht ausführbares Projektgerüst angelegt: Root-README, Architektur-, Hardware-, Boot-/Partitions-, Modul-/Schnittstellen- und Risiko-Dokumentation sowie README-Platzhalter unter `app/`, `hal/`, `drivers/`, `radio/`, `modules/`, `ui/`, `services/`, `tests/` und `tools/`. Keine Builds, Workflows oder Flashvorgänge ausgeführt.
