@@ -1,0 +1,50 @@
+name: ATS Mini OS - First Compile (manual only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_compile:
+        description: "Type COMPILE to confirm a compile-only test (no flashing)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  compile:
+    if: ${{ inputs.confirm_compile == 'COMPILE' }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        profile:
+          - esp32s3-ospi
+          - esp32s3-qspi
+    name: Compile-only / ${{ matrix.profile }}
+    steps:
+      - name: Checkout selected branch
+        uses: actions/checkout@v4
+
+      - name: Compile ATS Mini OS scaffold
+        uses: arduino/compile-sketches@v1
+        with:
+          cli-version: 1.4.1
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          sketch-paths: |
+            - firmware/ats-mini-os
+          cli-compile-flags: |
+            - --profile
+            - ${{ matrix.profile }}
+            - --export-binaries
+          enable-deltas-report: false
+          enable-warnings-report: true
+
+      - name: Preserve compile report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ats-mini-os-compile-report-${{ matrix.profile }}
+          path: sketches-reports
+          if-no-files-found: warn
+          retention-days: 14
