@@ -56,17 +56,22 @@ jobs:
           # Arduino CLI may fail to resolve libraries from the user library folder.
           # Place a CI-only copy in the installed ESP32 core's library folder.
           LGFX_SOURCE="$HOME/Arduino/libraries/LovyanGFX"
-          ESP32_CORE="$HOME/.arduino15/packages/esp32/hardware/esp32/3.3.12"
+          # Arduino CLI 1.4.1 stores installed platforms under .arduino15/internal
+          # on this runner, rather than the legacy .arduino15/packages path.
+          ESP32_CORE="$(find "$HOME/.arduino15/internal" -maxdepth 1 -type d -name 'esp32_esp32_3.3.12_*' -print -quit)"
+          test -n "$ESP32_CORE"
           test -f "$LGFX_SOURCE/library.properties"
           mkdir -p "$ESP32_CORE/libraries/LovyanGFX"
           cp -a "$LGFX_SOURCE/." "$ESP32_CORE/libraries/LovyanGFX/"
           test -f "$ESP32_CORE/libraries/LovyanGFX/src/LovyanGFX.hpp" || test -f "$ESP32_CORE/libraries/LovyanGFX/src/LovyanGFX.h"
-          echo "Placed CI-only LovyanGFX copy in ESP32 core libraries."
+          echo "Placed CI-only LovyanGFX copy in active ESP32 platform libraries: $ESP32_CORE"
 
       - name: Verify LovyanGFX header was installed
         run: |
           arduino-cli lib list
-          LGFX_LIB="$HOME/.arduino15/packages/esp32/hardware/esp32/3.3.12/libraries/LovyanGFX"
+          ESP32_CORE="$(find "$HOME/.arduino15/internal" -maxdepth 1 -type d -name 'esp32_esp32_3.3.12_*' -print -quit)"
+          test -n "$ESP32_CORE"
+          LGFX_LIB="$ESP32_CORE/libraries/LovyanGFX"
           test -f "$LGFX_LIB/library.properties"
           test -f "$LGFX_LIB/src/LovyanGFX.hpp" || test -f "$LGFX_LIB/src/LovyanGFX.h"
           echo "Found LovyanGFX library in ESP32 core library folder."
