@@ -870,3 +870,14 @@ Die Header- und Implementierungsdateien der offiziellen PU2CLR-Version 2.1.8 wur
 - **Noch nicht kompiliert.** Bitte den bestehenden Workflow manuell starten und den Run-Link teilen. Der Assistent hat keine GitHub Action gestartet.
 - Pinbelegung/Panel-ID sind Referenzwerte und am konkreten Gerät nicht physisch bestätigt. Radiotext-Scrolling und Encoderbedienung sind noch nicht implementiert.
 - Keine Flash-Aktion und keine Änderung an Bootloader, APP0/APP1, Recovery oder Partitionen. Die 8-MB-Profile bleiben ausschließlich Compile-Referenz.
+
+## 54. Displaytreiber-Headerguard korrigiert nach Run 41281847197 (2026-11-01)
+
+- Run: https://github.com/13HN2709/ATS_Mini_-OS/actions/runs/41281847197
+- Beide Compile-only-Jobs (QSPI und OSPI) erreichten den Sketch-Compile-Schritt, scheiterten jedoch in `DisplayDriver.h` mit `error: unterminated #ifndef`.
+- Ursache: Am Ende der Headerdatei fehlte das abschließende `#endif` für `ATS_MINI_OS_DISPLAY_DRIVER_H`.
+- Korrektur in Commit `ac4411d63e6c9ea641acfa1bbea5e813855f9a1e): `#endif // ATS_MINI_OS_DISPLAY_DRIVER_H` ergänzt.
+- Die Bibliotheksinstallation und die Headerprüfungen für LovyanGFX und SI4735 waren erfolgreich; der zuvor vermutete fehlende LovyanGFX-Include-Pfad war nicht mehr der aktuelle Abbruchgrund.
+- Nächster Schritt: Nutzer startet den Compile-only-Workflow manuell erneut und sendet den Run-Link. Der Assistent startet keine GitHub Actions selbst.
+- Nutzer hat bestätigt, dass die Pinbelegung aus ATS Mini DEV auf seinem ATS Mini funktioniert. Die neue OS-Treiberintegration braucht trotzdem noch einen erfolgreichen Compile und anschließend einen vorsichtigen Hardwaretest.
+- Kein Flashen und keine Änderung an Bootloader, APP0/APP1, Recovery oder Partitionen. Die 8-MB-Partitionsdatei bleibt Compile-Referenz-only und darf nicht auf das 16-MB-Gerät geflasht werden.
