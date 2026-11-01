@@ -4,7 +4,7 @@
 >
 > **Stand:** 2026-11-01  
 > **Repository:** https://github.com/13HN2709/ATS_Mini_-OS  
-> **Status:** Nutzer bestätigt Run `41274825544` für OSPI und QSPI grün. Danach wurden RT-A/B-Pufferbereinigung und RDS-Seriendiagnose committed; diese letzten Änderungen warten noch auf den nächsten manuellen Compile-only-Lauf. Keine Hardwaretests, kein Flash und kein Radio-/Displaybetrieb bestätigt
+> **Status:** Run `41275391304` hat im OSPI-Profil einen Compile-Fehler wegen geschützter PU2CLR-RDS-Pufferfunktionen gezeigt. Der Zugriff wurde danach über eine abgeleitete Tuner-Adapterklasse korrigiert; die Korrektur wartet auf den nächsten manuellen Compile-only-Lauf. Keine Hardwaretests, kein Flash und kein Radio-/Displaybetrieb bestätigt
 
 ## 1. Aktueller Auftrag
 
@@ -821,3 +821,16 @@ Die Header- und Implementierungsdateien der offiziellen PU2CLR-Version 2.1.8 wur
 - Der Lauf 41274825544 liegt **vor** den zwei genannten Commits und verifiziert diese Änderungen nicht.
 - Kein Workflow durch den Assistenten gestartet, kein Firmware-Flash, keine Bootloader-/APP0-/APP1-/Recovery-/Partitionsänderung.
 - Die 8-MB-Partitionsdatei bleibt ausschließlich Compile-Referenz und darf nicht auf das 16-MB-Gerät geflasht werden.
+
+
+## 50. Compile-Fehler aus Run 41275391304 behoben (2026-11-01)
+
+- Run: https://github.com/13HN2709/ATS_Mini_-OS/actions/runs/41275391304/job/124756434503
+- OSPI-Compile schlug fehl, weil `SI4735::clearRdsBuffer2A()` und `clearRdsBuffer2B()` in PU2CLR SI4735 2.1.8 als `protected` deklariert sind und daher nicht direkt von `TunerDriver` aufgerufen werden dürfen.
+- Korrektur: `TunerSI4735` erbt von `SI4735` und stellt eine kleine öffentliche Adaptermethode `clearRadioTextBuffers()` bereit, die intern die beiden geschützten Methoden aufruft. `TunerDriver` verwendet nun diesen Adapter.
+- Fix-Commits:
+  - `48b29dff095a09c112ddefff4d891b7321cbac69`
+  - `1c479ff4956eb8664db69d682dfb3cc68ec8f793`
+- Der QSPI-Job des Runs war beim Abruf noch in Arbeit; unabhängig davon ist der OSPI-Fehler eindeutig.
+- Nächster Schritt: Nutzer startet den Compile-only-Workflow manuell erneut und sendet den Run-Link. Keine GitHub Action durch den Assistenten gestartet.
+- Keine Flash-/Bootloader-/Partitionsänderungen. Die 8-MB-Partitionsdatei bleibt Compile-Referenz-only und darf nicht auf das 16-MB-Gerät geflasht werden.
