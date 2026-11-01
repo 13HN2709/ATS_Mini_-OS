@@ -62,6 +62,15 @@ jobs:
       - name: Verify ESP32-S3 target is available
         run: arduino-cli board details -b esp32:esp32:esp32s3
 
+      - name: Stage SI4735 implementation in sketch source tree
+        run: |
+          # CI resolves the header but has not linked the library implementation.
+          # Compile upstream SI4735.cpp as a sketch source file in this compile-only workflow.
+          mkdir -p firmware/ats-mini-os/src/vendor
+          cp "$HOME/Arduino/libraries/PU2CLR_SI4735/src/SI4735.cpp" firmware/ats-mini-os/src/vendor/SI4735Library.cpp
+          test -s firmware/ats-mini-os/src/vendor/SI4735Library.cpp
+          echo "Staged SI4735 implementation into sketch src tree."
+
       - name: Compile ATS Mini OS scaffold
         run: |
           arduino-cli compile \
