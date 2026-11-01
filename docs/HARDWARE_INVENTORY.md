@@ -49,3 +49,31 @@ Referenz: https://github.com/13HN2709/ats-mini-dev, Branch `main`. Die folgenden
 - Referenzprofile sind getrennt in ESP32-S3 OSPI und QSPI. Sie setzen unterschiedliche PSRAM-Konfigurationen voraus.
 
 **Vorläufig, noch nicht freigegeben:** Das Inventar muss vor einem echten Gerätebuild bestätigen, dass diese Pinbelegung zur konkreten ATS Mini V4 Hardware des Nutzers passt. Die Referenz-Profile dürfen nicht blind mit dem Boot-/Partitionslayout des neuen OS gleichgesetzt werden.
+
+
+## Display – Referenzanalyse (nur lesend, noch nicht am Gerät bestätigt)
+
+Referenzdatei: `13HN2709/ats-mini-dev/ats-mini/Display.h`, Branch `main`.
+
+- LovyanGFX mit benutzerdefiniertem 8-Bit-Parallelbus für die Standard-ATS-Mini-Variante; eine separate SPI-Konfiguration existiert für `LILYGO_SI473X` und darf nicht mit dem ATS Mini V4 verwechselt werden.
+- Referenzauflösung: 320×170 Pixel.
+- Standard-ATS-Mini Parallelbus: WR GPIO8, RD GPIO9, RS/DC GPIO7; Daten D0–D7 auf GPIO39, GPIO40, GPIO41, GPIO42, GPIO45, GPIO46, GPIO47, GPIO48.
+- Referenz-Panel: CS GPIO6, Reset GPIO5, Panelbreite 170, X-Offset 35.
+- Die Referenz versucht die LCD-ID per `RDDID (0x04)` zu lesen und unterscheidet unter anderem ST7789-Varianten sowie die gespiegelte GC9307-ID. Die tatsächliche Controller-ID des konkreten Geräts ist **nicht** gemessen.
+- Der Referenzbus enthält eine spezielle ESP32-S3 LCD_CAM/GPIO-Leseumschaltung. Deshalb nicht einfach eine generische LovyanGFX-Parallelbus-Konfiguration einsetzen.
+
+## Encoder – Referenzanalyse (nur lesend, noch nicht am Gerät bestätigt)
+
+Referenzdateien: `13HN2709/ats-mini-dev/ats-mini/Common.h`, `Rotary.h`, `Button.h` und `ats-mini.ino`.
+
+- Standard-ATS-Mini-Referenz: Encoder A GPIO2, B GPIO1, Drucktaste GPIO21.
+- Referenz verwendet die `Rotary`-Bibliothek; A/B-Reihenfolge und Half-Step-Einstellung beeinflussen die Drehrichtung bzw. Schrittfolge.
+- Referenz-Tastenlogik: Entprellung 50 ms, Klick unter 500 ms, Short-Press ab 500 ms, Long-Press ab 2000 ms (Long-Press wird als gedrückt erkannt).
+- Diese Zeitgrenzen sind Referenzverhalten, keine bestätigten Vorgaben für das neue OS. Die neue `EncoderInput`-Schnittstelle ist derzeit nur ein leerer Scaffold ohne GPIO-Konfiguration.
+
+## Konsequenz für den nächsten Implementierungsschritt
+
+1. Die Displaykonfiguration muss als eigener Treiber gekapselt werden; Controller-Erkennung und Panel-Initialisierung gehören in diesen Treiber.
+2. Die erste Testansicht soll erst nach erfolgreicher Displayinitialisierung gezeichnet werden und keine Menüs oder Scanner voraussetzen.
+3. Der Encoder wird separat implementiert und liefert Ereignisse (Drehen, kurzer Druck, langer Druck), ohne direkt UI oder Tuner zu steuern.
+4. Pinwerte und Panel-ID bleiben als Referenz markiert, bis das konkrete ATS Mini V4 verlässlich bestätigt wurde. Keine Flash-/Partitionsänderung und kein Workflow-Start im Zuge dieser Inventarisierung.
