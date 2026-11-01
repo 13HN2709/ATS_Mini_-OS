@@ -114,3 +114,31 @@ Der Nutzer hat die Reihenfolge festgelegt: Das Projekt wird zuerst als möglichs
 - Konkreter Bilddecoder und Cachegröße.
 - Ob die initiale Stufe bereits heruntergeladene Logos dauerhaft speichert oder zunächst nur temporär cached.
 - Diese Liste definiert den Umfang und die Reihenfolge, ist aber keine Freigabe für Code, Builds, GitHub Actions oder Flashen.
+
+
+## RDS/Tuner-Bestandsaufnahme (read-only, 2026-11-01)
+
+Erste Quellcodeprüfung des Referenz-Repositories `13HN2709/ats-mini-dev` (main) mit `ats-mini/SI4735-fixed.h`, `ats-mini/Station.cpp`, `ats-mini/Common.h` und `ats-mini/ats-mini.ino`. Das Referenz-Repository wurde nicht verändert.
+
+### Im vorhandenen Code nachgewiesen
+- **Tuner/API:** `SI4735_fixed` erbt von `SI4735`; FM-RDS wird bei FM-Betrieb initialisiert und mit `setRdsConfig(1, 2, 2, 2, 2)` aktiviert.
+- **RDS-Abruf:** `checkRds()` ruft `rx.getRdsStatus()` auf und leert die RDS-FIFO in begrenzten Schleifendurchläufen (maximal 25 Gruppen pro Aufruf).
+- **PS/Sendername:** Gruppe 0A wird über `getRdsStationName()` / `getRdsText0A()` zusammengesetzt; der Wrapper verlangt geordnete Segmente.
+- **PI:** `getRdsPI()` wird durch einen Wrapper überschrieben, der BLOCKAH und BLOCKAL zu einem 16-Bit-PI kombiniert; der Kommentar dokumentiert einen Fehler der Basisbibliothek, die nur BLOCKAL zurückgegeben habe.
+- **PTY:** `getRdsProgramTypeX()` extrahiert fünf Bits aus Block B. `Station.cpp` ordnet diesen Wert einer RDS- oder RBDS-Program Type Tabelle zu.
+- **RT:** Gruppe 2A/2B wird über `getRdsText2A()` / `getRdsText2B()` verarbeitet und in `Station.cpp` als RadioText angezeigt.
+- **RDS Clock Time:** Gruppe 4A wird durch `getRdsUTCEpoch()` dekodiert und kann als Zeitquelle verwendet werden, wenn NTP/andere Uhr nicht verfügbar sind.
+- **Frequenzkontext:** der aktuelle Betriebsmodus und die aktuelle Frequenz sind im Firmwarezustand vorhanden; eine vollständige RadioDNS-Identitätsvalidierung ist jedoch noch nicht implementiert.
+
+### Noch nicht im vorhandenen Anwendungscode nachgewiesen
+- **RT+:** kein RT+ Parser, kein RT+ Tag-Modell und keine RT+ Anzeige in den geprüften Dateien gefunden. Das ist aktuell nicht als vorhanden zu behandeln.
+- **ECC / Extended Country Code:** in den geprüften Anwendungspfaden keine eindeutige Extraktion oder Getter-Funktion gefunden.
+- **AF:** keine explizite Dekodierung/Sammlung alternativer Frequenzen in den geprüften Anwendungspfaden gefunden.
+- **TP/TA:** keine eigene Feldextraktion oder UI-/API-Verarbeitung in den geprüften Anwendungspfaden gefunden. Ein Kommentar im Wrapper stellt klar, dass Bit 4 in Gruppe 0 TA ist und nicht der RadioText-A/B-Flag.
+- **RDS-Synchronisations-/Gültigkeitsstatus:** FIFO-Belegung wird geprüft und PI kann null zurückgeben, aber ein vollständiger, stabilitätsbasierter Senderidentitätsstatus für RadioDNS ist noch nicht vorhanden.
+
+### Konsequenz und nächster Schritt
+- Vorläufig als **vorhanden** gelten PS, PI, PTY, RT und RDS-CT; jeweils nur soweit Sender und Empfang diese Daten tatsächlich liefern.
+- RT+, ECC, AF und TP/TA sind **nicht nachgewiesen**; vor einer Implementierungsentscheidung müssen die genaue PU2CLR-SI4735-Version 2.1.8, ihre RDS-Block-/FIFO-Semantik und der Si47xx-Datenblatt-/RDS-Standard geprüft werden. Nicht aus bloß vorhandenen Rohblöcken auf eine fertige Funktion schließen.
+- RadioDNS-Datenmodell soll Roh-PI, aktuelle FM-Frequenz und Länder-/ECC-Information mit Validitätsstatus führen. Fehlende Felder dürfen den FM-Grundbetrieb nicht beeinträchtigen; Fallback-Verhalten für nicht verfügbare Identitätsdaten ist noch anhand der RadioDNS-Spezifikation zu entscheiden.
+- Alle Ergebnisse sind eine Quellcode-Inventarisierung, keine Freigabe für Implementierung, Builds, Actions oder Flashen.
