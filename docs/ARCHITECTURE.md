@@ -146,3 +146,39 @@ Erste Quellcodeprüfung des Referenz-Repositories `13HN2709/ats-mini-dev` (main)
 - RT+, ECC, AF und TP/TA sind **nicht nachgewiesen**; vor einer Implementierungsentscheidung müssen die genaue PU2CLR-SI4735-Version 2.1.8, ihre RDS-Block-/FIFO-Semantik und der Si47xx-Datenblatt-/RDS-Standard geprüft werden. Nicht aus bloß vorhandenen Rohblöcken auf eine fertige Funktion schließen.
 - RadioDNS-Datenmodell soll Roh-PI, aktuelle FM-Frequenz und Länder-/ECC-Information mit Validitätsstatus führen. Fehlende Felder dürfen den FM-Grundbetrieb nicht beeinträchtigen; Fallback-Verhalten für nicht verfügbare Identitätsdaten ist noch anhand der RadioDNS-Spezifikation zu entscheiden.
 - Alle Ergebnisse sind eine Quellcode-Inventarisierung, keine Freigabe für Implementierung, Builds, Actions oder Flashen.
+
+
+## Erweiterte CPU-Taktsteuerung – feste Auswahl und automatische Leistungsanforderungen
+
+**Anforderung des Nutzers (2026-11-01):** Die Endfirmware soll eine mehrstufige CPU-Taktoption besitzen. Nutzer können entweder einen Taktmodus fest einstellen oder automatische Anpassung je nach Layout/Funktion aktivieren.
+
+### Bedienmodell
+- **Fester Modus:** ein vom Nutzer ausgewähltes CPU-Leistungsprofil bleibt aktiv, unabhängig vom aktuell geöffneten Layout. Der Nutzer kann es jederzeit ändern.
+- **Automatikmodus:** Layouts und Dienste melden begrenzte Leistungsanforderungen an einen zentralen Performance Manager. Kein Layout setzt selbst direkt den CPU-Takt.
+- Die auswählbaren Stufen und konkreten Frequenzwerte werden erst festgelegt, nachdem die ESP32-S3-/Arduino-Core-API und deren unterstützte Takte verifiziert wurden. Nicht ungeprüft beliebige Frequenzen oder APIs einbauen.
+- In Automatik darf eine Anforderung den fest eingestellten Nutzermodus nicht überschreiben. Automatik ist eine eigene, explizit auswählbare Betriebsart.
+
+### Beispiel: RadioDNS-Senderlogo
+1. FM/RDS liefert stabile Senderidentität (insbesondere PI und Frequenz; nötige Länder-/GCC-Informationen werden validiert).
+2. RadioDNS-Dienst meldet, dass Logo-/SI-Daten gefunden werden können.
+3. Im Automatikmodus fordert der Netzwerk-/Bilddienst temporär ein höheres Leistungsprofil an, bevor WLAN, DNS/HTTP(S), SI/XML-Auswertung und Bilddekodierung starten.
+4. Download und Dekodierung laufen asynchron bzw. in begrenzten Arbeitsschritten. Sie dürfen Tuner-Abfrage, Audio, Encoder und Anzeige nicht blockieren.
+5. Nach erfolgreichem oder fehlgeschlagenem Abruf, Timeout oder Abbruch werden WLAN und temporäres Leistungsprofil kontrolliert zurückgenommen. Der vorherige Automatikzustand wird wiederhergestellt; der Radio-Grundbetrieb bleibt aktiv.
+6. Das Logo wird in einen begrenzten Cache gelegt und vom Layout dargestellt. Ein erneuter Abruf erfolgt nur nach Cache-Regeln/Identitätswechsel, nicht in jedem UI-Frame.
+
+### Architektur- und Stabilitätsregeln
+- Eine zentrale **Performance Manager**-Schnittstelle verwaltet Taktanforderungen, Prioritäten, Zeitlimits und Freigaben.
+- Anforderungen sollen als zeitlich begrenzte Tokens/Leases erfolgen (z. B. `RADIO_DNS_LOOKUP`, `IMAGE_DECODE`, `SPECTRUM_SCAN)); Module geben sie bei Abschluss oder Abbruch frei. Zusätzlich muss ein Timeout hängengebliebene Anforderungen auslaufen lassen.
+- Ein sicherer Basistakt bleibt aktiv, solange kein gültiges Profil gesetzt ist. Keine automatische Taktänderung aus dem Render-Loop oder pro Frame.
+- WLAN wird nur eingeschaltet, wenn es benötigt wird und die Konfiguration dies erlaubt. Wenn ein anderes Modul WLAN bereits nutzt, darf der RadioDNS-Dienst es nicht eigenmächtig ausschalten.
+- Nach Abschluss fällt die Leistung auf das von der zentralen Richtlinie erlaubte Profil zurück. In Automatik zählt die höchste aktuell aktive Anforderung; in festem Modus bleiben Anforderungen ohne Wirkung auf den CPU-Takt.
+- Speicher-/PSRAM-Profile (OSPI/QSPI) sind unabhängig von der CPU-Taktstrategie; die Laufzeitsteuerung muss auf beiden Varianten funktionieren.
+- Logging soll angeforderte Stufe, Grund, Beginn/Ende, Zeitüberschreitung und Fehler sichtbar machen, ohne sensible WLAN-Zugangsdaten auszugeben.
+
+### Abnahmetests
+- Fester Modus bleibt stabil, während Logo geladen/dekodiert wird.
+- Automatik schaltet temporär hoch, wenn ein Netz-/Bildjob dies benötigt, und kehrt danach zum vorherigen erlaubten Profil zurück.
+- DNS-Fehler, HTTP-Timeout, fehlendes Logo, Decoderfehler und WLAN-Abbruch lassen keine dauerhaft hohe Taktstufe oder dauerhaft eingeschaltetes WLAN zurück.
+- Zwei parallele Jobs führen nach Ende des ersten Jobs nicht zu frühzeitigem Heruntertakten, solange der zweite noch läuft.
+- Ein fehlgeschlagener Job blockiert nicht die FM-Abstimmung, RDS-Auswertung, Encoderbedienung oder Audioausgabe.
+
