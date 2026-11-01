@@ -108,3 +108,8 @@ Der Nutzer hat den manuellen Compile-Workflow gestartet. Beide Matrix-Jobs `esp3
 Der erste Lauf (41263944157) scheiterte in der Toolchain-Installation: `Platform 'arduino:avr' not found: platform not installed`. Der Workflow wurde im Arbeitsbranch auf direkte Arduino-CLI-Core-Installation umgestellt: Espressif-Index hinzufügen, `esp32:esp32@3.3.12` installieren, Zielboard prüfen und dann je Profil kompilieren. OSPI nutzt `PSRAM=opi`, QSPI nutzt `PSRAM=enabled`. Die Shell-Syntax des Compile-Kommandos wurde statisch nachgeprüft. Diese Änderung wurde noch nicht durch einen weiteren Workflow-Lauf bestätigt.
 
 **Nächster Schritt:** neuen manuellen Compile-Lauf im Branch `dev/first-build-preparation` starten und `COMPILE` eingeben. Das ist weiterhin nur ein Scaffold-Compile; keine Flash-/Boot-Slot-Aktion. Die 8-MB-Partitionseinstellung bleibt vorläufig und darf nicht geflasht werden.
+
+
+## Ergebnis Lauf 41264295954 und nächste Korrektur
+
+Arduino CLI Setup und ESP32-S3-Board-Erkennung waren erfolgreich. Beide Profile scheiterten beim Entpacken von ESP32-3.3.12-Bibliotheken mit `no space left on device`; freier Speicher fiel auf 47 MB, danach fehlten ESP32-S3-Bootloader-Dateien. Das ist ein Ressourcenproblem des GitHub-Runner-Images, nicht ein bestätigter C++-Fehler. Workflow-Commit `4a46f8032b8ca553725c3a3ef697fd1a6421c8ba` entfernt vor Installation ungenutzte vorinstallierte SDKs auf dem ephemeren Runner und protokolliert danach `df -h /`. Noch kein dritter Lauf gestartet.
