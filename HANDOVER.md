@@ -900,3 +900,13 @@ Die Header- und Implementierungsdateien der offiziellen PU2CLR-Version 2.1.8 wur
 - Workflow-Anpassung in Commit `1276a7bb119bc47b08d150b6e5492a555d8f3136`: LovyanGFX wird wieder ausdrücklich über `--library "$HOME/Arduino/libraries/LovyanGFX"` angegeben; der manuelle LovyanGFX-Include-Pfad wurde aus `compiler.cpp.extra_flags` entfernt. Der SI4735-Include-Pfad bleibt erhalten.
 - Änderung noch nicht getestet. Nutzer startet den manuellen Workflow selbst und sendet den nächsten Run-Link. Keine GitHub Actions durch den Assistenten gestartet.
 - Keine Flash-Aktion und keine Änderungen an Bootloader, APP0/APP1, Recovery oder Partitionen. Die 8-MB-Profile bleiben Compile-Referenz-only und dürfen nicht auf das 16-MB-Gerät geflasht werden.
+
+
+## 57. Arduino CLI findet LovyanGFX aus User-Library-Ordner nicht – Run 41283468733 (2026-11-01)
+
+- Run: https://github.com/13HN2709/ATS_Mini_-OS/actions/runs/41283468733
+- Beide Profile brechen nun bereits beim Header ab: `fatal error: LovyanGFX.hpp: No such file or directory`. Die vorherige Änderung, die den zusätzlichen Include-Pfad entfernt hatte, machte den Header nicht mehr sichtbar.
+- Arduino CLI-Dokumentation beschreibt Library-Auflösung über installierte Libraries; es gibt außerdem einen aktuellen Arduino CLI Issue mit ähnlichem Verhalten bei User-Libraries unter `directories.user` (Issue #3253, 2026). Das ist ein plausibler Tooling-Fehler, nicht belegt als alleinige Ursache für diesen konkreten Build.
+- Workflow-Workaround in Commit `eea3684a0f4f56f558154e2ea9d54b396e16a5a6`: Die installierte LovyanGFX-Bibliothek wird im temporären GitHub-Runner zusätzlich nach `~/.arduino15/packages/esp32/hardware/esp32/3.3.12/libraries/LovyanGFX` kopiert. Der Sketch-Compile-Schritt kann die Bibliothek dann als ESP32-Core-Bibliothek auflösen und deren Quellen einbinden. Diese Kopie existiert ausschließlich im kurzlebigen CI-Runner, nicht auf dem Radio.
+- Noch ungetestet; Nutzer startet den Workflow manuell. Assistent startet keine GitHub Actions.
+- Keine Flash-Aktion und keine Änderung an Bootloader, APP0/APP1, Recovery oder Partitionen. Die 8-MB-Profile bleiben Compile-Referenz-only.
