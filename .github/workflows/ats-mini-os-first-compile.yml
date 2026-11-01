@@ -49,9 +49,15 @@ jobs:
       - name: Verify SI4735 header was installed
         run: |
           arduino-cli lib list
-          SI4735_HEADER="$(find "$HOME/Arduino/libraries" -name SI4735.h -print -quit)"
-          test -n "$SI4735_HEADER"
-          echo "Found SI4735 header: $SI4735_HEADER"
+          SI4735_LIB="$HOME/Arduino/libraries/PU2CLR_SI4735"
+          test -f "$SI4735_LIB/library.properties"
+          test -f "$SI4735_LIB/src/SI4735.h"
+          test -f "$SI4735_LIB/src/SI4735.cpp"
+          echo "Found SI4735 library metadata, header, and implementation:"
+          echo "$SI4735_LIB/library.properties"
+          echo "$SI4735_LIB/src/SI4735.h"
+          echo "$SI4735_LIB/src/SI4735.cpp"
+          arduino-cli lib list "PU2CLR SI4735"
 
       - name: Verify ESP32-S3 target is available
         run: arduino-cli board details -b esp32:esp32:esp32s3
@@ -61,8 +67,7 @@ jobs:
           arduino-cli compile \
             --fqbn "esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=8M,PSRAM=${{ matrix.psram }},CPUFreq=80,USBMode=hwcdc,FlashMode=qio,PartitionScheme=custom,DebugLevel=none" \
             --warnings all \
-            --library "$HOME/Arduino/libraries/PU2CLR_SI4735" \
-            --build-property "compiler.cpp.extra_flags=-I$HOME/Arduino/libraries/PU2CLR_SI4735/src" \
+            --libraries "$HOME/Arduino/libraries" \
             firmware/ats-mini-os
 
       - name: Preserve compile report
