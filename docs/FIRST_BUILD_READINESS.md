@@ -69,3 +69,9 @@ Noch erforderlich:
 - Keine Firmware flashen und keine aktiven Slots wechseln.
 - Slot A, DiamondRadio Slot B und bestehende Firmware-Repositories bleiben unverändert.
 - Keine Image-Offsets, Slotgrößen oder PSRAM-Variante raten.
+
+## Manueller Compile-Workflow vorbereitet
+
+Die Datei `.github/workflows/ats-mini-os-first-compile.yml` ist angelegt. Sie startet nur manuell, verlangt die explizite Eingabe `COMPILE` und erstellt getrennte Compile-Jobs für OSPI und QSPI. Sie enthält keinen Flash-Schritt.
+
+Der Workflow ist **noch nicht gestartet**. Vor der ersten Freigabe ist der Review des Workflow-/Profilpfads erforderlich. Der bestehende 16-MB-Dual-Boot-Aufbau wird nicht verändert; die mitgelieferte Partitionstabelle ist nur eine 8-MB-Referenz und ausdrücklich keine Freigabe zum Flashen.
