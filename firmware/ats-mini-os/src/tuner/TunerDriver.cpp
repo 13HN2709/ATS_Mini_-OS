@@ -35,7 +35,7 @@ bool TunerDriver::begin(uint32_t initialFrequencyKHz) {
     Serial.println("[TUNER] ERROR: SI4735 not detected on I2C (0x11/0x63)");
     return false;
   }
-  Serial.printf("[TUNER] SI47XX detected at I2C address 0x%02X\\n",
+  Serial.printf("[TUNER] SI47XX detected at I2C address 0x%02X\n",
                 static_cast<unsigned>(i2cAddress));
 
   radio_.setup(kRadioResetPin, 0, kFmFunction);
