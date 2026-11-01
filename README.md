@@ -12,6 +12,8 @@ Dieses Repository ist ein neues, getrenntes Projekt. Bestehende Firmware-Reposit
 
 ## Dokumentation
 
+- [Vorbereitung bis zum ersten Build](docs/FIRST_BUILD_READINESS.md)
+
 - [RadioDNS-Senderlogo: benötigte Daten und Diagnoseplan](docs/RADIODNS_LOGO_DATA_REQUIREMENTS.md)
 - [RadioDNS-Schnittstellen und Diagnose-Testlayout](docs/RADIODNS_INTERFACES_AND_TEST_LAYOUT.md)
 
