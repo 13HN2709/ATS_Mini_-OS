@@ -12,7 +12,7 @@ void SettingsStore::end() {
   }
 }
 
-uint32_t SettingsStore::lastFmFrequencyKHz(uint32_t fallbackKHz) const {
+uint32_t SettingsStore::lastFmFrequencyKHz(uint32_t fallbackKHz) {
   if (!ready_) return fallbackKHz;
 
   const uint32_t saved = preferences_.getUInt(kFrequencyKey, fallbackKHz);
