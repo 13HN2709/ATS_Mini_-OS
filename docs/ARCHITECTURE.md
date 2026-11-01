@@ -185,3 +185,19 @@ Die drei festen Stufen bleiben aktiv, unabhängig vom aktuell geöffneten Layout
 - Zwei parallele Jobs führen nach Ende des ersten Jobs nicht zu frühzeitigem Heruntertakten, solange der zweite noch läuft.
 - Ein fehlgeschlagener Job blockiert nicht die FM-Abstimmung, RDS-Auswertung, Encoderbedienung oder Audioausgabe.
 
+
+
+## Verbindliche Modularitätsregel
+
+**Jede Funktion bzw. fachliche Komponente wird als eigenes Modul umgesetzt und darf bei Änderungen keine fremde Funktion unbeabsichtigt beschädigen.** Das ist eine dauerhafte Projektregel, nicht nur eine Präferenz für die erste Version.
+
+- Jedes Modul erhält eigene `.h`- und `.cpp`-Dateien; keine großen Sammeldateien für mehrere unabhängige Funktionen.
+- Öffentliche Schnittstellen stehen im Header; Implementierungsdetails bleiben in der jeweiligen `.cpp`-Datei.
+- Module kommunizieren über klar definierte APIs und Datenstrukturen, nicht über versteckte Seiteneffekte oder direkte Änderungen fremder interner Variablen.
+- Hardwarezugriffe laufen über HAL/Treiber; UI und Dienste greifen nicht direkt auf Hardwareregister oder fremde Modul-Interna zu.
+- Gemeinsame Zustände haben einen klar benannten Besitzer. Für RDS gilt insbesondere: genau ein Modul liest die Tuner-FIFO und veröffentlicht Snapshots.
+- Änderungen bleiben möglichst auf das betroffene Modul begrenzt. Bei Änderungen an einer Schnittstelle werden alle direkten Aufrufer gesucht und angepasst.
+- Neue Module erhalten einen klaren Zweck, Abhängigkeiten, Fehler-/Timeout-Verhalten und kleine, prüfbare Tests oder Prüfhinweise.
+- Vor jedem Build: Änderungen und betroffene Schnittstellen prüfen; nach dem Build die Änderungen nachvollziehbar dokumentieren. Kein Build, Workflow-Start oder Flash ohne ausdrückliche Freigabe.
+
+Arduino-Sketch-Ausnahme: Die `.ino`-Datei ist ausschließlich der minimale Einstiegspunkt (Setup/Loop und Modulverdrahtung). Implementierungen liegen unter `src/` in separaten `.h`-/`.cpp`-Dateien. Keine `.cpp`-Datei wird per `#include` in eine andere Quelldatei eingebunden.
