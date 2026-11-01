@@ -197,3 +197,24 @@ Dies belegt nur, was in den geprüften Anwendungspfaden sichtbar ist. Es beweist
 2. RT+, ECC, AF und TP/TA als Recherche-/Implementierungsfragen offen halten, bis die zugrunde liegenden RDS-Gruppen und API-Zugriffe verifiziert sind.
 3. RadioDNS erst planen, wenn Identitätsdaten valide/stabil erfasst werden und die normgerechte Frequenz-/Länderkennung geklärt ist.
 4. Diese Bestandsaufnahme ist read-only und keine Freigabe für ausführbaren Code, Builds, GitHub Actions oder Flashvorgänge.
+
+
+## 10. PU2CLR SI4735 2.1.8 API-Prüfung und RadioDNS-GCC
+
+Geprüfte externe Quellen (read-only): offizielles Repository `pu2clr/SI4735`, Tag `2.1.8`, Dateien `src/SI4735.h` und `src/SI4735.cpp`; Release-Übersicht; offizielle RadioDNS-Dokumentation, Core Lookup TS 103 270 und GCC-Library-Seite.
+
+### Bibliotheks-API bestätigt
+- Status/FIFO: `getRdsStatus(...)`, `getRdsReceived()`, `getRdsSync()`, `getRdsSyncFound()`, `getRdsSyncLost()`, `getGroupLost()`, `getNumRdsFifoUsed()`.
+- Dekodierte RDS-Felder: `getRdsPI()`, `getRdsGroupType()`, `getRdsVersionCode()`, `getRdsProgramType()`, `getRdsText0A()` (PS), `getRdsText2A()` / `getRdsText2B()` (RT), `getRdsTime()` (CT).
+- Kein fertiger ECC-, AF-, TP/TA- oder RT+-Getter/Parser in den geprüften öffentlichen API-Deklarationen gefunden. Das bedeutet nicht, dass die Rohgruppen nicht auswertbar sind; der konkrete FIFO-Datenzugriff ist der nächste Prüfpunkt.
+
+### RadioDNS-GCC: wichtiger Präzisionspunkt
+- Aktuelle RadioDNS-Dokumentation sagt, dass der FM-Core-Lookup Frequenz, PI und GCC benötigt. GCC wird aus dem Country Code (erstes Nibble des RDS-PI) plus ausgestrahltem ECC gebildet.
+- ECC ist optional im ausgestrahlten RDS. RadioDNS empfiehlt daher eine standardkonforme Ersatzstrategie über die GCC-Library bzw. Geolocation, statt ECC ungeprüft aus dem Empfangsort abzuleiten. Grenzempfang ist zu berücksichtigen.
+- Bei Implementierung ist die aktuelle Core Lookup Spezifikation TS 103 270 maßgeblich. Historische RDNS01-Dokumente sind nicht als alleinige Implementierungsgrundlage zu verwenden.
+- Quellen: https://radiodns.org/technical/documentation/ ; https://radiodns.org/technical/libraries/gcc-library/ ; https://radiodns.org/technical/documentation/howto/ .
+
+### Noch offen
+- In der SI4735-2.1.8-Implementierung untersuchen, wie FIFO-Gruppen ausgelesen und welche Blockdaten exponiert werden.
+- Danach prüfen, ob Gruppe 1A (ECC), Gruppe 0A/0B (TP/TA/AF) und Gruppe 3A (RT+) anhand der gelieferten Daten zuverlässig dekodiert werden können.
+- Noch keine Implementierung, kein Build, keine GitHub Actions und kein Flashen.
