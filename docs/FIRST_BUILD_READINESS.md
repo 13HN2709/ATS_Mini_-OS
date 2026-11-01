@@ -96,3 +96,8 @@ Die derzeitige Laufzeitumschaltung bleibt deaktiviert, bis die Arduino-ESP32-3.3
 ### Grenzen dieses Freigabepunkts
 
 Dieser Freigabepunkt bezieht sich ausschließlich auf einen **Compile-Test des aktuellen Scaffold-Codes**. Er bestätigt nicht, dass das Gerät eine funktionsfähige Radio-Firmware erhält. Display, SI4735, Audio, RDS, Menüs und echte CPU-Taktumschaltung sind noch nicht implementiert. Die beiden Profile verwenden derzeit `FlashSize=8M` und eine 8-MB-Referenz-Partitionsdatei; das entspricht nicht dem bestätigten 16-MB-Gerät und ist ausschließlich als vorläufige Compile-Konfiguration zu behandeln. Diese Partitionstabelle darf nicht auf das ATS Mini V4 geflasht werden. Für einen späteren installierbaren Build müssen 16-MB-Dual-Boot-/Recovery-Anforderungen separat geklärt werden.
+
+
+## Ergebnis des ersten Compile-Versuchs (Run 41263944157, 2026-11-01)
+
+Der Nutzer hat den manuellen Compile-Workflow gestartet. Beide Matrix-Jobs `esp32s3-ospi` und `esp32s3-qspi` endeten mit `failure`. In beiden Logs wurden ESP32-3.3.12-Paketbestandteile heruntergeladen, anschließend meldete der Compile-Schritt: `Error during build: Platform 'arduino:avr' not found: platform not installed`. Damit ist noch kein belastbarer Compilerfehler aus dem ATS-Mini-OS-Quellcode nachgewiesen; der Lauf scheiterte in der Plattform-/Build-Umgebung. Nächster Schritt: Workflow-/Arduino-CLI-Plattforminstallation und Profilübergabe korrigieren, danach einen neuen Compile-only-Lauf autorisieren. Keine Firmware wurde geflasht.
