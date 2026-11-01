@@ -4,7 +4,7 @@
 >
 > **Stand:** 2026-11-01  
 > **Repository:** https://github.com/13HN2709/ATS_Mini_-OS  
-> **Status:** Grundgerüst angelegt – weiterhin Bestandsaufnahme / Architekturplanung; kein ausführbarer OS-Code
+> **Status:** Erste Firmware-Scaffold-Dateien im Branch `dev/first-build-preparation` angelegt; noch kein getesteter Build und noch kein Radio-/Displaybetrieb
 
 ## 1. Aktueller Auftrag
 
@@ -411,3 +411,17 @@ Am 1. November 2026 wurde `docs/RADIODNS_INTERFACES_AND_TEST_LAYOUT.md` ergänzt
 
 
 - Ergänzung: `docs/FIRST_BUILD_READINESS.md` bündelt die Quellcode-Erkenntnisse, offene Build-Blocker und den sicheren Ablauf bis zum ersten Compile.
+
+
+## 24. Erstes Firmware-Scaffold (2026-11-01)
+
+Branch `dev/first-build-preparation` enthält jetzt:
+- `firmware/ats-mini-os/ats-mini-os.ino`: Arduino-ESP32 bring-up sketch mit serieller Statusausgabe.
+- `firmware/ats-mini-os/system/PerformanceManager.h/.cpp`: vier Profile (Auto, FixedLow, FixedMedium, FixedHigh), temporäre Leistungs-Leases und Timeout-Entlastung. Noch keine tatsächlichen CPU-Taktänderungen; Frequenzpunkte/API müssen vor Aktivierung verifiziert werden.
+- `firmware/ats-mini-os/sketch.yaml`: OSPI-/QSPI-Profile als Ausgangspunkt aus `ats-mini-dev`.
+- `firmware/ats-mini-os/partitions.csv`: Kopie des 8-MB-Referenzlayouts aus `ats-mini-dev`, ausdrücklich nicht als endgültige Flash-/Dual-Boot-Tabelle freigegeben.
+- `firmware/ats-mini-os/README.md`: Grenzen und noch fehlende Komponenten.
+
+Dies ist nur ein Compile-/Bring-up-Scaffold. Es implementiert noch keinen nutzbaren UKW-Empfänger, kein Display, keine SI4735-Initialisierung, kein RDS/RadioDNS und keine Menüauswahl für CPU-Profile. Der tatsächliche CPU-Takt wird nicht umgestellt.
+
+**Build-Status:** Kein lokaler Build ausgeführt, kein GitHub Actions Workflow gestartet, nichts geflasht. Vor dem ersten Build muss die Arduino-CLI-Profilauflösung und die Behandlung von `PartitionScheme=custom` mit der bereitgestellten `partitions.csv` abgesichert werden. Ein erfolgreicher Scaffold-Compile wäre nur ein Toolchain-/Profiltest, kein Nachweis der finalen Firmware- oder Dual-Boot-Funktion.
