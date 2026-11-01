@@ -381,3 +381,15 @@ Der Nutzer hat ausdrücklich freigegeben, die Vorbereitung bis unmittelbar vor d
 
 ### Schutzgrenzen
 Slot A, DiamondRadio in Slot B und bestehende Firmware-Referenz-Repositories bleiben unangetastet. Die Arbeit erfolgt auf `dev/font-layout-test-prebuild`. Keine Builds, keine Actions und keine Flashvorgänge bis zur ausdrücklichen Freigabe des ersten Build-Schritts.
+
+
+## 22. Sprachpriorität bestätigt (2026-11-01)
+
+Der Nutzer hat bestätigt: Die Schriftdateien dürfen vorbereitet sein, aber die erste Version soll hauptsächlich Deutsch verwenden. Weitere Sprachen sind zunächst nicht aktiv.
+
+- Deutsch ist die Standardoberfläche; Umlaute und ß müssen direkt korrekt dargestellt werden.
+- Internationale lateinische Zeichen können für spätere Erweiterungen vorgesehen werden, aber keine zusätzlichen Sprachmenüs in der ersten Version aktivieren.
+- Arabische Schrift bleibt zunächst deaktiviert. Für später sind Buchstabenformung und Rechts-nach-links-Anordnung zusätzlich zur Glyphenabdeckung nötig.
+- Zusätzliche Schriften modular halten und unnötigen Flash-Verbrauch vermeiden.
+- Siehe `docs/LANGUAGE_DEFAULTS.md`.
+- Vor dem ersten Build anhalten und den Nutzer informieren; keine GitHub Actions starten und nichts flashen.
