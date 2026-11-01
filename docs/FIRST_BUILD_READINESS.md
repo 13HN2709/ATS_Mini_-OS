@@ -101,3 +101,10 @@ Dieser Freigabepunkt bezieht sich ausschließlich auf einen **Compile-Test des a
 ## Ergebnis des ersten Compile-Versuchs (Run 41263944157, 2026-11-01)
 
 Der Nutzer hat den manuellen Compile-Workflow gestartet. Beide Matrix-Jobs `esp32s3-ospi` und `esp32s3-qspi` endeten mit `failure`. In beiden Logs wurden ESP32-3.3.12-Paketbestandteile heruntergeladen, anschließend meldete der Compile-Schritt: `Error during build: Platform 'arduino:avr' not found: platform not installed`. Damit ist noch kein belastbarer Compilerfehler aus dem ATS-Mini-OS-Quellcode nachgewiesen; der Lauf scheiterte in der Plattform-/Build-Umgebung. Nächster Schritt: Workflow-/Arduino-CLI-Plattforminstallation und Profilübergabe korrigieren, danach einen neuen Compile-only-Lauf autorisieren. Keine Firmware wurde geflasht.
+
+
+## Workflow-Korrektur nach erstem Lauf
+
+Der erste Lauf (41263944157) scheiterte in der Toolchain-Installation: `Platform 'arduino:avr' not found: platform not installed`. Der Workflow wurde im Arbeitsbranch auf direkte Arduino-CLI-Core-Installation umgestellt: Espressif-Index hinzufügen, `esp32:esp32@3.3.12` installieren, Zielboard prüfen und dann je Profil kompilieren. OSPI nutzt `PSRAM=opi`, QSPI nutzt `PSRAM=enabled`. Die Shell-Syntax des Compile-Kommandos wurde statisch nachgeprüft. Diese Änderung wurde noch nicht durch einen weiteren Workflow-Lauf bestätigt.
+
+**Nächster Schritt:** neuen manuellen Compile-Lauf im Branch `dev/first-build-preparation` starten und `COMPILE` eingeben. Das ist weiterhin nur ein Scaffold-Compile; keine Flash-/Boot-Slot-Aktion. Die 8-MB-Partitionseinstellung bleibt vorläufig und darf nicht geflasht werden.
