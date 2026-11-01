@@ -16,3 +16,8 @@ This is the first code-bearing scaffold, not yet the complete radio firmware.
 - Final 16 MB partition/dual-boot packaging. The checked-in partition CSV is a reference for compilation only, not a flash instruction.
 
 Do not flash this scaffold to a radio. It is intended for the first compile check after the user authorizes build start.
+
+
+## Dauerhafte Entwicklungsregel: Modularität
+
+Jede fachlich eigenständige Funktion bekommt ihre eigenen `.h`- und `.cpp`-Dateien unter `src/`. Die `.ino`-Datei bleibt ein dünner Einstiegspunkt. Keine `.cpp`-Datei per `#include` einbinden. Module dürfen nur über dokumentierte Schnittstellen miteinander kommunizieren; Änderungen an einem Modul sollen keine unabhängigen Funktionen verändern. Bei Schnittstellenänderungen sind alle Aufrufer zu prüfen und die Übergabe in `HANDOVER.md` zu aktualisieren.
