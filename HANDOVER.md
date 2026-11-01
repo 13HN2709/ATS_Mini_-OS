@@ -253,3 +253,27 @@ Der Nutzer hat festgelegt, dass wir für den ersten UKW-Radio-Ausbau alle für R
 - Logoabfragen, Downloads und Bilddecodierung müssen außerhalb zeitkritischer Tuning-/Empfangspfade laufen; lokale Cache- und Fallback-Anzeige vorsehen.
 - Details sind in `docs/NETWORK_DATA_SOURCES.md`, Abschnitt 8 dokumentiert.
 - Dies bleibt Planung/Inventarisierung: keine ausführbare Implementierung, keine Builds, GitHub Actions oder Flashvorgänge ohne gesonderte Freigabe.
+
+
+## 16. Aktueller Stand: 16-MB-Flash, LittleFS und Dual-Boot-Strategie
+
+**Stand: 1. November 2026.** Der Nutzer hat den aktuellen Speicher- und Entwicklungsplan bestätigt.
+
+### Flash-/Speicherplanung
+- Der Nutzer hat anhand der Recovery-Anzeige bestätigt, dass der ATS Mini V4 **16 MB physischen Flash** hat.
+- Der gezeigte Screenshot weist folgende Partitionen aus: `app0` 3,5 MB, `app1` 3,5 MB, `recovery` 1,6 MB, `littlefs` 5,6 MB und `ffat` 1,3 MB; weitere Systempartitionen belegen den übrigen Bereich. Werte aus der Recovery-Anzeige sind maßgeblich für diese Referenz, müssen aber vor einer späteren Neupartitionierung erneut am Gerät geprüft werden.
+- LittleFS zeigt im Screenshot rund **2,5 MB frei**. Der Nutzer erklärt, dass dort zusätzlich ungefähr **2 MB `.ino`-Backup-Dateien** liegen. Wenn diese Dateien tatsächlich aus LittleFS gelöscht werden, wird mit ungefähr **4,5 MB freiem LittleFS-Speicher** gerechnet. Das ist eine Prognose nach dem Löschen, kein bereits bestätigter Messwert.
+- Das Entfernen von Dateien aus LittleFS vergrößert keine App-Partitionen und ändert nicht die physische Flash-Kapazität.
+
+### Dual-Boot- und spätere Vollspeicher-Strategie
+1. Zunächst **Dual-Boot-Unterstützung beibehalten** und die neue Firmware für den vorgesehenen Dateinamen/Installationsweg `ats.mini-ino.bin` vorbereiten. Den exakten Dateinamen und das benötigte Binärformat vor einem späteren Build/Flash anhand des realen Update-Verfahrens verifizieren.
+2. Slot A mit der funktionierenden Firmware und Slot B mit DiamondRadio bleiben unangetastet. Der Nutzer wechselt später selbst wieder auf das andere Dual-Boot-System, um die dortigen Speicherwerte bei Bedarf erneut zu prüfen.
+3. Erst wenn ATS Mini OS stabil fertiggestellt und getestet ist, soll optional auf eine Einzel-Firmware ohne Dual Boot umgestellt und die Partitionierung für möglichst viel nutzbaren Speicher neu geplant werden.
+4. Auch im späteren Einzel-Firmware-Betrieb benötigen Bootloader, Partitionstabelle, System-/Recovery-Bereiche und Dateisystem weiterhin geeigneten Platz; „gesamte 16 MB nutzen“ bedeutet, die Aufteilung sinnvoll zu optimieren, nicht jeden Byte ausschließlich für App-Code oder Nutzdateien zu reservieren.
+
+### Projektziel und nächster Arbeitsschritt
+- Langfristig soll ATS Mini OS die Funktionen selbst bereitstellen und den verfügbaren Speicher sinnvoll für Firmware, RadioDNS-Senderlogos, Wetterdaten/-grafiken, Cache und Konfigurationen nutzen. Vorgesehene Verzeichnisstruktur: `/radio/logos/`, `/radio/cache/`, `/weather/` und `/config/` (Planung, noch nicht implementiert).
+- Erstes Funktionsziel bleibt ein UKW-Radio mit RDS, RT, PTY, RT+ und RadioDNS.
+- **Aktueller Arbeitsstand: nur Planung und read-only Inventarisierung; es wurde noch keine ausführbare Firmware implementiert.**
+- **Nächster konkreter Schritt:** die Tuner-Bibliothek und ihre tatsächlich verwendeten Aufrufpfade im Referenz-Repository `13HN2709/ats-mini-dev` nur lesend untersuchen und dokumentieren, welche RDS-Felder wirklich verfügbar sind (PI, PS, PTY, RT, AF, TP/TA, ECC/Länderkennung und RT+, soweit unterstützt). Verifizierte Fakten, Annahmen und offene Fragen getrennt halten.
+- Keine Builds, keine GitHub Actions auslösen, nichts flashen und keine Änderungen an bestehenden Firmware-Repositories ohne ausdrückliche Freigabe. Das Referenz-Repository `13HN2709/ats-mini-dev` bleibt read-only.
