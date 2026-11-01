@@ -517,3 +517,12 @@ Die explizite Arduino-CLI-Konfiguration funktioniert nun: Installation von CLI u
 - `littlefs`: ca. 3 MB belegt / 2,5 MB frei.
 
 **Wichtige Interpretation:** `app0` und `app1` sind jeweils ungefähr 3,5 MiB groß; Recovery und LittleFS liegen in fest belegten Bereichen. Die bisher im neuen OS verwendete 8-MB-Partition-CSV ist nur eine Compile-Referenz und ist **keine** freigegebene Partitionstabelle für dieses 16-MB-Gerät. Sie darf nicht auf das Gerät geflasht werden. Bei künftigen Arbeiten zuerst diese IST-Daten und die tatsächliche Boot-/Recovery-Logik prüfen.
+
+
+## 33. Erster erfolgreicher Compile-Lauf – OSPI und QSPI (2026-11-01)
+
+Der Nutzer bestätigte mit Screenshot den erfolgreichen manuellen Workflow-Lauf **ATS Mini OS - First Compile (manual only) #5** auf Branch `dev/first-build-preparation`, Commit `f8d80de`. GitHub Actions zeigt Status `Success`, Gesamtdauer 4m 45s und zwei Artefakte:
+- `ats-mini-os-compile-report-esp32s3-ospi` (6.78 KB)
+- `ats-mini-os-compile-report-esp32s3-qspi` (6.78 KB)
+
+Beide Matrix-Jobs `Compile-only / esp32s3-ospi` und `Compile-only / esp32s3-qspi` sind erfolgreich abgeschlossen. GitHub zeigt pro Job eine Node.js 20 Deprecation-Warnung für eine Action; das sind Warnungen, keine Build-Fehler. Status ist **Compile erfolgreich**, aber es handelt sich weiterhin um den aktuellen modularen Scaffold und nicht um eine vollständige Radio-Firmware. Es wurde nichts geflasht; Partitionen, Boot-Slots, Recovery und bestehende Firmware sind unangetastet. Der nächste Schritt ist, die Artefakte/Build-Ausgabe zu prüfen und anschließend die tatsächliche Firmware modular zu implementieren, beginnend mit minimal stabilem FM-Radio. Nicht flashen ohne ausdrückliche Freigabe.
