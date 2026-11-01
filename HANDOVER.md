@@ -890,3 +890,13 @@ Die Header- und Implementierungsdateien der offiziellen PU2CLR-Version 2.1.8 wur
 - Korrektur in Commit `2ef743515afa5eb39bbd90873ca862f1c863dcc7`: die zwei singulären `--library`-Argumente entfernt; Arduino CLI soll LovyanGFX über den angegebenen Bibliotheksordner `--libraries "$HOME/Arduino/libraries"` regulär erkennen und dessen Implementierungsdateien mitkompilieren.
 - Diese Änderung ist noch nicht verifiziert. Nutzer startet den manuellen Compile-only-Workflow erneut und teilt den Run-Link; Assistent startet keine Actions.
 - Kein Flashen und keine Änderungen an Bootloader, APP0/APP1, Recovery oder Partitionen.
+
+
+## 56. LovyanGFX weiterhin nicht gelinkt – Workflow-Anpassung nach Run 41283059049 (2026-11-01)
+
+- Run: https://github.com/13HN2709/ATS_Mini_-OS/actions/runs/41283059049
+- Beide Profile scheitern weiterhin beim Linken mit zahlreichen fehlenden LovyanGFX-Symbolen. In der „Used library“-Liste stehen nur `Wire` und `Preferences`; LovyanGFX wird nicht als verwendete Bibliothek geführt.
+- Wahrscheinlicher Auslöser: Der manuell ergänzte `-I.../LovyanGFX/src`-Include-Pfad lässt den Header direkt auffindbar werden, ohne dass Arduino CLI die Bibliothek korrekt als Abhängigkeit aufnimmt. Das ist eine Diagnose-Hypothese, noch kein bestätigter Befund.
+- Workflow-Anpassung in Commit `1276a7bb119bc47b08d150b6e5492a555d8f3136`: LovyanGFX wird wieder ausdrücklich über `--library "$HOME/Arduino/libraries/LovyanGFX"` angegeben; der manuelle LovyanGFX-Include-Pfad wurde aus `compiler.cpp.extra_flags` entfernt. Der SI4735-Include-Pfad bleibt erhalten.
+- Änderung noch nicht getestet. Nutzer startet den manuellen Workflow selbst und sendet den nächsten Run-Link. Keine GitHub Actions durch den Assistenten gestartet.
+- Keine Flash-Aktion und keine Änderungen an Bootloader, APP0/APP1, Recovery oder Partitionen. Die 8-MB-Profile bleiben Compile-Referenz-only und dürfen nicht auf das 16-MB-Gerät geflasht werden.
