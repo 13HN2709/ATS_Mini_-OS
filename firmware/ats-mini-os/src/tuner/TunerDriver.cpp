@@ -1,5 +1,4 @@
 #include "TunerDriver.h"
-
 #include <Wire.h>
 
 namespace {
@@ -9,61 +8,53 @@ constexpr uint16_t kMinFrequency10KHz = 8750;
 constexpr uint16_t kMaxFrequency10KHz = 10800;
 constexpr uint16_t kDefaultSpacing10KHz = 10;
 constexpr uint8_t kDefaultVolume = 35;
-// PU2CLR SI4735 setup() defaultFunction: 0 = FM, 1 = AM.
 constexpr uint8_t kFmFunction = 0;
+
+void copyRdsText(char* dst, size_t capacity, const char* src) {
+  if (!capacity || !src) return;
+  size_t i = 0;
+  for (; i + 1 < capacity && src[i] != '\0'; ++i) {
+    const unsigned char ch = static_cast<unsigned char>(src[i]);
+    dst[i] = (ch >= 0x20 && ch <= 0x7e) ? static_cast<char>(ch) : ' ';
+  }
+  dst[i] = '\0';
+}
 }
 
 bool TunerDriver::begin(uint32_t initialFrequencyKHz) {
   ready_ = false;
-
-  // ATS Mini V4 reference pin map: SDA=18, SCL=17, radio LDO=15, reset=16.
+  haveTextFlag_ = false;
+  lastTextFlag_ = 0;
   pinMode(kRadioLdoPin, OUTPUT);
   digitalWrite(kRadioLdoPin, HIGH);
   delay(10);
 
-  // PU2CLR SI4735 2.1.8 calls Wire.begin() internally. Configure the custom
-  // ATS Mini pins first so its internal begin() uses SDA=18 and SCL=17.
   if (!Wire.setPins(kI2cSdaPin, kI2cSclPin)) {
     Serial.println("[TUNER] ERROR: I2C pin configuration failed");
     return false;
   }
-
-  // This library method pulses RESET, probes both supported SI47XX addresses
-  // (0x11 and 0x63), and returns 0 if no device responds.
-  const int16_t i2cAddress = radio_.getDeviceI2CAddress(kRadioResetPin);
-  if (i2cAddress == 0) {
+  const int16_t address = radio_.getDeviceI2CAddress(kRadioResetPin);
+  if (address == 0) {
     Serial.println("[TUNER] ERROR: SI4735 not detected on I2C (0x11/0x63)");
     return false;
   }
-  Serial.printf("[TUNER] SI47XX detected at I2C address 0x%02X\n",
-                static_cast<unsigned>(i2cAddress));
-
+  Serial.printf("[TUNER] SI47XX detected at I2C address 0x%02X\n", static_cast<unsigned>(address));
   radio_.setup(kRadioResetPin, 0, kFmFunction);
   radio_.setFM(kMinFrequency10KHz, kMaxFrequency10KHz,
                static_cast<uint16_t>(constrain(initialFrequencyKHz / 10UL,
-                                               kMinFrequency10KHz,
-                                               kMaxFrequency10KHz)),
+                                               kMinFrequency10KHz, kMaxFrequency10KHz)),
                kDefaultSpacing10KHz);
   radio_.setVolume(kDefaultVolume);
-
-  // Enable FM RDS reception. Reading/decoding RDS data is handled by the
-  // radio service in a later step; keep tuner setup responsible for enabling
-  // the receiver and resetting the library's RDS buffers after each startup.
   radio_.RdsInit();
   radio_.setRdsConfig(1, 2, 2, 2, 2);
-
   ready_ = true;
   return true;
 }
 
 bool TunerDriver::tune(uint32_t frequencyKHz) {
-  if (!ready_ || frequencyKHz < kMinFrequencyKHz ||
-      frequencyKHz > kMaxFrequencyKHz) {
-    return false;
-  }
-
-  // SI4735 library frequency values use 10 kHz units for FM.
+  if (!ready_ || frequencyKHz < kMinFrequencyKHz || frequencyKHz > kMaxFrequencyKHz) return false;
   radio_.setFrequency(static_cast<uint16_t>(frequencyKHz / 10UL));
+  haveTextFlag_ = false;
   return true;
 }
 
@@ -73,22 +64,58 @@ uint32_t TunerDriver::frequencyKHz() const {
 }
 
 void TunerDriver::refreshSignalQuality() {
-  if (!ready_) return;
-  // PU2CLR requires an RSQ_STATUS query before reading RSSI/SNR/pilot values.
-  radio_.getCurrentReceivedSignalQuality();
+  if (ready_) radio_.getCurrentReceivedSignalQuality();
+}
+
+bool TunerDriver::pollRds(TunerRdsData& out) {
+  out = TunerRdsData{};
+  if (!ready_) return false;
+  // One status query per call; application-side processing is deliberately bounded.
+  radio_.getRdsStatus(0, 0, 0);
+  if (!radio_.getRdsReceived()) return false;
+  out.received = true;
+  const uint8_t group = radio_.getRdsGroupType();
+
+  if (radio_.getRdsNewBlockA()) {
+    const uint16_t pi = radio_.getRdsPI();
+    if (pi != 0) { out.piValid = true; out.piCode = pi; }
+  }
+  if (radio_.getRdsNewBlockB()) {
+    out.ptyValid = true;
+    out.pty = radio_.getRdsProgramType();
+  }
+
+  if (group == 0) {
+    const char* ps = radio_.getRdsText0A();
+    if (ps) {
+      copyRdsText(out.stationName, sizeof(out.stationName), ps);
+      out.stationNameUpdated = true;
+    }
+  } else if (group == 2) {
+    const uint8_t flag = radio_.getRdsFlagAB();
+    if (!haveTextFlag_ || flag != lastTextFlag_) {
+      haveTextFlag_ = true;
+      lastTextFlag_ = flag;
+      out.radioText[0] = '\0';
+      out.radioTextUpdated = true;
+    }
+    const char* rt = radio_.getRdsVersionCode() == 0
+                         ? radio_.getRdsText2A()
+                         : radio_.getRdsText2B();
+    if (rt) {
+      copyRdsText(out.radioText, sizeof(out.radioText), rt);
+      out.radioTextUpdated = true;
+    }
+  }
+  return true;
 }
 
 int16_t TunerDriver::rssi() const {
-  if (!ready_) return -1;
-  return const_cast<SI4735&>(radio_).getCurrentRSSI();
+  return ready_ ? const_cast<SI4735&>(radio_).getCurrentRSSI() : -1;
 }
-
 int16_t TunerDriver::snr() const {
-  if (!ready_) return -1;
-  return const_cast<SI4735&>(radio_).getCurrentSNR();
+  return ready_ ? const_cast<SI4735&>(radio_).getCurrentSNR() : -1;
 }
-
 bool TunerDriver::stereo() const {
-  if (!ready_) return false;
-  return const_cast<SI4735&>(radio_).getCurrentPilot();
+  return ready_ && const_cast<SI4735&>(radio_).getCurrentPilot();
 }
