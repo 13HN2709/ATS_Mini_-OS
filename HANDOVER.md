@@ -472,3 +472,8 @@ Außerdem wurde in `PerformanceManager.cpp` ein irreführender Kommentar korrigi
 ## 29. Erster Compile-Lauf fehlgeschlagen – Toolchain-Fehler
 
 GitHub Actions Run: https://github.com/13HN2709/ATS_Mini_-OS/actions/runs/41263944157 (2026-11-01). Beide Jobs (`Compile-only / esp32s3-ospi` und `Compile-only / esp32s3-qspi`) endeten mit `failure`. Die Logs zeigen Download/Installation von ESP32-3.3.12-Paketbestandteilen und danach `Error during build: Platform 'arduino:avr' not found: platform not installed`. Dies ist zunächst ein Fehler bei Plattformauflösung/Toolchain-Setup, kein bestätigter C++-Fehler im OS-Scaffold. Die Workflow-/CLI-Konfiguration muss vor dem nächsten Lauf korrigiert werden. Es wurde nichts auf das ATS Mini geflasht und kein Boot-Slot verändert.
+
+
+## 30. Korrektur des Compile-Workflows nach Run 41263944157 (2026-11-01)
+
+Fehlerursache aus den Logs: `arduino/compile-sketches@v1` scheiterte beim Core-Setup mit `Platform 'arduino:avr' not found: platform not installed`, obwohl ESP32-Pakete heruntergeladen wurden. Im Branch `dev/first-build-preparation` wurde der Workflow auf einen expliziten Arduino-CLI-Ablauf umgestellt: CLI installieren, Espressif-Paketindex registrieren, `esp32:esp32@3.3.12` installieren, ESP32-S3-Board prüfen, danach getrennt OSPI (`PSRAM=opi`) und QSPI (`PSRAM=enabled`) kompilieren. Der Shell-Aufruf wurde auf korrekte Zeilenfortsetzungen geprüft. Korrektur-Commits: `47376eacdfaa3608e66673f5e8ea5aec23175ec5`, `5d0f90e1f0f1259ce72e3fb0b2b78e92bf6007d3`, `7c2db0cd7e5c7d914643e6e10b41c5af8119dd9e`. Noch kein neuer Lauf gestartet; der neue Workflow ist nicht praktisch validiert. Nächster Schritt: Nutzer startet manuell mit Eingabe `COMPILE`. Keine Flash-Aktion.
