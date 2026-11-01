@@ -644,3 +644,11 @@ Nächste Workflow-Korrektur in Commit `63e3a85b5973ac5bb137ac11c3848756cbd6e3df`
 - Workflow-Fix in Commit `be6fbe391038c8a872918d717dbb1e611e712dd6`: Vor dem Kompilieren kopiert der Workflow die installierte Upstream-Quelldatei `SI4735.cpp` in `firmware/ats-mini-os/src/vendor/SI4735Library.cpp`. Damit wird sie als Sketch-Quelldatei kompiliert; der ursprüngliche SI4735-Header und Include-Pfad bleiben eingebunden.
 - Dieser Workaround ist noch nicht durch einen neuen Lauf bestätigt. Nutzer startet den manuellen Compile-only-Workflow; wir starten keinen Workflow selbst.
 - Kein Flashen und keine Änderungen an Hardware, Bootloader, Partitionen, APP0 oder APP1.
+
+## Build-Lauf 41271303901 – SI4735-Linkerfehler weiterhin vorhanden (2026-11-01)
+
+- Beide Jobs sind fehlgeschlagen; der Linker meldet weiterhin fehlende SI4735-Symbole für Konstruktor, `setup`, `setFM` und `setVolume`.
+- Wichtig bei der Auswertung: Dieser Lauf enthält im Job-Schrittverlauf noch **nicht** den später hinzugefügten Schritt `Stage SI4735 implementation in sketch source tree`. Der Lauf wurde also mit einer älteren Workflow-Version ausgeführt und testet den Workaround aus Commit `be6fbe391038c8a872918d717dbb1e611e712dd6` nicht.
+- Zusätzlich zeigten Compilerwarnungen, dass `TunerDriver.h` die Grenzen 87500 und 108000 kHz als `int16_t` definierte; beide Werte liegen außerhalb des Wertebereichs dieses Typs. In Commit `44b4681492c229142ad24000f8cfc0bb97238a27` wurden die beiden Konstanten auf `uint32_t` geändert.
+- Nächster Schritt: manuellen Workflow erneut starten, damit der aktuelle Workflow samt SI4735-Staging-Schritt und der korrigierten Frequenztypen getestet wird. Wir starten keine Actions selbst.
+- Weiterhin Compile-only: kein Flashen und keine Änderungen an Bootloader, Partitionen, APP0, APP1 oder Recovery.
