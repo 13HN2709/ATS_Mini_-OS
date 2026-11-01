@@ -90,9 +90,9 @@ Referenzwerte aus `13HN2709/ats-mini-dev` (noch nicht unabhängig gegen das konk
 - Kein Versprechen, dass ein Image bereits dual-boot-kompatibel ist.
 
 
-## 8. Tatsächlicher Diamond Bootloader v4.2.2 – Nutzer-Screenshot
+## 8. Vom Nutzer gelieferter Screenshot der aktuellen Firmware – Partitionierungsreferenz
 
-Am 2026-11-01 hat der Nutzer einen Screenshot des laufenden Recovery-/Bootloader-Informationsbildschirms übermittelt. Er zeigt:
+Am 2026-11-01 hat der Nutzer einen Screenshot der aktuellen Firmware-Informationsseite übermittelt (nicht des Diamond Bootloaders). Er zeigt:
 - Recovery: v4.2.2
 - Chip: ESP32-S3 rev 2
 - Flash: 16.0 MB
@@ -118,6 +118,6 @@ Status im Screenshot:
 
 Diese Werte sind transkribiert aus dem vom Nutzer gelieferten Screenshot. Sie sind ein konkreter Beleg für die aktuell angezeigte Partitionierung, aber noch kein Ersatz für die originale Partitionstabelle/CSV oder die Bootloader-Dokumentation. Die Angaben sind gerundet; vor einem Flash-Schritt müssen exakte Größen und Grenzwerte aus der Partitionstabelle bzw. dem Buildsystem verifiziert werden.
 
-Der Nutzer berichtet außerdem, dass seine bestehende Konfiguration aus `ATS-MINI-DEV` im Diamond Bootloader problemlos funktioniert. Das stärkt die Entscheidung, dessen bewährte Buildprofile als Ausgangspunkt zu verwenden, ohne `FlashSize=8M` eigenmächtig auf 16M zu ändern. Der Nutzer kann bei Bedarf alternativ wieder auf sein früheres Dual-Boot mit v4.2.2 umstellen.
+Der Nutzer berichtet, dass die Konfiguration aus `ATS-MINI-DEV` mit beiden Bootloadern funktioniert. Daher verwenden wir diese bewährten Buildprofile als Ausgangspunkt und nutzen die Screenshot-Werte nur als Referenz für die aktuelle Firmware-Partitionierung. Der Nutzer kann bei Bedarf auf das frühere Dual-Boot mit Recovery v4.2.2 zurückwechseln.
 
 **Wichtig:** Der Screenshot zeigt keine PSRAM-Information. Er bestätigt deshalb weiterhin nicht, ob das konkrete Gerät OSPI oder QSPI nutzt. Die Profiltrennung bleibt erforderlich. Keine Build-/Flash-Aktion wurde ausgeführt.
