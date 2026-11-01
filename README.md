@@ -49,6 +49,8 @@ Die Verzeichnisse enthalten zunächst nur Beschreibungen und Platzhalter. Konkre
 
 ## Font-Plan für das Diagnose-Testlayout
 
-- Primäre digitale Testschrift: **Oxanium** (OFL, Latin + Latin Extended; deutsche Umlaute/ß und italienische Akzente werden an der tatsächlichen Datei geprüft).
-- Arabische Schriftfamilie für einen separaten späteren Test: **Noto Sans Arabic** (OFL); Unterstützung erst nach Nachweis von RTL-/Shaping-Verarbeitung.
-- Noch keine Fonts eingebunden oder gerendert. Renderer, Konvertierung, Speicherbedarf und Glyphenabdeckung sind vor der Implementierung zu verifizieren.
+- Ausgewählter erster Kandidat: **DSEGstended 14-Segment Regular** (SIL Open Font License 1.1 laut Projekt).
+- Quelle: https://github.com/ZeusOfTheCrows/DSegstended
+- Geprüft werden deutsche Umlaute und `ß`, italienische Akzente, Buchstaben, Ziffern und passende Darstellungsgrößen für Frequenz, MHz, Sendername und RadioDNS-Diagnose.
+- Arabisch bleibt ein separater späterer Rendering-Test mit Noto Sans Arabic; RTL-/Shaping-Unterstützung muss nachgewiesen werden.
+- Fontdateien sind noch nicht integriert; keine Builds oder GitHub Actions gestartet.
