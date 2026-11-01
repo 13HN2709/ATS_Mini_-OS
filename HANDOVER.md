@@ -542,3 +542,13 @@ Verwendete Referenz-Pins: LDO GPIO15, Reset GPIO16, SDA GPIO18, SCL GPIO17. Dies
 ## 35. FM-Testfrequenz gesetzt: Antenne Münster 95,4 MHz (2026-11-01)
 
 Der Standardstart der ersten FM-Diagnose wurde auf **95,4 MHz (95400 kHz)** gesetzt, auf Wunsch des Nutzers als Testsender Antenne Münster. Änderung in `firmware/ats-mini-os/ats-mini-os.ino`, Commit `dfc44dd016b88a84fd340be60d6ac3353f4efcc6`. Der Compile-Workflow für diesen Stand ist noch nicht erneut gestartet. Dies ist eine Test-Startfrequenz, kein Nachweis von Empfang oder RDS auf dem Gerät. Kein Flash.
+
+
+## 36. Slot-Aufteilung für Tests verbindlich bestätigt (2026-11-01)
+
+Der Nutzer bestätigt den aktuellen Gerätezustand: Die gut funktionierende aktuelle Dev-Firmware läuft auf **APP0**; neue OS-Tests sollen für **APP1** vorgesehen werden.
+- APP0: Start `0x010000`, Größe 3584 KB. Stabiler Betrieb – nicht überschreiben oder verändern.
+- APP1: Start `0x390000`, Größe 3584 KB. Vorgesehener Testslot für neues ATS Mini OS, aber noch kein Flash freigegeben.
+- Vollständiges Backup `ATSMiniFULLBackup.nbin` (16 MB) und Recovery erhalten.
+- Die bisherige OS-Konfiguration/Partition-CSV ist nur für Compile-Tests und darf nicht als Flash-/Upload-Konfiguration verwendet werden. Vor einem ersten Flash müssen Binärformat, Flash-Offsets, Bootloader-/OTA-Mechanismus und 3.5-MiB-Slotgröße verifiziert werden. Keine Firmware auf Offset `0x0`, kein Clean Install, keine Änderung an Bootmanager/Recovery.
+- Der Nutzer hat APP1 als Testplatz vorgesehen; dies ist noch keine ausdrückliche Freigabe, jetzt zu flashen. Bis zur gesonderten Freigabe nur Compile-/Artefaktprüfung.
