@@ -630,3 +630,10 @@ Nächste Workflow-Korrektur in Commit `63e3a85b5973ac5bb137ac11c3848756cbd6e3df`
 - Die offizielle Arduino-CLI-Dokumentation beschreibt `--libraries` als Verzeichnis-Sammlung für Bibliotheken und bestätigt, dass die `src`-Quellen einer korrekt strukturierten Library kompiliert und gelinkt werden. Der Fix ist noch nicht durch einen neuen Lauf verifiziert.
 - Nächster Schritt: Nutzer startet den manuellen Compile-only-Workflow. Wir starten keinen Workflow selbst.
 - Kein Flashen, keine Hardwareänderungen und keine Änderungen an Bootloader, Partitionen, APP0 oder APP1.
+## Build-Fehlerstand – 2026-11-01 (Run 41270987961)
+
+- OSPI-Job `124743546130` schlug beim Kompilieren fehl; QSPI-Job `124743546262` lief bei der Prüfung noch. Die Installations- und Vorprüfschritte waren erfolgreich.
+- Neuer Fehler: `fatal error: SI4735.h: No such file or directory` aus `src/tuner/TunerDriver.h`. Der reine `--libraries "$HOME/Arduino/libraries"`-Aufruf hat in diesem Setup den Header nicht aufgelöst.
+- Korrektur in Commit `a2064d10359c06d8d2a7c5c62bbee161afe0dce8`: neben `--libraries` werden wieder explizit `--library "$HOME/Arduino/libraries/PU2CLR_SI4735"` und der Include-Pfad zur `src`-Ebene gesetzt. Der neue Lauf muss zeigen, ob damit sowohl Header als auch Bibliotheksimplementierung korrekt gebaut und gelinkt werden.
+- Referenz zur Arduino-CLI-Abhängigkeitsauflösung: https://docs.arduino.cc/arduino-cli/sketch-build-process
+- Nutzer startet Workflows selbst; kein Workflow wurde von uns gestartet. Kein Flashen und keine Änderung an Bootloader, Partitionen, APP0 oder APP1.
