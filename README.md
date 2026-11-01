@@ -13,6 +13,7 @@ Dieses Repository ist ein neues, getrenntes Projekt. Bestehende Firmware-Reposit
 ## Dokumentation
 
 - [RadioDNS-Senderlogo: benötigte Daten und Diagnoseplan](docs/RADIODNS_LOGO_DATA_REQUIREMENTS.md)
+- [RadioDNS-Schnittstellen und Diagnose-Testlayout](docs/RADIODNS_INTERFACES_AND_TEST_LAYOUT.md)
 
 - [Übergabeprotokoll](HANDOVER.md)
 - [Architekturentwurf](docs/ARCHITECTURE.md)
@@ -44,3 +45,10 @@ Die Verzeichnisse enthalten zunächst nur Beschreibungen und Platzhalter. Konkre
 5. CPU-Leistungsprofile zentral verwalten; rechenintensive Ansichten wie Waterfall dürfen einen Performance-Modus anfordern.
 6. WLAN-Funktionen wie Wetter und optionale Bilddownloads modular und nicht-blockierend entwerfen; Offline-Radio muss weiter funktionieren.
 7. Vor jeglichen Builds oder Flash-Vorgängen müssen Slotgrößen, Imageformat, Bootpfad und Wiederherstellung geprüft und separat freigegeben werden.
+
+
+## Font-Plan für das Diagnose-Testlayout
+
+- Primäre digitale Testschrift: **Oxanium** (OFL, Latin + Latin Extended; deutsche Umlaute/ß und italienische Akzente werden an der tatsächlichen Datei geprüft).
+- Arabische Schriftfamilie für einen separaten späteren Test: **Noto Sans Arabic** (OFL); Unterstützung erst nach Nachweis von RTL-/Shaping-Verarbeitung.
+- Noch keine Fonts eingebunden oder gerendert. Renderer, Konvertierung, Speicherbedarf und Glyphenabdeckung sind vor der Implementierung zu verifizieren.
