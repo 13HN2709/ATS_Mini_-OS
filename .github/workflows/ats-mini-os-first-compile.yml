@@ -85,6 +85,8 @@ jobs:
           cp -R "$HOME/Arduino/libraries/LovyanGFX/src/." firmware/ats-mini-os/src/vendor/LovyanGFX/
           cp "$HOME/Arduino/libraries/PU2CLR_SI4735/src/SI4735.cpp" firmware/ats-mini-os/src/vendor/SI4735Library.cpp
           test -f firmware/ats-mini-os/src/vendor/LovyanGFX/LovyanGFX.hpp
+          test -f firmware/ats-mini-os/src/vendor/LovyanGFX/lgfx/v1/LGFX_Sprite.inl
+          echo "Verified LGFX_Sprite.inl at firmware/ats-mini-os/src/vendor/LovyanGFX/lgfx/v1/LGFX_Sprite.inl"
           test -s firmware/ats-mini-os/src/vendor/SI4735Library.cpp
           echo "Staged LovyanGFX and SI4735 implementations into sketch src tree."
 
@@ -94,7 +96,7 @@ jobs:
             --fqbn "esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=8M,PSRAM=${{ matrix.psram }},CPUFreq=80,USBMode=hwcdc,FlashMode=qio,PartitionScheme=custom,DebugLevel=none" \
             --warnings all \
             --libraries "$HOME/Arduino/libraries" \
-            --build-property "compiler.cpp.extra_flags=-Ifirmware/ats-mini-os/src/vendor/LovyanGFX -Ifirmware/ats-mini-os/src/vendor/LovyanGFX/lgfx -I$HOME/Arduino/libraries/PU2CLR_SI4735/src" \
+            --build-property "compiler.cpp.extra_flags=-Ifirmware/ats-mini-os/src/vendor/LovyanGFX -Ifirmware/ats-mini-os/src/vendor/LovyanGFX/lgfx -Ifirmware/ats-mini-os/src/vendor/LovyanGFX/lgfx/v1 -I$HOME/Arduino/libraries/PU2CLR_SI4735/src" \
             firmware/ats-mini-os
 
       - name: Preserve compile report
