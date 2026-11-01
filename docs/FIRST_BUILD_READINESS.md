@@ -1,7 +1,7 @@
 # Vorbereitung bis zum ersten Build
 
 **Arbeitszweig:** `dev/first-build-preparation`  
-**Status:** Recherche und Planungsnachweise gesammelt; noch nicht buildbereit.  
+**Status:** Scaffold und manueller Compile-Workflow statisch geprüft; bereit für den ersten autorisierten Compile-Test des Scaffolds, aber noch keine vollständige Radio-Firmware.  
 **Build/Actions/Flash:** Nicht ausgeführt.
 
 ## Gesicherte Quellcode-Erkenntnisse
@@ -84,3 +84,15 @@ Das vom Nutzer bereitgestellte Foto des DiamondRadio-Menüs bestätigt direkt di
 Verbindliche OS-Menülogik: `Auto`, `Taktstufe 1` = 80 MHz, `Taktstufe 2` = 160 MHz, `Taktstufe 3` = 240 MHz. Im Auto-Modus dürfen Waterfall, RadioDNS/WLAN und Bilddekodierung über den zentralen Performance Manager zeitlich begrenzte Leistungs-Leases anfordern. Erst wenn alle aktiven Anforderungen enden, darf Auto wieder absenken. Feste Stufen bleiben von solchen Anforderungen unberührt. Die im alten Chat erwähnte Regel „Encoderaktivität → 240 MHz, nach 10 Sekunden Inaktivität → 80 MHz“ ist für DiamondRadio noch nicht anhand des Originalquellcodes verifiziert.
 
 Die derzeitige Laufzeitumschaltung bleibt deaktiviert, bis die Arduino-ESP32-3.3.12-API und die Stabilität auf OSPI und QSPI geprüft wurden. Ein unterstützter Taktwert allein beweist noch keine Stabilität der konkreten Hardware-/Timing-Konfiguration.
+
+## Statischer Review vor dem ersten Compile (2026-11-01)
+
+- [x] `.ino` ist ein dünner Einstiegspunkt und bindet keine `.cpp`-Dateien ein.
+- [x] Implementierungen liegen getrennt unter `src/`; Performance Manager, Statusmodell, RadioSnapshot-Datenvertrag und Encoder-Eventvertrag besitzen eigene `.h`-/`.cpp`-Dateien.
+- [x] Der manuelle Workflow ist auf `workflow_dispatch` begrenzt, verlangt `COMPILE` und enthält keinen Flash-/Upload-auf-Gerät-Schritt.
+- [x] CPU-Stufen anhand des vom Nutzer bereitgestellten DiamondRadio-Fotos dokumentiert: 80/160/240 MHz; `Auto` bleibt der vierte Eintrag.
+- [ ] Der Workflow muss erst durch einen ausdrücklich autorisierten Lauf praktisch validiert werden; es wurde weder kompiliert noch ein Workflow gestartet.
+
+### Grenzen dieses Freigabepunkts
+
+Dieser Freigabepunkt bezieht sich ausschließlich auf einen **Compile-Test des aktuellen Scaffold-Codes**. Er bestätigt nicht, dass das Gerät eine funktionsfähige Radio-Firmware erhält. Display, SI4735, Audio, RDS, Menüs und echte CPU-Taktumschaltung sind noch nicht implementiert. Die beiden Profile verwenden derzeit `FlashSize=8M` und eine 8-MB-Referenz-Partitionsdatei; das entspricht nicht dem bestätigten 16-MB-Gerät und ist ausschließlich als vorläufige Compile-Konfiguration zu behandeln. Diese Partitionstabelle darf nicht auf das ATS Mini V4 geflasht werden. Für einen späteren installierbaren Build müssen 16-MB-Dual-Boot-/Recovery-Anforderungen separat geklärt werden.
