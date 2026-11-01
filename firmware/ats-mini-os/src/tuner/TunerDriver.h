@@ -2,6 +2,15 @@
 #include <Arduino.h>
 #include <SI4735.h>
 
+// Thin adapter: PU2CLR keeps the individual RT buffer-clear helpers protected.
+class TunerSI4735 : public SI4735 {
+public:
+  void clearRadioTextBuffers() {
+    clearRdsBuffer2A();
+    clearRdsBuffer2B();
+  }
+};
+
 struct TunerRdsData {
   bool received = false;
   bool piValid = false;
@@ -30,7 +39,7 @@ private:
   static constexpr uint8_t kRadioResetPin = 16;
   static constexpr uint32_t kMinFrequencyKHz = 87500;
   static constexpr uint32_t kMaxFrequencyKHz = 108000;
-  SI4735 radio_;
+  TunerSI4735 radio_;
   bool ready_ = false;
   bool haveTextFlag_ = false;
   uint8_t lastTextFlag_ = 0;
