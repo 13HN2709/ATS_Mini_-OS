@@ -1,30 +1,4 @@
 #include "DisplayDriver.h"
-#if !defined(LILYGO_SI473X)
-#include <esp_rom_gpio.h>
-#include <hal/gpio_ll.h>
-#endif
-
-void Bus_Parallel8_ATSMini::beginRead() {
-  wait();
-  const auto& cfg = config();
-  for (int8_t pin : cfg.pin_data) {
-    gpio_ll_set_output_enable_ctrl(&GPIO, pin, false, false);
-    gpio_ll_output_disable(&GPIO, pin);
-  }
-  gpio_ll_set_level(&GPIO, cfg.pin_rs, 1);
-  esp_rom_gpio_connect_out_signal(cfg.pin_rs, SIG_GPIO_OUT_IDX, false, false);
-  gpio_ll_set_level(&GPIO, cfg.pin_rd, 0);
-}
-
-bool Device::init_impl(bool use_reset, bool use_clear) {
-  if (!displayPanel.lgfx::Panel_Device::init(use_reset)) return false;
-  displayId = displayPanel.isReadable()
-    ? __builtin_bswap32(displayPanel.readCommand(LCD_CMD_RDDID, 0, 3)) >> 8 : 0;
-  displayPanel.highGammaDisplay = displayId == LCD_ID_HIGH_GAMMA;
-  if (displayId == LCD_ID_MIRRORED) setPanel(&gc9307Panel);
-  else setPanel(&displayPanel);
-  return lgfx::LGFX_Device::init_impl(false, use_clear);
-}
 
 namespace {
 constexpr uint16_t BLACK=0x0000, WHITE=0xFFFF, GREEN=0x07E0, CYAN=0x07FF, DARK_GREEN=0x0320;
