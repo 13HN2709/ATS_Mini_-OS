@@ -117,3 +117,8 @@ Die Struktur wird bei Bedarf um weitere Module ergänzt; die Beispiele sind kein
 6. Neue/angepasste Funktionen bekommen mindestens einen dokumentierten Prüfweg; Schnittstellenänderungen erfordern die Prüfung aller Aufrufer.
 7. Bei einem Fehler wird die Ursache im verantwortlichen Modul behoben, statt einen Workaround in einem fremden Layout oder Dienst einzubauen.
 8. Vor Übergabe an eine neue Chat-Sitzung sind Branch, letzte Commits, offene Risiken, getestete/nicht getestete Teile und der genaue Build-/Flash-Status in `HANDOVER.md` festzuhalten.
+
+
+## Initial FM bring-up module implementation (2026-11-01; compile pending)
+
+Added `src/tuner/TunerDriver.h/.cpp` to own SI4735 access, and `src/radio/RadioCore.h/.cpp` to own public FM state, tuning and a `RadioSnapshot`. `.ino` is now a thin serial bring-up entry point: initializes at 103.9 MHz and logs frequency, RSSI, SNR, stereo and CPU frequency every two seconds. Encoder/display are not wired yet. The compile workflow installs `PU2CLR SI4735` before compile. Pin assumptions: radio LDO GPIO15, reset GPIO16, SDA GPIO18, SCL GPIO17, from existing ATS Mini V4 reference. These are not yet hardware-validated in the new OS. Next: user starts manual compile-only workflow; fix compile issues from actual logs, then plan an explicit hardware test. No flash.
