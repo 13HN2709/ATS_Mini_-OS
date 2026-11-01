@@ -257,3 +257,23 @@ Diese Tabelle beschreibt Datenquellen und den Stand der Quellcodeprüfung, nicht
 - RadioDNS Core Lookup/GCC: https://radiodns.org/technical/documentation/ ; https://radiodns.org/technical/libraries/gcc-library/
 
 Nächster Schritt bleibt reine Quellenprüfung: Bitfelder von Gruppe 0A/0B, 1A und 3A anhand eines normativen RDS-Standards/Herstellerdokuments gegenprüfen; danach Datenmodell und sichere Integrationsstrategie für genau einen FIFO-Leser dokumentieren. Keine Implementierung, Builds, Actions oder Flashvorgänge.
+
+
+## 12. Normative Gruppen-Zuordnung: ECC, AF, TP/TA und RT+ (2026-11-01)
+
+Die RDS-Gruppenstruktur wurde gegen die verfügbare IEC 62106-2:2021-Referenzübersicht und Silicon Labs AN332 gegengeprüft. Die IEC-Katalog-/Dokumentationsübersicht listet die Features ECC, AF, RT+, TP und TA sowie die Gruppen 0A/0B, 1A, 2A/2B und 3A. Für eine produktive Umsetzung muss der vollständige normative Standard verfügbar sein; Zusammenfassungen ersetzen ihn nicht.
+
+- **Gruppe 0A:** PS und AF-Codes; Block B enthält unter anderem PTY und TP, TA ist ein separates Steuerbit in der Gruppenstruktur. Gruppe 0B hat eine abweichende Block-C-Struktur und darf nicht wie 0A behandelt werden.
+- **Gruppe 1A:** Slow-labelling/Variantendaten. ECC ist an Gruppe 1A, Variant 0 gebunden; Gruppe 1A allein reicht also nicht, die Variante und Fehlerqualität müssen geprüft werden. Block D ist je nach Variante unterschiedlich belegt.
+- **Gruppe 3A:** ODA-Ankündigung/Zuordnung. Sie enthält die Application Identification (AID) und die Zuordnung des Gruppentyps, der für die jeweilige ODA verwendet wird. RT+ ist deshalb nicht einfach ein allgemeines Feld in jeder Gruppe 3A; zuerst muss die passende AID erkannt und dann die zugewiesene Anwendungsgruppe verarbeitet werden. RT+ nutzt üblicherweise ODA-Zuordnung plus passende Gruppen-2-Radiotextdaten.
+- **Blockfehler:** vor dem Dekodieren A–D anhand der jeweiligen BLE-Werte und der Bibliothekskonfiguration beurteilen. Ungültige/unkorrigierbare Blöcke nicht als Identitätsdaten übernehmen.
+- **RadioDNS:** RDS-PI, Frequenz und GCC bleiben die zentralen Lookup-Daten. ECC ist nicht bei jeder Station verfügbar; Fallback nach RadioDNS-GCC-Verfahren verwenden, nicht die empfangene Region als sichere Länderkennung behandeln.
+
+### Aktualisierte Statusbewertung
+Die SI4735-Statusantwort enthält die Rohblöcke A–D; somit ist eine eigene Auswertung technisch untersuchbar. Offen bleibt der saubere öffentliche Zugriff auf die internen Rohdaten im Bibliotheksobjekt sowie die Integration in einen einzigen koordinierten FIFO-Leser. Für RT+ ist zusätzlich die AID-/ODA-Verfolgung erforderlich. Keine dieser Funktionen ist damit bereits in ATS Mini OS implementiert.
+
+Referenzen:
+- IEC 62106-2:2021 Übersicht: https://standards.theiteh.com/catalog/standards/iec/bdec93e0-43f3-40db-91a9-062413fd0be7/iec-62106-2-2021
+- Silicon Labs AN332: https://strawberry-linux.com/pub/Si4735%20Programming%20Guide.pdf
+- PU2CLR SI4735 2.1.8: https://github.com/pu2clr/SI4735/tree/2.1.8
+- RadioDNS GCC: https://radiodns.org/technical/libraries/gcc-library/
