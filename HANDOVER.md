@@ -145,6 +145,16 @@ Zu Beginn jeder neuen Sitzung:
 5. Nach wichtigen neuen Entscheidungen den Übergabetext aktualisieren und den Commit-Link bzw. die Commit-SHA im Chat nennen.
 6. Den Nutzer informieren, wenn eine Aktualisierung nicht möglich war; niemals behaupten, das Dokument aktualisiert zu haben, ohne den GitHub-Schreibvorgang bestätigt bekommen zu haben.
 
+## 22. Digitalschrift für das RadioDNS-Testlayout
+
+- Für den ersten Test wird **DSEGstended 14-Segment Regular** als Kandidat bevorzugt, statt Oxanium.
+- Quelle: https://github.com/ZeusOfTheCrows/DSegstended
+- Das Projekt nennt die SIL Open Font License 1.1 und zusätzliche lateinische Akzentzeichen, griechische/kyrillische Großbuchstaben sowie `ß`, `Æ/æ`, `Œ/œ` und `Ø/ø`.
+- Vor dem Einbau sind die konkrete Fontdatei, Lizenz, tatsächliche Glyphen und Lesbarkeit in mehreren Größen zu prüfen: große Frequenz, mittlere Sender-/Statuszeilen und kleine Diagnosewerte.
+- Pflichtzeichen: `Ä Ö Ü ä ö ü ß`, italienische Akzente, Ziffern, Satzzeichen und Hexwerte.
+- Noto Sans Arabic bleibt für einen separaten RTL-/Shaping-Test vorgemerkt.
+- **Status: nur Auswahl und Dokumentation; Fontdatei nicht integriert, nicht auf dem Display getestet, keine Builds/Actions gestartet.**
+
 ## 11. Änderungsverlauf
 
 - **2026-11-01:** Erstes Übergabeprotokoll erstellt. Neues Repository geprüft und als leer bestätigt. Planungsvorgaben, Schutz bestehender Slots, OSPI/QSPI-Einschränkung und nächste Inventarisierungsschritte dokumentiert.\n- **2026-11-01:** CPU-Takt-Auswahl und layoutabhängige Maximalleistung (insbesondere Waterfall) als Anforderungen ergänzt; Umsetzung bleibt bis zur Plattformprüfung offen.
