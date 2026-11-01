@@ -72,6 +72,6 @@ Vorgesehene Verantwortlichkeiten:
 
 - Das Testlayout soll Frequenz oben links groß zeigen; der Encoder stimmt über den Radio Core ab.
 - RDS-/RadioDNS-Zwischenschritte und Logo-Status werden separat dargestellt.
-- **Oxanium** ist als digitale Schrift für den lateinischen Diagnosetext vorgesehen; die Google-Fonts-Metadaten führen `latin` und `latin-ext` sowie OFL. Die tatsächliche Datei muss auf `Ä Ö Ü ä ö ü ß` und italienische Akzente getestet werden.
+- **DSEGstended 14-Segment Regular** ist der ausgewählte erste Digitalschriften-Kandidat. Die konkrete Fontdatei muss auf `Ä Ö Ü ä ö ü ß`, italienische Akzente, Zahlen und Renderer-Kompatibilität geprüft werden. Projekt und Lizenz: https://github.com/ZeusOfTheCrows/DSegstended (SIL OFL 1.1 laut Upstream). Noch nicht integriert.
 - **Noto Sans Arabic** ist für einen separaten arabischen Rendering-Test vorgemerkt. Ohne verifizierte RTL-/Shaping-Unterstützung darf Arabisch nicht als korrekt unterstützt gelten.
 - Siehe [RadioDNS-Schnittstellen und Diagnose-Testlayout](RADIODNS_INTERFACES_AND_TEST_LAYOUT.md).
