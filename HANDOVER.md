@@ -467,3 +467,8 @@ Espressif dokumentiert für den ESP32-S3 dieselben CPU-Frequenzpunkte für Dynam
 Im Modus `Auto` dürfen Waterfall, RadioDNS/WLAN und Bilddekodierung zeitlich begrenzte Anforderungen über den Performance Manager stellen. Parallele Aufgaben dürfen kein vorzeitiges Heruntertakten verursachen. Feste Stufen werden niemals von solchen Anforderungen überschrieben. Der alte Hinweis „Encoderaktivität schaltet auf 240 MHz, nach zehn Sekunden Inaktivität auf 80 MHz“ ist noch nicht am DiamondRadio-Originalquellcode verifiziert.
 
 Außerdem wurde in `PerformanceManager.cpp` ein irreführender Kommentar korrigiert: Anfragen in festen Modi werden akzeptiert, erzeugen aber absichtlich keine Lease und verändern den festen Takt nicht. Änderung: Commit `2ac60fc4f203a837ca45bf4d9ba3abcba3e8a6aa`. CPU-Recherche in Readiness-Dokument: Commit `93e02023a1f90d53b95a8d9a1008b48f13c8ed82`.
+
+
+## 29. Erster Compile-Lauf fehlgeschlagen – Toolchain-Fehler
+
+GitHub Actions Run: https://github.com/13HN2709/ATS_Mini_-OS/actions/runs/41263944157 (2026-11-01). Beide Jobs (`Compile-only / esp32s3-ospi` und `Compile-only / esp32s3-qspi`) endeten mit `failure`. Die Logs zeigen Download/Installation von ESP32-3.3.12-Paketbestandteilen und danach `Error during build: Platform 'arduino:avr' not found: platform not installed`. Dies ist zunächst ein Fehler bei Plattformauflösung/Toolchain-Setup, kein bestätigter C++-Fehler im OS-Scaffold. Die Workflow-/CLI-Konfiguration muss vor dem nächsten Lauf korrigiert werden. Es wurde nichts auf das ATS Mini geflasht und kein Boot-Slot verändert.
