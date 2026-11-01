@@ -51,30 +51,13 @@ jobs:
           ARDUINO_LIBRARY_ENABLE_UNSAFE_INSTALL: "true"
         run: arduino-cli lib install --git-url https://github.com/lovyan03/LovyanGFX
 
-      - name: Make LovyanGFX discoverable to Arduino CLI
-        run: |
-          # Arduino CLI may fail to resolve libraries from the user library folder.
-          # Place a CI-only copy in the installed ESP32 core's library folder.
-          LGFX_SOURCE="$HOME/Arduino/libraries/LovyanGFX"
-          # Arduino CLI 1.4.1 stores installed platforms under .arduino15/internal
-          # on this runner, rather than the legacy .arduino15/packages path.
-          ESP32_CORE="$(find "$HOME/.arduino15/internal" -maxdepth 1 -type d -name 'esp32_esp32_3.3.12_*' -print -quit)"
-          test -n "$ESP32_CORE"
-          test -f "$LGFX_SOURCE/library.properties"
-          mkdir -p "$ESP32_CORE/libraries/LovyanGFX"
-          cp -a "$LGFX_SOURCE/." "$ESP32_CORE/libraries/LovyanGFX/"
-          test -f "$ESP32_CORE/libraries/LovyanGFX/src/LovyanGFX.hpp" || test -f "$ESP32_CORE/libraries/LovyanGFX/src/LovyanGFX.h"
-          echo "Placed CI-only LovyanGFX copy in active ESP32 platform libraries: $ESP32_CORE"
-
-      - name: Verify LovyanGFX header was installed
+      - name: Verify LovyanGFX installation
         run: |
           arduino-cli lib list
-          ESP32_CORE="$(find "$HOME/.arduino15/internal" -maxdepth 1 -type d -name 'esp32_esp32_3.3.12_*' -print -quit)"
-          test -n "$ESP32_CORE"
-          LGFX_LIB="$ESP32_CORE/libraries/LovyanGFX"
+          LGFX_LIB="$HOME/Arduino/libraries/LovyanGFX"
           test -f "$LGFX_LIB/library.properties"
           test -f "$LGFX_LIB/src/LovyanGFX.hpp" || test -f "$LGFX_LIB/src/LovyanGFX.h"
-          echo "Found LovyanGFX library in ESP32 core library folder."
+          echo "Found LovyanGFX header at $LGFX_LIB/src"
 
       - name: Verify SI4735 header was installed
         run: |
@@ -107,7 +90,8 @@ jobs:
             --fqbn "esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=8M,PSRAM=${{ matrix.psram }},CPUFreq=80,USBMode=hwcdc,FlashMode=qio,PartitionScheme=custom,DebugLevel=none" \
             --warnings all \
             --libraries "$HOME/Arduino/libraries" \
-            --build-property "compiler.cpp.extra_flags=-I$HOME/Arduino/libraries/PU2CLR_SI4735/src" \
+            --library "$HOME/Arduino/libraries/LovyanGFX" \
+            --build-property "compiler.cpp.extra_flags=-I$HOME/Arduino/libraries/LovyanGFX/src -I$HOME/Arduino/libraries/PU2CLR_SI4735/src" \
             firmware/ats-mini-os
 
       - name: Preserve compile report
