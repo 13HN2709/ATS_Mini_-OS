@@ -18,33 +18,45 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        profile:
-          - esp32s3-ospi
-          - esp32s3-qspi
+        include:
+          - profile: esp32s3-ospi
+            psram: opi
+          - profile: esp32s3-qspi
+            psram: enabled
     name: Compile-only / ${{ matrix.profile }}
     steps:
       - name: Checkout selected branch
         uses: actions/checkout@v4
 
-      - name: Compile ATS Mini OS scaffold
-        uses: arduino/compile-sketches@v1
+      - name: Install Arduino CLI
+        uses: arduino/setup-arduino-cli@v2
         with:
-          cli-version: 1.4.1
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          sketch-paths: |
-            - firmware/ats-mini-os
-          cli-compile-flags: |
-            - --profile
-            - ${{ matrix.profile }}
-            - --export-binaries
-          enable-deltas-report: false
-          enable-warnings-report: true
+          version: 1.4.1
+
+      - name: Configure ESP32 package index
+        run: |
+          arduino-cli config init --overwrite
+          arduino-cli config add board_manager.additional_urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+          arduino-cli core update-index
+          arduino-cli core install esp32:esp32@3.3.12
+
+      - name: Verify ESP32-S3 target is available
+        run: arduino-cli board details -b esp32:esp32:esp32s3
+
+      - name: Compile ATS Mini OS scaffold
+        run: |
+          arduino-cli compile
+          --fqbn "esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=8M,PSRAM=${{ matrix.psram }},CPUFreq=80,USBMode=hwcdc,FlashMode=qio,PartitionScheme=custom,DebugLevel=none"
+          --warnings all
+          firmware/ats-mini-os
 
       - name: Preserve compile report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ats-mini-os-compile-report-${{ matrix.profile }}
-          path: sketches-reports
+          path: |
+            build
+            firmware/ats-mini-os
           if-no-files-found: warn
           retention-days: 14
