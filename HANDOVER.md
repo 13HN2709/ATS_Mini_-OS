@@ -71,7 +71,7 @@ Die folgenden Dateien und Platzhalter sind angelegt. Sie dokumentieren die gepla
 ```text
 ATS_Mini_-OS/
 ├── docs/
-│   ├── HANDOVER.md
+├── HANDOVER.md
 │   ├── ARCHITECTURE.md
 │   ├── HARDWARE_INVENTORY.md
 │   └── PARTITIONS_AND_BOOT.md
@@ -86,8 +86,11 @@ ATS_Mini_-OS/
 │   ├── spectrum/
 │   ├── dual_rx/
 │   └── web_control/
-├── ui/                  # Anzeige, Layouts, Eingabe/Encoder
-├── services/            # Konfiguration, Logging, Zeit usw.
+├── ui/
+│   └── layouts/          # Layout-Platzhalter
+├── services/
+│   ├── config/           # Konfigurationsdienst
+│   └── performance/      # CPU-Leistungsprofile
 ├── tests/
 └── tools/
 ```
