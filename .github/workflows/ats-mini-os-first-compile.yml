@@ -75,14 +75,18 @@ jobs:
       - name: Verify ESP32-S3 target is available
         run: arduino-cli board details -b esp32:esp32:esp32s3
 
-      - name: Stage SI4735 implementation in sketch source tree
+      - name: Stage third-party implementations in sketch source tree
         run: |
-          # CI resolves the header but has not linked the library implementation.
-          # Compile upstream SI4735.cpp as a sketch source file in this compile-only workflow.
-          mkdir -p firmware/ats-mini-os/src/vendor
+          # The current CLI report resolves LovyanGFX headers but omits LovyanGFX
+          # from the compiled-library list, leaving its methods undefined at link time.
+          # Stage upstream source files under the sketch's recursive src tree so
+          # Arduino CLI compiles them as ordinary sketch sources.
+          mkdir -p firmware/ats-mini-os/src/vendor/LovyanGFX
+          cp -R "$HOME/Arduino/libraries/LovyanGFX/src/." firmware/ats-mini-os/src/vendor/LovyanGFX/
           cp "$HOME/Arduino/libraries/PU2CLR_SI4735/src/SI4735.cpp" firmware/ats-mini-os/src/vendor/SI4735Library.cpp
+          test -f firmware/ats-mini-os/src/vendor/LovyanGFX/LovyanGFX.hpp
           test -s firmware/ats-mini-os/src/vendor/SI4735Library.cpp
-          echo "Staged SI4735 implementation into sketch src tree."
+          echo "Staged LovyanGFX and SI4735 implementations into sketch src tree."
 
       - name: Compile ATS Mini OS scaffold
         run: |
@@ -90,8 +94,7 @@ jobs:
             --fqbn "esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=8M,PSRAM=${{ matrix.psram }},CPUFreq=80,USBMode=hwcdc,FlashMode=qio,PartitionScheme=custom,DebugLevel=none" \
             --warnings all \
             --libraries "$HOME/Arduino/libraries" \
-            --library "$HOME/Arduino/libraries/LovyanGFX" \
-            --build-property "compiler.cpp.extra_flags=-I$HOME/Arduino/libraries/LovyanGFX/src -I$HOME/Arduino/libraries/PU2CLR_SI4735/src" \
+            --build-property "compiler.cpp.extra_flags=-Ifirmware/ats-mini-os/src/vendor/LovyanGFX -Ifirmware/ats-mini-os/src/vendor/LovyanGFX/lgfx -I$HOME/Arduino/libraries/PU2CLR_SI4735/src" \
             firmware/ats-mini-os
 
       - name: Preserve compile report
