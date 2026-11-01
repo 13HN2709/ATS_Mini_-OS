@@ -47,6 +47,9 @@ jobs:
           arduino-cli core update-index
           arduino-cli core install esp32:esp32@3.3.12
 
+      - name: Install SI4735 tuner library
+        run: arduino-cli lib install "PU2CLR SI4735"
+
       - name: Verify ESP32-S3 target is available
         run: arduino-cli board details -b esp32:esp32:esp32s3
 
