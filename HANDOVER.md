@@ -730,3 +730,28 @@ Sources:
 - Hardware detection is now based on an I2C address acknowledgement, not a complete proof that FM audio/tuning works.
 - The library's internal setup sequence still uses void-returning commands, so further runtime verification would need to be carefully designed against the exact library status/command behavior.
 - No firmware was flashed. APP0, APP1, bootloader, recovery, and the device's 16 MB partition layout were not changed. The repository's 8 MB partition CSV remains compile-reference-only and must not be flashed to the device.
+
+
+## 46. FM-Signalabfrage und RDS-Vorbereitung (2026-11-01)
+
+### Aktueller Stand
+- Entwicklungsbranch: `dev/first-build-preparation`.
+- Der letzte zuvor gemeldete erfolgreiche Compile-only-Lauf war GitHub Actions Run [41273167361](https://github.com/13HN2709/ATS_Mini_-OS/actions/runs/41273167361). Dieser Lauf enthält noch nicht die nachfolgend beschriebenen späteren Änderungen.
+- In `TunerDriver.cpp` wurde danach RDS-Initialisierung ergänzt: `radio_.RdsInit()` und `radio_.setRdsConfig(1, 2, 2, 2, 2)`.
+- Commit für diese RDS-Initialisierung: `0bb00c68f3e1e9848e1e5c13291bcf01b2afc6a7`.
+- Bereits im Code vorhanden ist `refreshSignalQuality()`, das vor dem Lesen von RSSI/SNR/Pilot `getCurrentReceivedSignalQuality()` aufruft. `RadioCore` ruft diese Methode bei der Initialisierung und bei seinem 500-ms-Poll auf.
+- Der aktuelle Commit mit RDS-Initialisierung wurde noch nicht durch einen neuen Compile-only-Lauf bestätigt. Die RDS-Daten (PS, PI, PTY, Radiotext) werden noch nicht aktiv in den Snapshot übernommen; die RDS-Initialisierung allein bedeutet noch keine fertige RDS-Anzeige.
+
+### Referenz aus `13HN2709/ats-mini-dev`
+- Alte `Station.cpp` verarbeitet RDS-Gruppen in begrenzten Batches (Limit 25) und behandelt Sendername/PS, PI, PTY und Radiotext getrennt.
+- Alte `ats-mini.ino` fragt zuerst `getCurrentReceivedSignalQuality()` ab und liest danach RSSI/SNR.
+- Die alten RDS-Funktionen stammen aus einer abweichenden SI4735-Fork/API (`SI4735-fixed.h)); Funktionsaufrufe dürfen deshalb nicht ungeprüft in das neue OS kopiert werden.
+- Ziel ist ein eigener, modularer RDS-Service mit stabilem Sendernamen-Puffer und getrenntem Radiotext-Puffer. Vor Implementierung sind die tatsächlichen RDS-Methoden der im neuen OS verwendeten PU2CLR-SI4735-Version zu verifizieren.
+
+### Nächste Schritte
+1. Nutzer startet manuell den Compile-only-Workflow: https://github.com/13HN2709/ATS_Mini_-OS/actions/workflows/ats-mini-os-first-compile.yml
+2. Prüfen, ob der aktuelle Branch mit RDS-Initialisierung und Signalqualitätsabfrage kompiliert; Fehler anhand der tatsächlichen Joblogs beheben.
+3. Danach die installierte SI4735-API verifizieren und einen separaten RDS-Service ergänzen (PS, PI, PTY, RT), ohne die alte Firmware zu verändern.
+4. Kein Firmware-Flash und keine Änderung an Bootloader, APP0/APP1, Recovery oder Partitionen ohne ausdrückliche Freigabe. Die 8-MB-Partitionsdatei bleibt ausschließlich Compile-Referenz und darf nicht auf das 16-MB-Gerät geflasht werden.
+
+**Verifikationsstatus:** RDS-Initialisierung committed; neuer Build ausstehend; RDS-Decodierung und Hardwaretest noch offen.
