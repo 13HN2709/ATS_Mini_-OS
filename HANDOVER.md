@@ -277,3 +277,28 @@ Der Nutzer hat festgelegt, dass wir für den ersten UKW-Radio-Ausbau alle für R
 - **Aktueller Arbeitsstand: nur Planung und read-only Inventarisierung; es wurde noch keine ausführbare Firmware implementiert.**
 - **Nächster konkreter Schritt:** die Tuner-Bibliothek und ihre tatsächlich verwendeten Aufrufpfade im Referenz-Repository `13HN2709/ats-mini-dev` nur lesend untersuchen und dokumentieren, welche RDS-Felder wirklich verfügbar sind (PI, PS, PTY, RT, AF, TP/TA, ECC/Länderkennung und RT+, soweit unterstützt). Verifizierte Fakten, Annahmen und offene Fragen getrennt halten.
 - Keine Builds, keine GitHub Actions auslösen, nichts flashen und keine Änderungen an bestehenden Firmware-Repositories ohne ausdrückliche Freigabe. Das Referenz-Repository `13HN2709/ats-mini-dev` bleibt read-only.
+
+
+## 17. Fortschritt: erste read-only Inventarisierung der RDS-Funktionen
+
+Am 1. November 2026 wurde die erste Tuner-/RDS-Codeprüfung im Referenz-Repository `13HN2709/ats-mini-dev` (main) abgeschlossen. Es wurden nur Dateien gelesen; das Referenz-Repository blieb unverändert.
+
+### Im vorhandenen Anwendungscode nachgewiesen
+- PS/Sendername über Gruppe 0A und `getRdsStationName()`.
+- PI über `SI4735_fixed::getRdsPI()`, das BLOCKAH + BLOCKAL zu einem 16-Bit-PI zusammensetzt (Wrapper-Korrektur für dokumentierten Basisbibliotheksfehler).
+- PTY über `getRdsProgramTypeX()` (fünf Bits) mit RDS-/RBDS-Anzeigetabellen.
+- RT über die vorhandenen Gruppe-2A/2B-Funktionen.
+- RDS Clock Time über Gruppe 4A / `getRdsUTCEpoch()`.
+- RDS-FIFO wird in `checkRds()` begrenzt ausgelesen; RDS wird im FM-Pfad konfiguriert.
+
+### Noch nicht nachgewiesen
+- RT+ Parser/Tags, ECC-Extraktion, AF-Sammlung sowie TP/TA-Auswertung sind in den geprüften Anwendungspfaden nicht vorhanden bzw. nicht nachgewiesen.
+- Das ist kein Beweis, dass Hardware oder Bibliothek diese Felder unmöglich liefern; die konkrete PU2CLR-SI4735-Version 2.1.8, RDS-Gruppen, Rohblockzugriff und RadioDNS-Spezifikation müssen als Nächstes geprüft werden.
+- Ein vollständiger, stabilitätsgeprüfter RadioDNS-Identitätsdatensatz aus PI + Frequenz + ECC ist noch nicht implementiert.
+
+### Dokumentation aktualisiert
+- `docs/ARCHITECTURE.md` – Abschnitt „RDS/Tuner-Bestandsaufnahme“; Commit `434e1fbd79da269c3d3f360393fbfd819497789e`.
+- `docs/NETWORK_DATA_SOURCES.md` – Abschnitt 9 „Ergebnis der ersten Tuner-/RDS-Inventarisierung“; Commit `ecbc5216976fe2a172b639e027236cff890cd8d7`.
+
+### Nächster Schritt
+Die exakt verwendete PU2CLR-SI4735-Version 2.1.8 und die RDS-Rohblock-/FIFO-Semantik prüfen, um festzustellen, ob ECC, AF, TP/TA und RT+ über Bibliotheks- oder Rohdatenzugriff erschlossen werden können. Anschließend RadioDNS-Identitätsbildung gemäß offizieller Spezifikation prüfen. Weiterhin: keine Builds, keine GitHub Actions, kein Flashen und keine Änderungen an bestehenden Firmware-Repositories ohne ausdrückliche Freigabe.
