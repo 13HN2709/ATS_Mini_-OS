@@ -87,3 +87,30 @@ Für den betrachteten Umfang sind ausschließlich **OSPI und QSPI** vorgesehen. 
 ## Nächster Schritt
 
 Hardware- und Quellcode-Inventar vervollständigen. Erst danach Architekturentscheidungen als bestätigt markieren.
+
+## Erstes Entwicklungsziel: UKW-Radio mit RDS und RadioDNS
+
+Der Nutzer hat die Reihenfolge festgelegt: Das Projekt wird zuerst als möglichst kleines, stabiles UKW-Radio aufgebaut. Zusätzliche Funktionen kommen erst schrittweise hinzu.
+
+### Zielumfang der ersten funktionsfähigen Stufe
+1. **UKW-FM-Grundbetrieb:** Frequenz abstimmen und Radio-Audio über die nachgewiesene ATS-Mini-V4-Hardware ausgeben.
+2. **RDS:** RDS-Daten empfangen und auswerten, einschließlich Sendername/PS und PI-Code, soweit Hardware und Treiber diese Daten zuverlässig liefern.
+3. **RT (RadioText):** Radiotext darstellen, wenn vom Sender ausgestrahlt und vom Tuner verfügbar.
+4. **PTY (Program Type):** Programmtyp darstellen, wenn vom Sender ausgestrahlt und vom Tuner verfügbar.
+5. **RadioDNS:** nach erfolgreicher Netzwerkverbindung anhand der standardkonform ermittelten Senderidentität verfügbare Service-Informationen und gegebenenfalls Senderlogo finden.
+6. **Robustes Fallback:** Fehlen RDS-/RadioDNS-Daten oder ist WLAN nicht verfügbar, bleibt das UKW-Radio bedienbar; Sendername bzw. RT/PTY werden je nach Verfügbarkeit weiter angezeigt, ein Logo ist optional.
+
+### Entwicklungsreihenfolge und Abnahmepunkte
+- **Stufe 0 – Inventarisierung:** Hardware, Pins, Tuner-Modell, vorhandene SI4735-Anbindung, Display, Eingaben, Audioausgabe, WLAN/HTTPS und Zeitdienst quellenbasiert bestätigen.
+- **Stufe 1 – FM-Grundbetrieb:** nur UKW-Abstimmung und Audio; verifizieren, dass Bedienung und Empfang stabil sind.
+- **Stufe 2 – RDS/PS/PI:** erst RDS-Grunddaten und stabile Senderidentität testen.
+- **Stufe 3 – RT und PTY:** Daten unabhängig behandeln; fehlende Senderdaten dürfen die Anzeige nicht beschädigen.
+- **Stufe 4 – RadioDNS:** zuerst mit einem bekannten deutschen UKW-Sender testen; PI/ECC/Frequenzbildung gemäß Spezifikation verifizieren, Metadaten abrufen und Logo nur nach Prüfung laden.
+- **Stufe 5 – Stabilität:** WLAN-Ausfall, fehlende Metadaten, Timeouts und Cache-Verhalten testen, ohne Radioempfang oder Bedienung zu blockieren.
+- Erst danach werden weitere Funktionen wie Wetter, Web Control, Scanner oder Dual RX priorisiert und einzeln geplant.
+
+### Noch nicht festgelegt
+- Exakte Menü-/Layoutgestaltung und Logo-Position.
+- Konkreter Bilddecoder und Cachegröße.
+- Ob die initiale Stufe bereits heruntergeladene Logos dauerhaft speichert oder zunächst nur temporär cached.
+- Diese Liste definiert den Umfang und die Reihenfolge, ist aber keine Freigabe für Code, Builds, GitHub Actions oder Flashen.
