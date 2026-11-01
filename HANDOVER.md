@@ -4,7 +4,7 @@
 >
 > **Stand:** 2026-11-01  
 > **Repository:** https://github.com/13HN2709/ATS_Mini_-OS  
-> **Status:** Run `41275768795` schlug in QSPI und OSPI mit vier ungültigen `const_cast`-Ausdrücken fehl, die nach Einführung von `TunerSI4735` noch auf `SI4735&` zielten. Commit `e0bac0c1e56622295b0429123f990051a0908741` korrigiert die Cast-Ziele; wartet auf manuellen Compile-only-Lauf. Keine Hardwaretests, kein Flash und kein Radio-/Displaybetrieb bestätigt
+> **Status:** Run `41276405931` ist erfolgreich: QSPI und OSPI kompilieren beide auf Commit `b7374e047549cbcb18d392c4d50203cc630b10cd`. Der Cast-Fix und der aktualisierte Übergabestand sind damit im Compile-only-Workflow bestätigt. Keine Hardwaretests, kein Flash und kein Radio-/Displaybetrieb bestätigt
 
 ## 1. Aktueller Auftrag
 
@@ -844,3 +844,17 @@ Die Header- und Implementierungsdateien der offiziellen PU2CLR-Version 2.1.8 wur
 - Nächster Schritt: Nutzer startet den manuellen Compile-only-Workflow erneut und sendet den neuen Run-Link. Der Assistent löst keine GitHub Actions selbst aus.
 - Die Warnung über möglicherweise uninitialisiertes `mjd` in der SI4735-Upstream-Implementierung ist nicht der Grund für diesen Build-Abbruch; sie ist eine separate Warnung und kann nach Stabilisierung des Builds geprüft werden.
 - Kein Flashen und keine Änderungen an Bootloader, APP0, APP1, Recovery oder Partitionen. Die 8-MB-Partitionsdatei bleibt ausschließlich Compile-Referenz und darf nicht auf das 16-MB-Gerät geflasht werden.
+
+
+## 52. Compile-only-Build wieder grün – Run 41276405931 (2026-11-01)
+
+- Nutzerbestätigter Lauf: https://github.com/13HN2709/ATS_Mini_-OS/actions/runs/41276405931
+- Branch: `dev/first-build-preparation`; geprüfter Commit: `b7374e047549cbcb18d392c4d50203cc630b10cd`.
+- Beide Jobs erfolgreich:
+  - QSPI: Job `124759364156`, Ergebnis `success`.
+  - OSPI: Job `124759364372`, Ergebnis `success`.
+- Der Workflow führte in beiden Profilen die Installation/Prüfung der SI4735-Bibliothek, das Staging der SI4735-Implementierung und den Compile-Schritt erfolgreich aus.
+- Damit ist der letzte `const_cast`-Compilefehler behoben und der aktuelle Stand wieder compile-grün.
+- **Wichtig:** Das ist ausschließlich ein Compile-only-Nachweis. Kein Geräteboot, kein Empfang/RDS-Test, keine Display-/Encoder-Prüfung und keine Flash-Aktion wurden bestätigt.
+- Nächster sicherer Arbeitsschritt: gezielte, lesende Inventarisierung der Display- und Encoder-Hardware/API und Abgleich mit dem konkreten ATS Mini V4; danach erst einen isolierten Minimal-UI-Umfang planen.
+- Keine GitHub Actions durch den Assistenten gestartet. Kein Flashen, keine Änderung an Bootloader, APP0, APP1, Recovery oder Partitionen. Die 8-MB-Partitionsdatei bleibt Compile-Referenz-only und darf nicht auf das 16-MB-Gerät geflasht werden.
