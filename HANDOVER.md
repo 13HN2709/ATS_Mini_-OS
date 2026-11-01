@@ -482,3 +482,38 @@ Fehlerursache aus den Logs: `arduino/compile-sketches@v1` scheiterte beim Core-S
 ## 31. Zweiter Compile-Lauf: Runner-Speicher erschöpft (Run 41264295954, 2026-11-01)
 
 Die explizite Arduino-CLI-Konfiguration funktioniert nun: Installation von CLI und ESP32-Core-Index sowie `arduino-cli board details -b esp32:esp32:esp32s3` waren erfolgreich. Beide Compile-Jobs scheiterten danach während der Core-Installation, weil der Runner-Speicher voll wurde: `no space left on device`; das Log meldete nur 47 MB frei. Dadurch fehlten u. a. ESP32-S3-Bootloader-Dateien. Das ist ein Runner-Speicherproblem, kein bestätigter Quellcodefehler. Im Workflow wurde ein Schritt ergänzt, der vor der Core-Installation nicht benötigte vorinstallierte SDKs (Android, .NET, GHC, Boost, Swift) auf dem kurzlebigen GitHub-Runner entfernt und den freien Speicher protokolliert. Änderung Commit `4a46f8032b8ca553725c3a3ef697fd1a6421c8ba`. Noch nicht erneut ausgeführt; Nutzer muss den manuellen Compile-Workflow erneut starten. Kein Flashen.
+
+
+## 32. IST-Zustand ATS Mini V4 – Partitionen und Backup bestätigt (2026-11-01)
+
+**Diese Angaben sind der verbindliche IST-Referenzstand.** Sie stammen aus den vom Nutzer bereitgestellten Fotos der Partition-Ansicht des aktuell laufenden Firmware-/Recovery-Systems. Es handelt sich ausdrücklich **nicht** um eine Partitionstabelle des Diamond-Bootloaders.
+
+### Hardware und Sicherheitszustand
+- Gerät: **AMNVOLT ATS Mini V4**, Flashgröße **16 MB**.
+- Der Nutzer hat sein zuvor erstelltes Backup über die YdiamondRadio-Webseite zurückgespielt; der Rückweg verlief erfolgreich.
+- Zuvor wurde ein vollständiges Backup `ATSMiniFULLBackup.nbin` mit 16,00 MB erwähnt.
+- DBFM v4.2.2 Recovery-only-Update war zuvor auf Adresse `0x860000` erfolgreich, wobei App-Slots erhalten blieben.
+- Der Nutzer möchte die bestehende Boot-/Recovery-Konfiguration bewahren. Keine Partitionierung ändern und nichts flashen, solange es nicht ausdrücklich freigegeben ist.
+
+### Partitionstabelle aus den aktuellen Fotos
+
+| Partition | Startadresse | Angezeigte Größe |
+|---|---:|---:|
+| `nvs` | `0x009000` | 20 KB |
+| `otadata` | `0x00E000` | 8 KB |
+| `app0` | `0x010000` | 3584 KB |
+| `app1` | `0x390000` | 3584 KB |
+| `ffat` | `0x710000` | 1344 KB |
+| `recovery` | `0x860000` | 1664 KB |
+| `littlefs` | `0xA00000` | 5716 KB |
+| `rec_settings` | `0xF95000` | 32 KB |
+| `settings` | `0xF9D000` | 128 KB |
+| `coredump` | `0xFDF000` | 128 KB |
+
+### Angezeigte Nutzung (aus dem zuvor dokumentierten Partition-Info-Bild)
+- `app0`: ca. 1,8 MB belegt / 1,7 MB frei (52 %).
+- `app1`: ca. 735 KB belegt / 2,8 MB frei (20 %).
+- `recovery`: ca. 1,2 MB belegt / 416 KB frei.
+- `littlefs`: ca. 3 MB belegt / 2,5 MB frei.
+
+**Wichtige Interpretation:** `app0` und `app1` sind jeweils ungefähr 3,5 MiB groß; Recovery und LittleFS liegen in fest belegten Bereichen. Die bisher im neuen OS verwendete 8-MB-Partition-CSV ist nur eine Compile-Referenz und ist **keine** freigegebene Partitionstabelle für dieses 16-MB-Gerät. Sie darf nicht auf das Gerät geflasht werden. Bei künftigen Arbeiten zuerst diese IST-Daten und die tatsächliche Boot-/Recovery-Logik prüfen.
