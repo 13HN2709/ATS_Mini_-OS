@@ -239,3 +239,17 @@ Der Nutzer hat festgelegt, dass wir das ATS Mini OS zuerst als einfaches **UKW-R
 - RadioDNS bleibt der bevorzugte erste Logo-Kandidat, ist aber keine Garantie, dass jeder Sender ein Logo veröffentlicht.
 - Die Architektur-/Reihenfolgeentscheidung ist noch keine Freigabe für ausführbaren Code, Builds, Actions oder Flashvorgänge.
 - Bestehende Slot-A- und Slot-B-Firmware und Referenz-Repositories bleiben unangetastet. Der aktuelle Status bleibt Planung/Inventarisierung.
+
+
+## 15. RadioDNS: vollständige Erfassung der nötigen RDS-Daten
+
+Der Nutzer hat festgelegt, dass wir für den ersten UKW-Radio-Ausbau alle für RadioDNS relevanten verfügbaren RDS-Informationen auslesen und erfassen sollen.
+
+- Primäre Identitätsdaten zur Prüfung: **PI-Code, aktuelle UKW-Frequenz und ECC/Länderkennung** nach offizieller RadioDNS-Spezifikation.
+- **PS/Sendername** ergänzend anzeigen und zur Plausibilitätsprüfung nutzen, nicht als alleinigen Schlüssel.
+- Weitere verfügbare Felder erfassen: PTY, TP/TA, AF sowie RT und RT+; RT/RT+ dienen primär der Anzeige und sind nicht automatisch Voraussetzung für die RadioDNS-Auflösung.
+- Zusätzlich Decoder-/Validitätsstatus prüfen, damit bei ungültigem oder instabilem PI keine unnötigen Abfragen gestartet werden.
+- Als nächster Schritt zunächst den tatsächlichen Funktionsumfang der verwendeten Tuner-Bibliothek und den Zugriff auf diese Felder inventarisieren. DNS-Namen und Feldkodierungen nicht raten, sondern gemäß RadioDNS-Spezifikation umsetzen.
+- Logoabfragen, Downloads und Bilddecodierung müssen außerhalb zeitkritischer Tuning-/Empfangspfade laufen; lokale Cache- und Fallback-Anzeige vorsehen.
+- Details sind in `docs/NETWORK_DATA_SOURCES.md`, Abschnitt 8 dokumentiert.
+- Dies bleibt Planung/Inventarisierung: keine ausführbare Implementierung, keine Builds, GitHub Actions oder Flashvorgänge ohne gesonderte Freigabe.
