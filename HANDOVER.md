@@ -4,7 +4,7 @@
 >
 > **Stand:** 2026-11-01  
 > **Repository:** https://github.com/13HN2709/ATS_Mini_-OS  
-> **Status:** Run `41275391304` hat im OSPI-Profil einen Compile-Fehler wegen geschützter PU2CLR-RDS-Pufferfunktionen gezeigt. Der Zugriff wurde danach über eine abgeleitete Tuner-Adapterklasse korrigiert; die Korrektur wartet auf den nächsten manuellen Compile-only-Lauf. Keine Hardwaretests, kein Flash und kein Radio-/Displaybetrieb bestätigt
+> **Status:** Run `41275768795` schlug in QSPI und OSPI mit vier ungültigen `const_cast`-Ausdrücken fehl, die nach Einführung von `TunerSI4735` noch auf `SI4735&` zielten. Commit `e0bac0c1e56622295b0429123f990051a0908741` korrigiert die Cast-Ziele; wartet auf manuellen Compile-only-Lauf. Keine Hardwaretests, kein Flash und kein Radio-/Displaybetrieb bestätigt
 
 ## 1. Aktueller Auftrag
 
@@ -834,3 +834,13 @@ Die Header- und Implementierungsdateien der offiziellen PU2CLR-Version 2.1.8 wur
 - Der QSPI-Job des Runs war beim Abruf noch in Arbeit; unabhängig davon ist der OSPI-Fehler eindeutig.
 - Nächster Schritt: Nutzer startet den Compile-only-Workflow manuell erneut und sendet den Run-Link. Keine GitHub Action durch den Assistenten gestartet.
 - Keine Flash-/Bootloader-/Partitionsänderungen. Die 8-MB-Partitionsdatei bleibt Compile-Referenz-only und darf nicht auf das 16-MB-Gerät geflasht werden.
+
+
+## 51. Compile-Fehler aus Run 41275768795 korrigiert (2026-11-01)
+
+- Run: https://github.com/13HN2709/ATS_Mini_-OS/actions/runs/41275768795
+- Beide Compile-only-Jobs (QSPI und OSPI) scheiterten in `TunerDriver.cpp` an vier `const_cast`-Ausdrücken. Nach dem Wechsel des Feldtyps von `SI4735` zu `TunerSI4735` versuchten die Casts weiterhin, eine `const TunerSI4735`-Referenz direkt als `SI4735&` zu behandeln; das ist kein gültiger `const_cast`.
+- Korrektur in Commit `e0bac0c1e56622295b0429123f990051a0908741`: Die vier Cast-Ziele in `frequencyKHz()`, `rssi()`, `snr()` und `stereo()` wurden auf `TunerSI4735&` geändert.
+- Nächster Schritt: Nutzer startet den manuellen Compile-only-Workflow erneut und sendet den neuen Run-Link. Der Assistent löst keine GitHub Actions selbst aus.
+- Die Warnung über möglicherweise uninitialisiertes `mjd` in der SI4735-Upstream-Implementierung ist nicht der Grund für diesen Build-Abbruch; sie ist eine separate Warnung und kann nach Stabilisierung des Builds geprüft werden.
+- Kein Flashen und keine Änderungen an Bootloader, APP0, APP1, Recovery oder Partitionen. Die 8-MB-Partitionsdatei bleibt ausschließlich Compile-Referenz und darf nicht auf das 16-MB-Gerät geflasht werden.
