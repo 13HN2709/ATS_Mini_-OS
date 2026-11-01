@@ -13,6 +13,7 @@ Dieses Repository ist ein neues, getrenntes Projekt. Bestehende Firmware-Reposit
 ## Dokumentation
 
 - [Vorbereitung bis zum ersten Build](docs/FIRST_BUILD_READINESS.md)
+- [Hardware-, Build- und Dual-Boot-Recherche für OSPI/QSPI](docs/HARDWARE_BUILD_DUALBOOT_RESEARCH.md)
 
 - [RadioDNS-Senderlogo: benötigte Daten und Diagnoseplan](docs/RADIODNS_LOGO_DATA_REQUIREMENTS.md)
 - [RadioDNS-Schnittstellen und Diagnose-Testlayout](docs/RADIODNS_INTERFACES_AND_TEST_LAYOUT.md)
