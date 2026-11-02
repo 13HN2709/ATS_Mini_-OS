@@ -9,6 +9,9 @@ constexpr uint16_t kMaxFrequency10KHz = 10800;
 constexpr uint16_t kDefaultSpacing10KHz = 10;
 constexpr uint8_t kDefaultVolume = 35;
 constexpr uint8_t kFmFunction = 0;
+// ATS Mini V4 audio controls: mute is active HIGH; amplifier enable is active HIGH.
+constexpr uint8_t kAudioMutePin = 3;
+constexpr uint8_t kAmplifierEnablePin = 10;
 
 void copyRdsText(char* dst, size_t capacity, const char* src) {
   if (!capacity || !src) return;
@@ -25,6 +28,13 @@ bool TunerDriver::begin(uint32_t initialFrequencyKHz) {
   ready_ = false;
   haveTextFlag_ = false;
   lastTextFlag_ = 0;
+  // Keep audio muted and the amplifier disabled while the tuner starts, to avoid
+  // startup pops and to ensure a failed tuner initialization cannot leave audio live.
+  pinMode(kAudioMutePin, OUTPUT);
+  digitalWrite(kAudioMutePin, HIGH);
+  pinMode(kAmplifierEnablePin, OUTPUT);
+  digitalWrite(kAmplifierEnablePin, LOW);
+
   pinMode(kRadioLdoPin, OUTPUT);
   digitalWrite(kRadioLdoPin, HIGH);
   delay(10);
@@ -47,6 +57,11 @@ bool TunerDriver::begin(uint32_t initialFrequencyKHz) {
   radio_.setVolume(kDefaultVolume);
   radio_.RdsInit();
   radio_.setRdsConfig(1, 2, 2, 2, 2);
+
+  // Enable the amplifier only after SI4735 setup and volume configuration.
+  digitalWrite(kAmplifierEnablePin, HIGH);
+  delay(5);
+  digitalWrite(kAudioMutePin, LOW);
   ready_ = true;
   return true;
 }
