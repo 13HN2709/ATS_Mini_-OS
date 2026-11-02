@@ -5,13 +5,15 @@
 **Status:** Vorbereitungsprotokoll; keine Flash-Freigabe  
 **Ausführung:** Nur Quellcode-/Konfigurationsprüfung. Kein Build, kein GitHub-Actions-Start, kein Gerätezugriff.
 
-## Ziel
+## Ziel und tatsächlicher Ausgangspunkt
 
-Den späteren Test des ATS Mini OS so vorbereiten, dass weder der bestehende Bootloader noch die vorhandene Firmware in Slot A oder DiamondRadio in Slot B versehentlich überschrieben werden. Das Gerät ist laut Nutzer ein ATS Mini V4 mit 16 MB Flash. Der bestehende OSPI-DE-Aufbau ist die bevorzugte Testbasis.
+Der Nutzer verwendet **nicht mehr den DiamondRadio-Bootloader**. Er hat sein zuvor über die YDiamondRadio-Webseite erstelltes Backup des früheren Bootloader-/Partitionszustands zurückgespielt. Diese bekannte, wiederhergestellte Konfiguration ist die Ausgangsbasis für die weitere Planung.
 
-## Gesicherte Referenzwerte
+Der Nutzer nennt das Gerät als AMNVOLT ATS Mini V4 mit 16 MB Flash. Für den ersten Flash-Test ist ausschließlich das bekannte **16-MB-OSPI-Setup** vorgesehen; die 8-MB-Konfiguration bleibt experimentell. Bootloader und Partitionierung sollen unangetastet bleiben. Der genaue Bootloadername und die tatsächlichen aktiven Partitionen müssen anhand des wiederhergestellten Setups belegt werden, statt sie zu erraten.
 
-Die Projektdatei `firmware/ats-mini-os/partitions.csv` enthält derzeit folgende Referenzaufteilung:
+## Was aus dem Repository bekannt ist
+
+Die Datei `firmware/ats-mini-os/partitions.csv` verwendet aktuell folgende 8-MiB-Referenzaufteilung:
 
 | Bereich | Offset | Größe |
 |---|---:|---:|
@@ -23,36 +25,44 @@ Die Projektdatei `firmware/ats-mini-os/partitions.csv` enthält derzeit folgende
 | Settings | `0x7E0000` | `0x10000` |
 | Coredump | `0x7F0000` | `0x10000` |
 
-Die Tabelle reicht bis `0x800000` (8 MiB). Sie ist als Referenz-/Build-Konfiguration dokumentiert, **nicht** als Nachweis, dass der installierte Dual-Boot-Manager exakt diese Tabelle verwendet.
+Die Tabelle reicht bis `0x800000` (8 MiB). Sie entspricht der dokumentierten ATS-Mini-DEV-Referenz, ist aber **nicht** als bestätigte Partitionstabelle des wiederhergestellten 16-MB-Setups nachgewiesen. Sie darf nicht ungeprüft auf das Gerät geschrieben oder als sichere APP0-/APP1-Zuordnung behandelt werden.
 
-Buildprofil OSPI-DE: ESP32-S3, Arduino-ESP32 3.3.12, `FlashSize=8M`, `PSRAM=opi`, `CPUFreq=80`, `FlashMode=qio`. Das ist die derzeit bevorzugte Profilwahl; die 16-MB-Angabe allein beweist weder das Bootmanager-Layout noch den PSRAM-Modus.
+Das bevorzugte Buildprofil für die Zielhardware ist OSPI-DE: ESP32-S3, Arduino-ESP32 3.3.12, `FlashSize=8M`, `PSRAM=opi`, `CPUFreq=80`, `FlashMode=qio`. Die Projektanforderung, für den späteren Test das bekannte 16-MB-OSPI-Setup beizubehalten, bedeutet nicht, dass wir die FlashSize- oder Partitionswerte eigenmächtig ändern dürfen.
 
-## Flash-Adresshinweise – noch nicht freigegeben
+## Flash-Adresshinweise – nicht als Schreibanweisung verwenden
 
-Für ein übliches Arduino-ESP32-Image werden häufig folgende Adressen verwendet: Bootloader `0x0`, Partitionstabelle `0x8000`, `boot_app0.bin` `0xE000`, App-Image `0x10000`. Diese Standardadressen sind **keine** Flash-Anweisung für das installierte DiamondRadio-Dual-Boot-System.
+Für übliche Arduino-ESP32-Images kommen häufig die Adressen Bootloader `0x0`, Partitionstabelle `0x8000`, `boot_app0.bin` `0xE000` und App `0x10000` vor. Diese Standardwerte belegen nicht, welche Adressen der wiederhergestellte Bootloader verwendet.
 
-APP0/APP1-Offsets aus der CSV dürfen erst dann als tatsächliche Geräte-Offsets verwendet werden, wenn das reale Bootmanager-/Partitionslayout belegt ist. Insbesondere darf `otadata` nicht versuchsweise verändert werden, um einen Slot zu erzwingen.
+Vor einem Flash-Schritt müssen wir anhand der wiederhergestellten Boot-/Partitionskonfiguration und des tatsächlichen Installationswegs nachweisen:
+- welcher Bootloader und welches Partitionslayout aktiv sind;
+- welche Partitionen/Slots existieren und wie sie ausgewählt werden;
+- welche Bereiche das gewählte Flash-Verfahren tatsächlich schreibt;
+- ob ein reines App-Image in den vorgesehenen Slot passt und vom vorhandenen Bootpfad akzeptiert wird.
+
+Insbesondere dürfen `otadata`, Bootloader und Partitionstabelle nicht versuchsweise verändert werden, um einen Slot zu erzwingen.
 
 ## Freigabesperren vor jedem Flash-Versuch
 
-- [ ] Aktuelles, vollständiges 16-MB-Backup ist außerhalb des Geräts vorhanden und lesbar; Dateiname/Größe/Prüfsumme protokolliert.
-- [ ] Tatsächlicher Bootmanager und seine Version sind identifiziert.
-- [ ] Reale Partitionstabelle und Zuordnung Slot A/Slot B sind durch einen verlässlichen Nachweis bestätigt.
-- [ ] Der konkrete Installationsweg „Upload and Flash to APP0“ ist dokumentiert; es ist bekannt, welche Flash-Bereiche er schreibt.
-- [ ] OSPI-/PSRAM-Profil des konkreten Geräts ist belegt.
-- [ ] Exportiertes App-Image ist als App-Image identifiziert; Größe ist kleiner/gleich der nachgewiesenen Slotgröße.
+- [ ] Die zurückgespielte Sicherung ist vollständig, extern vorhanden und lesbar; Dateiname, Größe und SHA-256 sind protokolliert.
+- [ ] Der **tatsächlich wiederhergestellte Bootloader** und seine Version sind identifiziert.
+- [ ] Das aktive Partitionslayout des wiederhergestellten 16-MB-Setups ist durch einen verlässlichen Nachweis bestätigt.
+- [ ] Die Zuordnung der App-Slots und die Boot-/Recovery-Logik sind dokumentiert.
+- [ ] Der konkrete Flash-/Recovery-Weg und seine Schreibbereiche sind bekannt.
+- [ ] Das OSPI-/PSRAM-Profil der konkreten Hardware ist belegt.
+- [ ] Das exportierte App-Image ist eindeutig identifiziert; seine Größe ist kleiner/gleich der nachgewiesenen Zielpartition.
 - [ ] SHA-256, Git-Commit, Profil und Dateiname des geprüften Images sind festgehalten.
-- [ ] Es ist bestätigt, dass der Installationsweg weder Bootloader, Partitionstabelle, `otadata`, Slot A noch Slot B außerhalb des ausdrücklich gewählten Ziels verändert.
-- [ ] Nutzer erteilt eine **separate, ausdrückliche Freigabe** für genau diesen Flash-Schritt.
+- [ ] Es ist nachgewiesen, dass der Installationsweg keine nicht freigegebenen Bereiche verändert.
+- [ ] Der Nutzer erteilt eine **separate, ausdrückliche Freigabe** für genau diesen Flash-Schritt.
 
 Solange ein Punkt offen ist: **nicht flashen**.
 
 ## Sicherer nächster Schritt
 
-Nur lesend die DiamondRadio-Installations-/Recovery-Dokumentation und die im Projekt verfügbaren Image-Artefakte untersuchen. Danach die konkreten Schreibbereiche und Boot-Slot-Auswahl als kurze Entscheidungsvorlage dokumentieren. Keine Actions auslösen und keine Dateien auf das Gerät schreiben.
+Die zuvor wiederhergestellte Konfiguration als maßgeblich behandeln und die Hinweise auf DiamondRadio als aktiven Bootloader aus der Erstflash-Planung entfernen. Anschließend nur lesend die verfügbaren Backup-/Recovery-Informationen und das passende Flash-Verfahren untersuchen. Danach eine kurze Entscheidungsvorlage mit nachgewiesenen Schreibbereichen, offenem Prüfbedarf und klarer Rückfallstrategie erstellen.
 
 ## Explizit ausgeschlossen
 
+- Kein DiamondRadio-Bootloader als aktuelle Ausgangsbasis voraussetzen.
 - Kein Bootloader-Flash.
 - Keine Partitionstabelle schreiben.
 - Keine Änderung von `otadata`.
