@@ -2,9 +2,9 @@
 
 > **Zweck:** Dieses Dokument ist die zentrale Übergabe für neue Chat-Sitzungen. Vor jeder Fortsetzung zuerst diese Datei lesen und anschließend den tatsächlichen Repository-Stand prüfen.
 >
-> **Stand:** 2026-11-01  
+> **Stand:** 2026-11-02  
 > **Repository:** https://github.com/13HN2709/ATS_Mini_-OS  
-> **Status:** Run `41276405931` ist erfolgreich: QSPI und OSPI kompilieren beide auf Commit `b7374e047549cbcb18d392c4d50203cc630b10cd`. Der Cast-Fix und der aktualisierte Übergabestand sind damit im Compile-only-Workflow bestätigt. Keine Hardwaretests, kein Flash und kein Radio-/Displaybetrieb bestätigt
+> **Status:** ATS Mini V4-Hardwaretest vom Nutzer bestätigt: Radio startet mit Audio auf 95,400 MHz, RDS/PS/RT bleiben stabil ohne Flackern, Encoder reagiert jetzt korrekt. Workflow-Dateinamen enthalten nun Buildnummer und Run-Versuch (Commit `399b6d21dfd47a09acdd422599b53b9cc3cd8924`). Neue Layout- und RadioDNS-Arbeit ist als nächster Schritt vorgesehen. Kein Build durch den Assistenten gestartet; kein Flash-/Bootloader-/Partitionsschritt durchgeführt.
 
 ## 1. Aktueller Auftrag
 
@@ -1016,3 +1016,44 @@ Die Header- und Implementierungsdateien der offiziellen PU2CLR-Version 2.1.8 wur
 - Der Workflow wurde für kleinere Artefakte geändert: Commit `131411816bc58f19ca0616f470617cef044f1331` entfernt den kompletten `compile-report`-Ordner und nimmt stattdessen `COMPILE-LOG.txt` auf; Commit `a1f18297f0d74a419268a15bcd4f7cf0864c3543` aktiviert `pipefail` beim gleichzeitigen Speichern des Compilerlogs.
 - Erwarteter Inhalt je Artefakt: `ATS-Mini-OS-OSPI-DE.ino.bin` oder `ATS-Mini-OS-QSPI-DE.ino.bin`, das passende `ATS-Mini-OS-Source-Code-*.zip`, `BUILD-NOTES.txt` und `COMPILE-LOG.txt`.
 - Kein Flash-Go. Weiter offen: reale Hardwareprüfung, GPIO/Encoder-/Radio-/Displayverhalten, 8-MB-Buildkonfiguration gegen 16-MB-Gerät sowie Partitionen, Bootloader-/Bootmanager-Kompatibilität und OTA-Verfahren.
+
+## Handover – Alpha-Meilenstein: Encoder, Radio/RDS und Build-Dateinamen (2026-11-02)
+
+### Vom Nutzer am ATS Mini V4 bestätigter Hardwarestand
+- **Encoder funktioniert jetzt**; die zuletzt eingespielte interruptbasierte Erfassung mit Beschleunigung hat das zuvor gemeldete Geschwindigkeitsproblem behoben. Hardwareergebnis vom Nutzer bestätigt.
+- Radio startet unmittelbar mit Musik auf **95,400 MHz**; die vorherige manuelle Encoderbewegung zum „Aufwecken“ des Empfangs ist nicht mehr nötig.
+- **RDS läuft stabil**: Sendername/Program Service (PS) und Radiotext (RT) flackern nicht mehr.
+- Der Nutzer bewertet das Projekt als auf dem Weg zur **Alpha Stage**. Dies ist ein Entwicklungsmeilenstein, kein offizielles Release.
+
+### Encoder-Änderungen, die dem erfolgreichen Test vorausgingen
+- Commit `1d180464236ab73c2f321f6500b9a66495451b8d`: Encoder-Erfassung auf Interrupts für beide Pins GPIO2/GPIO1 umgestellt; vollständige Quadratur-Rastungen werden erfasst.
+- Commit `e1efb792e52ec23f971f2bdd88ee13d950f51e25`: Header auf ISR-basierte Eingabe und Beschleunigungszustand angepasst.
+- Commit `1f0eb43f206e6b9ee41049ce63c0387f613c930d`: erkannte Rastungen eines Ereignis-Bursts zusammengefasst und Beschleunigungsrampe an die ATS-Mini-Dev-Referenz angelehnt.
+- Der Nutzer hat anschließend bestätigt: **„Encoder klappt“**. Damit ist der praktische Encoder-Test nicht mehr offen; künftige Änderungen daran trotzdem schrittweise testen.
+
+### Build-Dateinamen mit Nummern bis zum Release
+- Workflow-Datei: `.github/workflows/ats-mini-os-first-compile.yml`.
+- Commit `399b6d21dfd47a09acdd422599b53b9cc3cd8924`: Firmware-BIN erhält nun Workflow-Laufnummer und Run-Versuch, z. B. `ATS-Mini-OS-OSPI-DE-Build-58-1.ino.bin` und `ATS-Mini-OS-QSPI-DE-Build-58-1.ino.bin`.
+- Änderung wurde anschließend auf GitHub zurückgelesen und verifiziert; **noch kein neuer Build durch diese Änderung bestätigt**.
+- Diese nummerierten Namen gelten für die Entwicklungs-/Alpha-Phase. Zum offiziellen Release später auf feste Versionsnummern umstellen.
+- Workflow bleibt manuell (`workflow_dispatch)); der Nutzer startet jeden Build selbst. Der Assistent startet keine GitHub Actions.
+
+### Nächste Arbeit – Fortsetzung am nächsten Tag
+1. **Neues Radio-Layout modular implementieren**, ohne den funktionierenden Radio-/RDS-Kern unnötig anzufassen:
+   - oben links gut lesbare Frequenz mit zwei Nachkommastellen, z. B. `95.40 MHz`;
+   - oben rechts Statussymbole in dieser Reihenfolge: Bluetooth, WLAN, Akku ganz rechts;
+   - horizontale Trennlinie unter der Kopfzeile;
+   - Senderlogo links (ungefähr ein Drittel der Displaybreite), Sendername rechts daneben;
+   - Radiotext darunter;
+   - ganz unten RDS-PTY/Genre, z. B. `CURRENT AFFAIRS`, `NEWS`, `POP MUSIC`;
+   - dunkler Hintergrund, wichtige Details neon-grün (`0x07E0`), Statusanzeigen cyan, lesbare Schrift.
+2. **RadioDNS** für senderbezogene Metadaten/Logos weiterentwickeln: PI-Code/Frequenz/Länderkennung gemäß Spezifikation, begrenzter Download, lokaler Logo-Cache und sinnvoller Fallback, wenn kein Treffer oder kein Internet verfügbar ist.
+3. Danach gezielte Alpha-Tests und Fehlerkorrekturen; bestehende funktionierende Empfangs-, Encoder- und RDS-Funktionen bei jeder Änderung erhalten.
+
+### Verbindliche Schutz- und Arbeitsregeln
+- Das bevorzugte **TEF6686-Layout bleibt unverändert**; neue Layoutarbeit darf es nicht beschädigen.
+- Hardware-/GPIO-Referenz bleibt `13HN2709/ats-mini-dev`; Referenz nur lesen.
+- Nutzer startet Builds manuell. Vor dem nächsten Build Änderungen erst fertigstellen und dann den Nutzer starten lassen.
+- Kein Flashen durch den Assistenten; keine Änderungen an Bootloader, Bootmanager, Recovery, Partitionslayout oder den bestehenden APP-Slots ohne separate ausdrückliche Freigabe.
+- Gerät ist ATS Mini V4 mit 16 MB Flash; die Workflow-Compile-Profile zeigen derzeit `FlashSize=8M` und sind **keine Freigabe zum Flashen**. Bestehendes Backup und Bootloader unangetastet lassen.
+- Der letzte Encoder-Hardwaretest ist positiv, aber neue Layout-/RadioDNS-Änderungen sind noch nicht gebaut oder auf Hardware getestet.
