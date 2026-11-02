@@ -92,8 +92,9 @@ jobs:
 
       - name: Compile ATS Mini OS scaffold
         run: |
+          mkdir -p "build/${{ matrix.profile }}"
           arduino-cli compile \
-            --export-binaries \
+            --output-dir "build/${{ matrix.profile }}" \
             --fqbn "esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=8M,PSRAM=${{ matrix.psram }},CPUFreq=80,USBMode=hwcdc,FlashMode=qio,PartitionScheme=custom,DebugLevel=none" \
             --warnings all \
             --libraries "$HOME/Arduino/libraries" \
@@ -114,8 +115,8 @@ jobs:
             LABEL="QSPI-DE"
           fi
 
-          # --export-binaries exports the sketch binaries next to the .ino file.
-          APP_BIN="firmware/ats-mini-os/ats-mini-os.ino.bin"
+          # --output-dir gives each matrix profile a deterministic binary location.
+          APP_BIN="build/$PROFILE/ats-mini-os.ino.bin"
           if [ -s "$APP_BIN" ]; then
             cp "$APP_BIN" "$OUT/ATS-Mini-OS-$LABEL.ino.bin"
           else
