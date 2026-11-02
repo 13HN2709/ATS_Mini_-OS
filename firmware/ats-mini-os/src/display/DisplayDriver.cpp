@@ -39,16 +39,16 @@ bool DisplayDriver::begin() {
   return true;
 }
 
-void DisplayDriver::render(const RadioSnapshot& s,bool radioReady) {
+void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,const char* lastInputEvent,uint32_t inputEventCount) {
   if(!ready_)return;
   const uint32_t now=millis();
   if(s.generation==lastGeneration_ && now-lastDrawMs_<500)return;
   lastGeneration_=s.generation;
   lastDrawMs_=now;
-  draw(s,radioReady);
+  draw(s,radioReady,lastInputEvent,inputEventCount);
 }
 
-void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady) {
+void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady,const char* lastInputEvent,uint32_t inputEventCount) {
   const int w=device_.width();
   device_.fillScreen(BLACK);
   device_.drawRoundRect(5,5,w-10,160,7,GREEN);
@@ -89,12 +89,17 @@ void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady) {
   text(device_,s.radioText[0]?s.radioText:"Warte auf Radiotext...",
        43,115,WHITE,&lgfx::fonts::Font2);
 
+  char inputStatus[40];
+  snprintf(inputStatus,sizeof(inputStatus),"ENC:%s  EVENTS:%lu",
+    lastInputEvent ? lastInputEvent : "WAIT",static_cast<unsigned long>(inputEventCount));
+  text(device_,inputStatus,13,132,CYAN,&lgfx::fonts::Font0);
+
   char status[72];
   snprintf(status,sizeof(status),"%s RSSI:%d SNR:%d RDS:%s",
     s.stereo?"ST":"MO",static_cast<int>(s.rssi),static_cast<int>(s.snr),
     s.rdsAvailable?"RX":"--");
-  text(device_,status,13,146,GREEN,&lgfx::fonts::Font0);
+  text(device_,status,13,148,GREEN,&lgfx::fonts::Font0);
 
-  text(device_,radioReady?"TUNER:READY":"TUNER:ERROR",w-100,146,
+  text(device_,radioReady?"TUNER:READY":"TUNER:ERROR",w-100,148,
        radioReady?GREEN:0xF800,&lgfx::fonts::Font0);
 }
