@@ -25,8 +25,13 @@ public:
 private:
   static constexpr uint8_t kEventQueueCapacity = 8;
   void queueEvent(EncoderEventType type, int16_t delta);
+  int16_t acceleratedDelta(int8_t direction, uint32_t now);
   uint8_t previousAB_ = 0;
   int8_t transitionAccumulator_ = 0;
+  bool haveLastRotation_ = false;
+  uint32_t lastRotationMs_ = 0;
+  uint32_t smoothedRotationMs_ = 350;
+  int8_t lastRotationDirection_ = 0;
   bool rawButtonPressed_ = false;
   bool stableButtonPressed_ = false;
   bool longPressSent_ = false;
