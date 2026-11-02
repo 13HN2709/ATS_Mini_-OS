@@ -484,3 +484,12 @@ Am 1. November 2026 wurde `docs/RADIODNS_INTERFACES_AND_TEST_LAYOUT.md` ergänzt
 - Erwarteter Inhalt des nächsten Artefakts: genau vier Dateien – benannte `.ino.bin`, benanntes Source-Code-ZIP, `BUILD-NOTES.txt` und `COMPILE-LOG.txt`.
 - Nutzer startet den nächsten Workflow manuell. Kein Workflow durch den Assistenten auslösen.
 - Keine Flashfreigabe: Firmware noch nicht auf Hardware getestet; `FlashSize=8M` gegenüber 16-MB-Gerät sowie Partitions-/Bootloader-/OTA-Kompatibilität sind offen.
+
+## Erstflash-Vorbereitung: On-Device-Encoderdiagnose – 2026-11-02
+
+- Zweck: Der Nutzer hat keinen PC/Serial Monitor zur Verfügung. Daher zeigt die Testanzeige nun den letzten Encoder-Eingang direkt am Display: `ENC:CW`, `ENC:CCW`, `ENC:SHORT` oder `ENC:LONG`, plus laufenden `EVENTS`-Zähler.
+- Änderung auf `dev/first-build-preparation`: `firmware/ats-mini-os/ats-mini-os.ino` Commit `9c691031d6d92c5b49c9384c72fab6f1d79e5dd3`; `DisplayDriver.h` Commit `434dd23d5a6ae21c65b77c1120beeda420a2be03`; `DisplayDriver.cpp` Commit `f57e41a2dc31d001b2e9424c9ace7603b01918b8`.
+- Die Änderung ist noch nicht kompiliert oder auf Hardware geprüft. Nutzer startet den nächsten Compile-only-Workflow manuell; Assistent löst keine Runs aus.
+- Der Workflow wurde für kleinere Artefakte geändert: Commit `131411816bc58f19ca0616f470617cef044f1331` entfernt den kompletten `compile-report`-Ordner und nimmt stattdessen `COMPILE-LOG.txt` auf; Commit `a1f18297f0d74a419268a15bcd4f7cf0864c3543` aktiviert `pipefail` beim gleichzeitigen Speichern des Compilerlogs.
+- Erwarteter Inhalt je Artefakt: `ATS-Mini-OS-OSPI-DE.ino.bin` oder `ATS-Mini-OS-QSPI-DE.ino.bin`, das passende `ATS-Mini-OS-Source-Code-*.zip`, `BUILD-NOTES.txt` und `COMPILE-LOG.txt`.
+- Kein Flash-Go. Weiter offen: reale Hardwareprüfung, GPIO/Encoder-/Radio-/Displayverhalten, 8-MB-Buildkonfiguration gegen 16-MB-Gerät sowie Partitionen, Bootloader-/Bootmanager-Kompatibilität und OTA-Verfahren.
