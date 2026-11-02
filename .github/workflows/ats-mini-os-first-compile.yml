@@ -99,15 +99,41 @@ jobs:
 
       - name: Compile ATS Mini OS scaffold
         run: |
-          set -o pipefail
-          mkdir -p "build/${{ matrix.profile }}"
+          set -euo pipefail
+          PROFILE="${{ matrix.profile }}"
+          BUILD_OUT="build/$PROFILE"
+          mkdir -p "$BUILD_OUT"
+          # The ESP32 core exports flash_args into the sketch-local build/ tree.
+          # Remove any prior exported artifacts and force a clean compile so stale
+          # flash_args cannot override the actual current profile's settings.
+          rm -rf firmware/ats-mini-os/build
           arduino-cli compile \
-            --output-dir "build/${{ matrix.profile }}" \
+            --clean \
+            --output-dir "$BUILD_OUT" \
             --fqbn "esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=8M,PSRAM=${{ matrix.psram }},CPUFreq=80,USBMode=hwcdc,FlashMode=qio,PartitionScheme=custom,DebugLevel=none" \
+            --build-property "build.flash_mode=qio" \
+            --build-property "build.flash_freq=80m" \
             --warnings all \
             --libraries "$HOME/Arduino/libraries" \
             --build-property "compiler.cpp.extra_flags=-Ifirmware/ats-mini-os/src/vendor/LovyanGFX -Ifirmware/ats-mini-os/src/vendor/LovyanGFX/lgfx -Ifirmware/ats-mini-os/src/vendor/LovyanGFX/lgfx/v1 -I$HOME/Arduino/libraries/PU2CLR_SI4735/src" \
-            firmware/ats-mini-os 2>&1 | tee "build/${{ matrix.profile }}/COMPILE-LOG.txt"
+            firmware/ats-mini-os 2>&1 | tee "$BUILD_OUT/COMPILE-LOG.txt"
+          # Require the generated arguments from this clean build to agree with
+          # the OSPI/QSPI profile, rather than merely printing the intended value.
+          FLASH_ARGS="$(find firmware/ats-mini-os/build "$BUILD_OUT" -type f -name flash_args -print -quit 2>/dev/null || true)"
+          if [ -z "$FLASH_ARGS" ] || [ ! -s "$FLASH_ARGS" ]; then
+            echo "ERROR: clean build did not generate flash_args." >&2
+            exit 1
+          fi
+          echo "Generated flash_args: $FLASH_ARGS"
+          cat "$FLASH_ARGS"
+          grep -Eq -- '--flash-mode[[:space:]]+qio([[:space:]]|$)' "$FLASH_ARGS" || {
+            echo "ERROR: generated flash_args does not declare qio; refusing to package this profile as valid." >&2
+            exit 1
+          }
+          grep -Eq -- '--flash-size[[:space:]]+8MB([[:space:]]|$)' "$FLASH_ARGS" || {
+            echo "ERROR: generated flash_args does not declare 8MB; refusing to package this profile as valid." >&2
+            exit 1
+          }
 
       - name: Prepare named firmware and source artifacts
         if: always()
