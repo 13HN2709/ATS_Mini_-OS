@@ -6,8 +6,6 @@
 #include "src/input/EncoderInput.h"
 #include "src/network/WifiClient.h"
 #include "src/system/PartitionDiagnostics.h"
-#include "src/settings/SettingsStore.h"
-#include "src/storage/LittleFsStore.h"
 
 namespace {
 constexpr uint32_t SERIAL_BAUD = 115200;
@@ -17,29 +15,21 @@ RadioCore radio;
 DisplayDriver display;
 EncoderInput encoder;
 WifiClient wifi;
-SettingsStore settings;
 uint32_t lastStatusMs = 0;
 uint32_t encoderEventCount = 0;
 const char* lastEncoderEvent = "WAIT";
 }
 void setup() {
   Serial.begin(SERIAL_BAUD); delay(250); performance.begin();
-  Serial.println(); Serial.println("ATS Mini OS - modular FM bring-up");
-  Serial.println("Display uses ATS Mini DEV reference configuration; hardware not yet validated.");
+  Serial.println(); Serial.println("ATS Mini OS - UKW/RDS hardware test");
+  Serial.println("First milestone: display, SI4735 audio, RDS. No memories/EiBi storage.");
   PartitionDiagnostics::printToSerial();
-
-  if (settings.begin()) {
-    Serial.println("[STORAGE] Preferences opened on partition 'settings' (namespace atsmini_os).");
-  } else {
-    Serial.println("[STORAGE] Preferences partition 'settings' unavailable; no fallback partition used.");
-  }
-  LittleFsStore::begin();
 
   encoder.begin();
   if (display.begin()) Serial.println("[DISPLAY] first UI initialized.");
   if (radio.begin(DEFAULT_FM_FREQUENCY_KHZ))
     Serial.printf("Radio ready: %.1f MHz\n",radio.snapshot().frequencyKHz/1000.0f);
-  else Serial.println("Radio init failed; tuner module reports not ready.");
+  else Serial.println("[TUNER] init failed; check I2C, radio power and GPIO configuration.");
   wifi.begin();
   Serial.printf("CPU profile: %s\n",performance.profileName());
 }
