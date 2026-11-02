@@ -3,6 +3,11 @@
 #include "WifiTestConfig.h"
 
 void WifiClient::begin() {
+  if (WifiTestConfig::SSID[0] == '\0') {
+    Serial.println("[WIFI] not configured; no credentials are embedded in this build");
+    return;
+  }
+
   WiFi.mode(WIFI_STA);
   WiFi.setAutoReconnect(true);
   WiFi.persistent(false);
@@ -13,6 +18,8 @@ void WifiClient::begin() {
 }
 
 void WifiClient::update() {
+  if (WifiTestConfig::SSID[0] == '\0') return;
+
   const wl_status_t status = WiFi.status();
   const uint32_t now = millis();
 
@@ -47,5 +54,5 @@ void WifiClient::update() {
 }
 
 bool WifiClient::connected() const {
-  return WiFi.status() == WL_CONNECTED;
+  return WifiTestConfig::SSID[0] != '\0' && WiFi.status() == WL_CONNECTED;
 }
