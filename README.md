@@ -23,6 +23,7 @@ Dieses Repository ist ein neues, getrenntes Projekt. Bestehende Firmware-Reposit
 - [Architekturentwurf](docs/ARCHITECTURE.md)
 - [Hardware-Inventar](docs/HARDWARE_INVENTORY.md)
 - [Partitionen und Boot-Kompatibilität](docs/PARTITIONS_AND_BOOT.md)
+- [Kompatibilitätsabgleich: GNBD DBFM v4.2.2 (DES)](docs/DBFM_4_2_2_COMPATIBILITY_CHECK.md)
 - [Modul- und Schnittstellenplan](docs/MODULES_AND_INTERFACES.md)
 - [Risiken und Prüfplan](docs/RISK_REGISTER_AND_CHECKLIST.md)
 
