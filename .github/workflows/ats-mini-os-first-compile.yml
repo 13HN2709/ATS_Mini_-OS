@@ -126,8 +126,9 @@ jobs:
             exit 1
           fi
 
-          # Source archive contains the firmware project, not generated build files.
-          git archive --format=zip --output="$OUT/ATS-Mini-OS-Source-Code-$LABEL.zip" HEAD firmware/ats-mini-os
+          # Archive the actual staged sketch tree, including vendor sources used by this compile.
+          # git archive would omit these runner-staged files.
+          (cd firmware/ats-mini-os && zip -qr "../../../$OUT/ATS-Mini-OS-Source-Code-$LABEL.zip" .)
 
           # Include only the named application binary, source archive, notes, and compact compile log.
           cp "build/$PROFILE/COMPILE-LOG.txt" "$OUT/COMPILE-LOG.txt"
@@ -135,7 +136,12 @@ jobs:
             echo "Profile: $PROFILE"
             echo "Label: $LABEL"
             echo "Application binary: ATS-Mini-OS-$LABEL.ino.bin"
-            echo "Note: compile success is not hardware or partition compatibility validation."
+            echo "FlashSize: 8M"
+            echo "ESP32 Arduino core: 3.3.12"
+            echo "PSRAM mode: ${{ matrix.psram }}"
+            echo "Third-party implementation sources are staged into the ZIP from the installed libraries used by this build."
+            echo "This ZIP does not include the complete offline toolchain."
+            echo "Compile success is not hardware or partition compatibility validation."
             echo "OTA package intentionally not emitted until OTA/partition compatibility is verified."
           } > "$OUT/BUILD-NOTES.txt"
 
