@@ -998,3 +998,12 @@ Die Header- und Implementierungsdateien der offiziellen PU2CLR-Version 2.1.8 wur
 - Korrektur auf dev/first-build-preparation: Commit 25f3ecc6a282aeffd403b800fab397f78a0b0d8e ändert die Ausgabe auf einen deterministischen --output-dir pro Profil (build/esp32s3-qspi bzw. build/esp32s3-ospi) und lässt den Artefakt-Schritt dort nach ats-mini-os.ino.bin suchen.
 - Nächster Schritt: Nutzer startet manuell einen neuen Compile-only-Run und sendet den Link zur Prüfung. Assistent startet keine Workflows.
 - Noch nicht bestätigt: erfolgreicher Export der .ino.bin, Source-Code-ZIPs, Hardwareverhalten, Flash-/Partitionskompatibilität und OTA-Verfahren. Keine Flashfreigabe; derzeitige Build-Option enthält weiterhin FlashSize=8M, während das Gerät 16 MB hat. Keine Firmware flashen.
+
+## Artefaktgröße und schlanke Ausgabe – 2026-11-02
+
+- Run `41369997620` auf `dev/first-build-preparation` ist für QSPI und OSPI vollständig erfolgreich.
+- Artefakte enthielten dennoch rund 54,3 MiB, weil der komplette Quellbaum und Build-Ordner unter `compile-report/` kopiert wurden. Das war unnötig und wurde entfernt.
+- Workflow-Änderungen auf Dev: `131411816bc58f19ca0616f470617cef044f1331` entfernt `compile-report/` und nimmt stattdessen einen kompakten `COMPILE-LOG.txt` auf; `a1f18297f0d74a419268a15bcd4f7cf0864c3543` aktiviert `pipefail`, damit ein echter Compilerfehler nicht durch `tee` verborgen wird.
+- Erwarteter Inhalt des nächsten Artefakts: genau vier Dateien – benannte `.ino.bin`, benanntes Source-Code-ZIP, `BUILD-NOTES.txt` und `COMPILE-LOG.txt`.
+- Nutzer startet den nächsten Workflow manuell. Kein Workflow durch den Assistenten auslösen.
+- Keine Flashfreigabe: Firmware noch nicht auf Hardware getestet; `FlashSize=8M` gegenüber 16-MB-Gerät sowie Partitions-/Bootloader-/OTA-Kompatibilität sind offen.
