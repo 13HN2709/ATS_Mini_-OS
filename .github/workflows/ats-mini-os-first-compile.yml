@@ -116,7 +116,7 @@ jobs:
             --warnings all \
             --libraries "$HOME/Arduino/libraries" \
             --build-property "compiler.cpp.extra_flags=-Ifirmware/ats-mini-os/src/vendor/LovyanGFX -Ifirmware/ats-mini-os/src/vendor/LovyanGFX/lgfx -Ifirmware/ats-mini-os/src/vendor/LovyanGFX/lgfx/v1 -I$HOME/Arduino/libraries/PU2CLR_SI4735/src" \
-            firmware/ats-mini-os 2>&1 | tee "$BUILD_OUT/COMPILE-LOG.txt"
+            firmware/ats-mini-os 2>&1 | tee "build/$PROFILE-COMPILE-LOG.txt"
           # Require the generated arguments from this clean build to agree with
           # the OSPI/QSPI profile, rather than merely printing the intended value.
           FLASH_ARGS="$(find firmware/ats-mini-os/build "$BUILD_OUT" -type f -name flash_args -print -quit 2>/dev/null || true)"
@@ -163,8 +163,8 @@ jobs:
           # GitHub creates the downloadable ZIP, so do not create a nested source ZIP here.
 
           # Preserve diagnostic output even when compilation failed before creating a binary.
-          if [ -s "build/$PROFILE/COMPILE-LOG.txt" ]; then
-            cp "build/$PROFILE/COMPILE-LOG.txt" "$OUT/COMPILE-LOG.txt"
+          if [ -s "build/$PROFILE-COMPILE-LOG.txt" ]; then
+            cp "build/$PROFILE-COMPILE-LOG.txt" "$OUT/COMPILE-LOG.txt"
           else
             printf 'Compile log was not created. Check the workflow steps above for the failure.\n' > "$OUT/COMPILE-LOG.txt"
           fi
