@@ -153,7 +153,7 @@ jobs:
           } > "$OUT/BUILD-NOTES.txt"
 
       - name: Upload firmware binary separately
-        if: always() && hashFiles('release-artifacts/${{ matrix.profile }}/*.ino.bin') != ''
+        if: always() && hashFiles(format('release-artifacts/{0}/*.ino.bin', matrix.profile)) != ''
         uses: actions/upload-artifact@v4
         with:
           name: ATS-Mini-OS-${{ matrix.label }}-Firmware-BIN
@@ -162,7 +162,7 @@ jobs:
           retention-days: 14
 
       - name: Upload source ZIP separately
-        if: always() && hashFiles('release-artifacts/${{ matrix.profile }}/*Source-Code*.zip') != ''
+        if: always() && hashFiles(format('release-artifacts/{0}/*Source-Code*.zip', matrix.profile)) != ''
         uses: actions/upload-artifact@v4
         with:
           name: ATS-Mini-OS-Source-Code-${{ matrix.label }}
@@ -171,7 +171,7 @@ jobs:
           retention-days: 14
 
       - name: Upload compile log separately
-        if: always() && hashFiles('release-artifacts/${{ matrix.profile }}/COMPILE-LOG.txt') != ''
+        if: always() && hashFiles(format('release-artifacts/{0}/COMPILE-LOG.txt', matrix.profile)) != ''
         uses: actions/upload-artifact@v4
         with:
           name: ATS-Mini-OS-${{ matrix.label }}-COMPILE-LOG
@@ -180,7 +180,7 @@ jobs:
           retention-days: 14
 
       - name: Upload build notes separately
-        if: always() && hashFiles('release-artifacts/${{ matrix.profile }}/BUILD-NOTES.txt') != ''
+        if: always() && hashFiles(format('release-artifacts/{0}/BUILD-NOTES.txt', matrix.profile)) != ''
         uses: actions/upload-artifact@v4
         with:
           name: ATS-Mini-OS-${{ matrix.label }}-BUILD-NOTES
