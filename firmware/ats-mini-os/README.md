@@ -58,3 +58,6 @@ Die Layout-Architektur wird getrennte Familien für FM/VHF und ALL-BAND erhalten
 - `Layout-TEF6686.cpp` bleibt weitgehend unverändert und wird nicht als Experimentierfläche für die neuen Designs verwendet.
 - Erst die First-Flash-/Boot-/Partitions-Sicherheitsprüfung und die dafür nötigen Grundfunktionen abschließen; anschließend die Layout-Familien schrittweise implementieren und jeweils separat kompilieren/testen.
 
+### Umsetzungspriorität
+Die erste funktionale Layout-Phase konzentriert sich ausdrücklich auf **FM/VHF mit Senderlogos**. Erst wenn FM-Empfang, RDS/PS, Radiotext, Logo-Zuordnung/-Anzeige, Netzwerkverhalten und die FM-Layouts stabil getestet sind, beginnen wir mit den ALL-BAND-Layouts für AM/USB/LSB. Die FM-Logo-Funktion ist der Hauptwunsch und hat Vorrang vor zusätzlichen Bandmodi.
+
