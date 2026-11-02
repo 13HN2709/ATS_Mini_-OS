@@ -192,7 +192,7 @@ jobs:
           # Discover the real output path instead of assuming it is directly under build/$PROFILE.
           APP_BIN="$(find "build/$PROFILE" -type f -name 'ats-mini-os.ino.bin' -print -quit)"
           if [ -n "$APP_BIN" ] && [ -s "$APP_BIN" ]; then
-            cp "$APP_BIN" "$OUT/ATS-Mini-OS-$LABEL.ino.bin"
+            cp "$APP_BIN" "$OUT/ATS-Mini-OS-$LABEL-Build-${{ github.run_number }}-${{ github.run_attempt }}.ino.bin"
           else
             echo "Expected application binary missing under build/$PROFILE" >&2
             find "build/$PROFILE" -maxdepth 5 -type f -print || true
@@ -211,7 +211,7 @@ jobs:
           {
             echo "Profile: $PROFILE"
             echo "Label: $LABEL"
-            echo "Application binary: ATS-Mini-OS-$LABEL.ino.bin (only present if compilation produced it)"
+            echo "Application binary: ATS-Mini-OS-$LABEL-Build-${{ github.run_number }}-${{ github.run_attempt }}.ino.bin (only present if compilation produced it)"
             echo "FlashSize: 8M"
             echo "ESP32 Arduino core: 3.3.12"
             echo "PSRAM mode: ${{ matrix.psram }}"
