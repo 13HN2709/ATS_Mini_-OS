@@ -967,3 +967,14 @@ Die Header- und Implementierungsdateien der offiziellen PU2CLR-Version 2.1.8 wur
 - Artefakte sind Compile-Reports, keine bestätigten flashbaren Firmware-Images: `ats-mini-os-compile-report-esp32s3-ospi` und `ats-mini-os-compile-report-esp32s3-qspi`; je 46,543,028 Bytes, erstellt am 2026-11-02, Ablauf 2026-11-16.
 - Grenzen: nur Kompilierung bestätigt. Keine physischen Tests für Audio-Mute, Verstärker, Backlight, Display oder Radio; nichts geflasht und Bootloader/Partitionslayout nicht geändert.
 - Nächster Schritt: späterer, kontrollierter Test am ATS Mini V4 nach ausdrücklicher Freigabe; zuerst die sichere Teststrategie und Image-/Partitionskompatibilität separat prüfen. Nutzer führt alle Workflows selbst aus.
+
+
+## Encoder-Event-Queue-Korrektur nach Run 41367291150 (2026-11-02)
+
+- Bei der Codeprüfung von `EncoderInput.cpp` wurde ein konkreter Fehler gefunden: Der bisherige einzelne `pendingEvent_`-Speicher konnte ein zuvor erkanntes Ereignis überschreiben, wenn innerhalb eines `update()`-Durchlaufs beispielsweise eine Drehung und ein Tastendruckereignis entstanden.
+- Korrektur auf `dev/first-build-preparation`: feste Ringwarteschlange mit 8 `EncoderEvent)-Einträgen. `poll()` entnimmt Ereignisse FIFO; beim vollen Puffer wird das neueste Ereignis verworfen und eine serielle Diagnose ausgegeben, statt ein wartendes Ereignis zu überschreiben.
+- Header-Commit: `e487dde375422df765602abc5d26850e1bfb63db` – [EncoderInput.h](https://github.com/13HN2709/ATS_Mini_-OS/blob/dev/first-build-preparation/firmware/ats-mini-os/src/input/EncoderInput.h).
+- Implementierungs-Commit: `55e8b0e4bf1efe974ba24d1ee315469acc64a7f4` – [EncoderInput.cpp](https://github.com/13HN2709/ATS_Mini_-OS/blob/dev/first-build-preparation/firmware/ats-mini-os/src/input/EncoderInput.cpp).
+- Noch nicht kompiliert; der vorherige grüne Run `41367291150` enthält diese beiden Commits nicht. Nutzer muss den manuellen Compile-only-Workflow erneut starten und QSPI/OSPI kontrollieren.
+- Danach bleibt der praktische Encoder-Test am Gerät offen: Drehrichtung, Frequenzschritt 100 kHz, Grenzüberlauf 87,5/108,0 MHz, kurzer Tastendruck, langer Tastendruck und Anzeige-/Radio-Konsistenz. Die aktuelle Firmware ordnet kurzen/lange Tastendruck-Ereignisse bislang nur seriellen Diagnosemeldungen zu; Menüaktionen sind nicht implementiert.
+- Grenzen unverändert: keine Actions durch den Assistenten gestartet, nichts geflasht, Bootloader/Partitionen und bestehende Firmware-Repositories unangetastet.
