@@ -229,7 +229,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ATS-Mini-OS-Source-Code-${{ matrix.label }}
-          path: firmware/ats-mini-os/
+          path: |
+            firmware/ats-mini-os/**
+            !firmware/ats-mini-os/build/**
+            !firmware/ats-mini-os/build
           if-no-files-found: error
           retention-days: 14
 
