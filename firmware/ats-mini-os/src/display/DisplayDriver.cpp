@@ -70,11 +70,17 @@ void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady,const char* last
 
   device_.drawFastHLine(13,67,w-26,DARK_GREEN);
 
-  // Clear only the PS row so shorter station names do not leave old characters.
-  device_.fillRect(12,70,w-24,18,BLACK);
-  text(device_,"PS:",13,72,YELLOW,&lgfx::fonts::Font2);
-  text(device_,s.stationName[0]?s.stationName:(radioReady?"Warte auf PS...":"RADIO OFFLINE"),
-       45,72,WHITE,&lgfx::fonts::Font2);
+  // Only redraw PS when its content changes. Clearing it on every RDS update
+  // caused visible blinking while the rest of the screen stayed stable.
+  const char* station = s.stationName[0] ? s.stationName : (radioReady ? "Warte auf PS..." : "RADIO OFFLINE");
+  if(!haveStationRow_ || strncmp(lastStationRow_,station,sizeof(lastStationRow_)) != 0) {
+    device_.fillRect(12,70,w-24,18,BLACK);
+    text(device_,"PS:",13,72,YELLOW,&lgfx::fonts::Font2);
+    text(device_,station,45,72,WHITE,&lgfx::fonts::Font2);
+    strncpy(lastStationRow_,station,sizeof(lastStationRow_)-1);
+    lastStationRow_[sizeof(lastStationRow_)-1] = '\0';
+    haveStationRow_ = true;
+  }
 
   // PI and PTY are displayed as raw values to make decoding verifiable.
   char rdsIds[48];
@@ -87,13 +93,17 @@ void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady,const char* last
   text(device_,rdsIds,13,91,CYAN,&lgfx::fonts::Font2);
 
   device_.drawFastHLine(13,111,w-26,DARK_GREEN);
-  // RT changes independently of PS; clear its own row before drawing new text.
-  device_.fillRect(12,113,w-24,18,BLACK);
-  text(device_,"RT:",13,115,YELLOW,&lgfx::fonts::Font2);
-  // RT is kept independent of PS. Long text will be clipped for now; scrolling
-  // can be added after the first hardware validation of the received RDS data.
-  text(device_,s.radioText[0]?s.radioText:"Warte auf Radiotext...",
-       43,115,WHITE,&lgfx::fonts::Font2);
+  // RT updates independently of PS; redraw only when the received text changes.
+  const char* rt = s.radioText[0] ? s.radioText : "Warte auf Radiotext...";
+  if(!haveRadioTextRow_ || strncmp(lastRadioTextRow_,rt,sizeof(lastRadioTextRow_)) != 0) {
+    device_.fillRect(12,113,w-24,18,BLACK);
+    text(device_,"RT:",13,115,YELLOW,&lgfx::fonts::Font2);
+    // Long text is clipped for now; scrolling can be added after validation.
+    text(device_,rt,43,115,WHITE,&lgfx::fonts::Font2);
+    strncpy(lastRadioTextRow_,rt,sizeof(lastRadioTextRow_)-1);
+    lastRadioTextRow_[sizeof(lastRadioTextRow_)-1] = '\0';
+    haveRadioTextRow_ = true;
+  }
 
   char inputStatus[40];
   snprintf(inputStatus,sizeof(inputStatus),"ENC:%s  EVENTS:%lu",
