@@ -397,3 +397,39 @@ Am 1. November 2026 wurde `docs/RADIODNS_INTERFACES_AND_TEST_LAYOUT.md` ergänzt
 - Neue Datei: [docs/RADIODNS_INTERFACES_AND_TEST_LAYOUT.md](docs/RADIODNS_INTERFACES_AND_TEST_LAYOUT.md)
 - Commit der neuen Datei: `332f47c9a65eece2b32619512dc61059503e9567`
 - Schnittstellen, Fonts und Testlayout bleiben Planung. Keine Firmwareimplementierung, Builds, Actions oder Flashvorgänge.
+
+## Aktueller Handover – ATS Mini V4 GPIO-Abgleich und Audio/Backlight (2026-11-02)
+
+### Nutzerentscheidung / verbindliche Referenz
+- Der Nutzer hat ausdrücklich festgelegt: Für ATS Mini OS ist `13HN2709/ats-mini-dev` die Hardware-/GPIO-Referenz. Was dort funktioniert, soll im neuen OS nach Möglichkeit gleichartig übernommen werden.
+- Handover laufend aktualisieren: neue Erkenntnisse, Commits, Buildstatus und nächste Schritte direkt hier dokumentieren, damit ein neuer Chat ohne Wiederholung fortsetzen kann.
+- Keine GitHub Actions selbst starten. Der Nutzer startet den manuellen Workflow und schickt den Run-Link.
+- Kein Flashen und keine Änderungen an Bootloader, APP0/APP1, Recovery oder Partitionstabelle. Die 8-MB-Profile sind Compile-Referenz und dürfen nicht auf das 16-MB-Gerät geflasht werden. Das bekannte Backup und der derzeitige Bootloader bleiben unangetastet.
+- GPIO-Referenz hilft bei der Portierung, garantiert aber nicht, dass sämtliche Funktionen ohne Hardwaretest funktionieren.
+
+### Geprüfte GPIOs aus `ats-mini-dev/ats-mini/Common.h`
+| Funktion | GPIO | Referenzverhalten |
+|---|---:|---|
+| Radio-LDO | 15 | HIGH = ein |
+| SI4735 Reset | 16 | Reset |
+| I²C SDA / SCL | 18 / 17 | Daten / Takt |
+| Audio-Mute | 3 | HIGH = stumm |
+| Audioverstärker Enable | 10 | HIGH = ein |
+| Display-Backlight | 38 | PWM, Referenz nutzt 16 kHz / 8 Bit |
+| Encoder A / B | 2 / 1 | Drehgeber |
+| Encoder-Taste | 21 | Eingang |
+- Referenzlautstärke: 35/63. Nicht ändern.
+
+### Änderungen auf `dev/first-build-preparation`
+1. Commit `1120d02dfe0c0e7f98cbae0de42eb09c7b9e1c65`: `TunerDriver.cpp` registriert GPIO 3 nun zusätzlich mit `radio_.setAudioMuteMcuPin(kAudioMutePin)`. Mute bleibt vor der SI4735-Initialisierung HIGH, Amp GPIO 10 zunächst LOW, LDO GPIO 15 HIGH; nach Tuner-Setup wird Amp HIGH und Mute LOW gesetzt. Volume bleibt 35. Die offizielle PU2CLR-SI4735-API wurde read-only geprüft: `setAudioMuteMcuPin(int8_t)` setzt den Pin als Ausgang und hinterlegt ihn als externe Mute-Leitung; `setHardwareAudioMute(bool)` setzt den Pegel mit 300-µs-Verzögerung. Die Hardwarewirkung und das Verhalten bei Tune-/Power-Übergängen sind noch nicht am Gerät bestätigt.
+2. Commit `e5c69045941baabf171d168a4061768f3a1f54d2`: `DisplayDriver.cpp` initialisiert bei Nicht-LILYGO-Builds GPIO 38 per `ledcAttach(38, 16000, 8)`, schaltet die Hintergrundbeleuchtung vor Panel-Init aus und setzt sie nach erfolgreichem Display-Init auf Helligkeitswert 180. Noch nicht am Gerät bestätigt.
+- Links: [Audio-Mute-Anbindung](https://github.com/13HN2709/ATS_Mini_-OS/commit/1120d02dfe0c0e7f98cbae0de42eb09c7b9e1c65), [Backlight GPIO38](https://github.com/13HN2709/ATS_Mini_-OS/commit/e5c69045941baabf171d168a4061768f3a1f54d2).
+- Die Dateien wurden im Branch `dev/first-build-preparation` geändert. Die `HANDOVER.md`-Einträge werden sowohl hier auf `main` als auch im Dev-Branch gepflegt.
+
+### Letzter bestätigter Build und nächster Schritt
+- Letzter bestätigter Compile-only-Run vor den beiden oben genannten Commits: [Run 41365786325 / Build #39](https://github.com/13HN2709/ATS_Mini_-OS/actions/runs/41365786325), beide Jobs OSPI und QSPI erfolgreich.
+- Dieser grüne Build enthält die Commits `1120d02` und `e5c6904` noch nicht. Sie sind deshalb **noch nicht neu kompiliert** und nicht auf echter Hardware getestet.
+- Nächster Schritt: Nutzer startet den manuellen Workflow [ATS Mini OS First Compile](https://github.com/13HN2709/ATS_Mini_-OS/actions/workflows/ats-mini-os-first-compile.yml) und teilt den Run-Link. Beide Profile OSPI/QSPI kontrollieren; erst danach sichere Hardwaretests nach Zustimmung des Nutzers planen.
+- Build-Artefakte des bisherigen Laufs heißen `ats-mini-os-compile-report-esp32s3-ospi` und `ats-mini-os-compile-report-esp32s3-qspi`; je ca. 46 MB und Compile-Reports, kein bestätigter flashbarer Firmware-Release. Ablaufdatum 16.11.2026.
+- Display-UI ist derzeit RDS-Testansicht (Frequenz, PS, PI/PTY, RT, Stereo/Mono, RSSI/SNR und RDS-Status). RT-Scrolling und Encoderbedienung/volle Radiofunktionen sind noch nicht vollständig integriert bzw. verifiziert. Compile-Erfolg allein bestätigt keine Hardwarefunktion.
+
