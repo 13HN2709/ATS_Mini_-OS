@@ -14,8 +14,10 @@ jobs:
       matrix:
         include:
           - profile: esp32s3-ospi
+            label: OSPI-DE
             psram: opi
           - profile: esp32s3-qspi
+            label: QSPI-DE
             psram: enabled
     name: Compile-only / ${{ matrix.profile }}
     steps:
@@ -149,7 +151,7 @@ jobs:
         if: always() && hashFiles('release-artifacts/${{ matrix.profile }}/*.ino.bin') != ''
         uses: actions/upload-artifact@v4
         with:
-          name: ATS-Mini-OS-${{ matrix.profile }}-Firmware-BIN
+          name: ATS-Mini-OS-${{ matrix.label }}-Firmware-BIN
           path: release-artifacts/${{ matrix.profile }}/*.ino.bin
           if-no-files-found: error
           retention-days: 14
@@ -158,7 +160,7 @@ jobs:
         if: always() && hashFiles('release-artifacts/${{ matrix.profile }}/*Source-Code*.zip') != ''
         uses: actions/upload-artifact@v4
         with:
-          name: ATS-Mini-OS-${{ matrix.profile }}-Source-Code-ZIP
+          name: ATS-Mini-OS-Source-Code-${{ matrix.label }}
           path: release-artifacts/${{ matrix.profile }}/*Source-Code*.zip
           if-no-files-found: error
           retention-days: 14
@@ -167,7 +169,7 @@ jobs:
         if: always() && hashFiles('release-artifacts/${{ matrix.profile }}/COMPILE-LOG.txt') != ''
         uses: actions/upload-artifact@v4
         with:
-          name: ATS-Mini-OS-${{ matrix.profile }}-Compile-Log
+          name: ATS-Mini-OS-${{ matrix.label }}-COMPILE-LOG
           path: release-artifacts/${{ matrix.profile }}/COMPILE-LOG.txt
           if-no-files-found: error
           retention-days: 14
@@ -176,7 +178,7 @@ jobs:
         if: always() && hashFiles('release-artifacts/${{ matrix.profile }}/BUILD-NOTES.txt') != ''
         uses: actions/upload-artifact@v4
         with:
-          name: ATS-Mini-OS-${{ matrix.profile }}-Build-Notes
+          name: ATS-Mini-OS-${{ matrix.label }}-BUILD-NOTES
           path: release-artifacts/${{ matrix.profile }}/BUILD-NOTES.txt
           if-no-files-found: error
           retention-days: 14
