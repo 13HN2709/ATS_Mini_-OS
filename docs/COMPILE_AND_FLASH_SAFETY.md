@@ -39,3 +39,10 @@ The run completed both compile jobs successfully. Inspecting the downloaded OSPI
 - The source-code artifact accidentally included a sketch-local `build/` directory with compiled binaries, ELF/map files, and generated build metadata. The workflow now excludes that directory from the source-only artifact and searches both build output roots for review files.
 
 Commit `90e4a311ad9beeb9750258b6fa1da4d2047501c9` updates the workflow to include a discovered `flash_args` in the review bundle, report a mismatch against the requested QIO profile, and keep build outputs out of the source archive. This workflow edit has not yet been tested by a user-started run. The first-flash gate remains closed; the next run must verify that the review bundle contains the real `flash_args`, explicitly reports the mode mismatch if it remains, and that the source archive no longer contains `build/`.
+
+
+## Flash-mode correction prepared (2026-11-02)
+
+Commit `3b56cebd4560d7c498172250f1fcb930cd2ced3d` changes the manual compile workflow to explicitly set `build.flash_mode=qio` and `build.flash_freq=80m` in addition to the selected FQBN options. It removes the sketch-local exported build directory before each profile compile and passes Arduino CLI's `--clean` option to prevent a stale `flash_args` file from being mistaken for current output. Compile logs are written outside the cleaned output directory.
+
+After compiling, the workflow now requires a freshly generated `flash_args` file and checks that it declares both `--flash-mode qio` and `--flash-size 8MB`; otherwise the compile job fails before packaging the profile as valid. This change has been committed but is not yet tested. The next manually started run must prove that the generated file agrees with QIO/8 MB. Do not flash until the new run confirms this and bootloader/Dual Boot compatibility is separately reviewed.
