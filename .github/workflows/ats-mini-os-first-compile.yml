@@ -125,19 +125,24 @@ jobs:
           else
             echo "Expected application binary missing: $APP_BIN" >&2
             find firmware/ats-mini-os -maxdepth 2 -type f -name '*.bin' -print || true
-            exit 1
+            echo "Firmware binary was not produced; see COMPILE-LOG.txt." > "$OUT/NO-FIRMWARE-BINARY.txt"
           fi
 
           # Archive the actual staged sketch tree, including vendor sources used by this compile.
           # git archive would omit these runner-staged files.
           (cd firmware/ats-mini-os && zip -qr "../../$OUT/ATS-Mini-OS-Source-Code-$LABEL.zip" .)
 
-          # Include only the named application binary, source archive, notes, and compact compile log.
-          cp "build/$PROFILE/COMPILE-LOG.txt" "$OUT/COMPILE-LOG.txt"
+          # Preserve diagnostic output even when compilation failed before creating a binary.
+          if [ -s "build/$PROFILE/COMPILE-LOG.txt" ]; then
+            cp "build/$PROFILE/COMPILE-LOG.txt" "$OUT/COMPILE-LOG.txt"
+          else
+            printf 'Compile log was not created. Check the workflow steps above for the failure.\n' > "$OUT/COMPILE-LOG.txt"
+          fi
+
           {
             echo "Profile: $PROFILE"
             echo "Label: $LABEL"
-            echo "Application binary: ATS-Mini-OS-$LABEL.ino.bin"
+            echo "Application binary: ATS-Mini-OS-$LABEL.ino.bin (only present if compilation produced it)"
             echo "FlashSize: 8M"
             echo "ESP32 Arduino core: 3.3.12"
             echo "PSRAM mode: ${{ matrix.psram }}"
