@@ -233,7 +233,7 @@ public:
 class DisplayDriver {
 public:
   bool begin();
-  void render(const RadioSnapshot& state, bool radioReady);
+  void render(const RadioSnapshot& state, bool radioReady, const char* lastInputEvent, uint32_t inputEventCount);
   bool isReady() const { return ready_; }
   uint32_t detectedPanelId() const { return device_.getDisplayId(); }
 private:
@@ -241,7 +241,7 @@ private:
   bool ready_ = false;
   uint32_t lastGeneration_ = UINT32_MAX;
   uint32_t lastDrawMs_ = 0;
-  void draw(const RadioSnapshot& state, bool radioReady);
+  void draw(const RadioSnapshot& state, bool radioReady, const char* lastInputEvent, uint32_t inputEventCount);
 };
 
 #endif // ATS_MINI_OS_DISPLAY_DRIVER_H
