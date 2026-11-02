@@ -34,8 +34,9 @@ bool DisplayDriver::begin() {
   ledcWrite(38, 180);
 #endif
   device_.fillScreen(BLACK);
-  Serial.printf("[DISPLAY] ready, panel ID=0x%06lX, size=%dx%d\n",
-    static_cast<unsigned long>(device_.getDisplayId()),device_.width(),device_.height());
+  Serial.printf("[DISPLAY] ready, panel ID=0x%06lX, size=%ldx%ld\n",
+    static_cast<unsigned long>(device_.getDisplayId()),
+    static_cast<long>(device_.width()),static_cast<long>(device_.height()));
   return true;
 }
 
