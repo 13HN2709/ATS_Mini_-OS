@@ -42,10 +42,10 @@ void EncoderInput::update() {
   previousAB_ = currentAB;
 
   if (transitionAccumulator_ >= 4) {
-    queueEvent(EncoderEventType::RotateClockwise, 1);
+    queueEvent(EncoderEventType::RotateClockwise, acceleratedDelta(1, millis()));
     transitionAccumulator_ = 0;
   } else if (transitionAccumulator_ <= -4) {
-    queueEvent(EncoderEventType::RotateCounterClockwise, -1);
+    queueEvent(EncoderEventType::RotateCounterClockwise, acceleratedDelta(-1, millis()));
     transitionAccumulator_ = 0;
   }
 
@@ -70,6 +70,39 @@ void EncoderInput::update() {
     longPressSent_ = true;
     queueEvent(EncoderEventType::LongPress, 0);
   }
+}
+
+int16_t EncoderInput::acceleratedDelta(int8_t direction, uint32_t now) {
+  // Match ATS Mini Dev's smoothed encoder-speed thresholds and 1/2/4/8/16x
+  // acceleration. Timing is measured when a complete detent is decoded.
+  constexpr uint32_t speedThresholds[] = {350, 60, 45, 35, 25};
+  constexpr uint16_t accelFactors[] = {1, 2, 4, 8, 16};
+
+  if (!haveLastRotation_) {
+    haveLastRotation_ = true;
+    lastRotationMs_ = now;
+    smoothedRotationMs_ = speedThresholds[0];
+    lastRotationDirection_ = direction;
+    return direction;
+  }
+
+  const uint32_t elapsed = now - lastRotationMs_;
+  smoothedRotationMs_ = (elapsed * 7U + smoothedRotationMs_ * 3U) / 10U;
+  uint16_t factor = 1;
+
+  if (smoothedRotationMs_ <= speedThresholds[0] &&
+      lastRotationDirection_ == direction) {
+    for (int8_t i = 4; i >= 0; --i) {
+      if (smoothedRotationMs_ <= speedThresholds[i]) {
+        factor = accelFactors[i];
+        break;
+      }
+    }
+  }
+
+  lastRotationMs_ = now;
+  lastRotationDirection_ = direction;
+  return static_cast<int16_t>(direction * factor);
 }
 
 bool EncoderInput::poll(EncoderEvent& event) {
