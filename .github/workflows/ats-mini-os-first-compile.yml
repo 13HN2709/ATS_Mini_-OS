@@ -192,20 +192,52 @@ jobs:
             fi
           fi
 
-          if [ -s "$FLASH_REVIEW/flash_args" ]; then
-            {
-              echo "Generated flash arguments from this build:"
-              cat "$FLASH_REVIEW/flash_args"
-              echo
-              echo "Review only: compare every path and address against ATS-Mini-Dev."
-              echo "Do not flash until Dual Boot compatibility is explicitly verified."
-            } > "$FLASH_REVIEW/FLASH-ADDRESSES.txt"
-          else
-            cat > "$FLASH_REVIEW/FLASH-ADDRESSES.txt" <<'EOF'
-          NO GENERATED flash_args FILE WAS FOUND.
-          Addresses are not verified for this build. Do not flash this bundle.
+          # Arduino CLI 1.4.1 does not reliably export an esptool flash_args file
+          # with this compile invocation. Record the known ATS-Mini-Dev reference
+          # layout explicitly, and validate the sketch partition CSV before showing it.
+          EXPECTED_PARTITIONS="$(mktemp)"
+          cat > "$EXPECTED_PARTITIONS" <<'EOF'
+          nvs,data,nvs,0x9000,0x5000
+          otadata,data,ota,0xe000,0x2000
+          app0,app,ota_0,0x10000,0x300000
+          app1,app,ota_1,0x310000,0x300000
+          littlefs,data,littlefs,0x610000,0x1d0000
+          settings,data,nvs,0x7e0000,0x10000
+          coredump,data,coredump,0x7f0000,0x10000
           EOF
+          ACTUAL_PARTITIONS="$(mktemp)"
+          awk -F, '!/^#/ && NF >= 5 {
+            for (i=1;i<=5;i++) { gsub(/^[[:space:]]+|[[:space:]]+$/, "", $i) }
+            print $1 "," $2 "," $3 "," tolower($4) "," tolower($5)
+          }' firmware/ats-mini-os/partitions.csv > "$ACTUAL_PARTITIONS"
+
+          if diff -u "$EXPECTED_PARTITIONS" "$ACTUAL_PARTITIONS" > "$FLASH_REVIEW/PARTITION-CHECK.diff"; then
+            PARTITION_STATUS="PASS: sketch partition table matches the checked-in ATS-Mini-Dev reference layout."
+          else
+            PARTITION_STATUS="FAIL: sketch partition table differs from the ATS-Mini-Dev reference. Do not flash."
           fi
+
+          {
+            echo "FLASH ADDRESS REVIEW - REFERENCE ONLY"
+            echo "Profile: $LABEL"
+            echo "Flash size profile: 8M"
+            echo
+            echo "Known-good ATS-Mini-Dev reference addresses:"
+            echo "0x0000  ats-mini-os.ino.bootloader.bin"
+            echo "0x8000  ats-mini-os.ino.partitions.bin"
+            echo "0xE000  boot_app0.bin"
+            echo "0x10000 ats-mini-os.ino.bin (application image)"
+            echo
+            echo "Alternative single-image method:"
+            echo "0x0000  ats-mini-os.ino.merged.bin"
+            echo
+            echo "$PARTITION_STATUS"
+            echo
+            echo "IMPORTANT: these are reference offsets, not generated esptool flash_args."
+            echo "The merged image and the separate-file method are alternatives; never use both."
+            echo "This review does not verify bootloader/Dual Boot compatibility or authorize flashing."
+          } > "$FLASH_REVIEW/FLASH-ADDRESSES.txt"
+          rm -f "$EXPECTED_PARTITIONS" "$ACTUAL_PARTITIONS"
 
           # Write the safety note first, then append missing-file diagnostics.
           cat > "$FLASH_REVIEW/README-FIRST-FLASH-REVIEW.txt" <<EOF
