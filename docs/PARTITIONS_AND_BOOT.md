@@ -24,7 +24,8 @@ Die ATS-Mini-OS-Partitionstabelle ist aktuell identisch mit der Referenzdatei au
 ## ATS-Mini-OS-Scaffold und Build #56
 
 - Das aktuelle Scaffold verwendet `FlashSize=8M` für OSPI/QSPI und enthält die Referenz-Partitionstabelle aus `ats-mini-dev`.
-- Die aktuelle `ats-mini-os.ino` initialisiert bzw. verwendet noch keine gleichwertige LittleFS-/Preferences-Storage-Schicht.
+- Das OS hat `src/settings/SettingsStore.h/.cpp` für die letzte FM-Frequenz. Es verwendet `Preferences.begin("atsmini_os", false)` ohne explizite Partitionsbezeichnung, also Standard-NVS. Die Referenz `ats-mini-dev` nutzt dagegen `STORAGE_PARTITION "settings"`.
+- Eine LittleFS-Implementierung für EiBi-Dateien, `memories.json` oder `/schedules.bin` ist im OS noch nicht übernommen.
 - Build #56: https://github.com/13HN2709/ATS_Mini_-OS/actions/runs/41476309903
 - App-Binärdateien: OSPI 956.624 Bytes; QSPI 954.368 Bytes. Beide passen größenmäßig in einen 3,5-MiB-Slot und besitzen ESP-Image-Magic `E9`.
 - Beide Deskriptoren zeigen `arduino-lib-builder`; der Name ist kein bestätigter Blocker. `ATSM` bei Offset 288 fehlt, aber ist nicht als allgemeine DBFM-v4.2.2-Installationsvoraussetzung bestätigt.
@@ -58,10 +59,11 @@ Die ATS-Mini-OS-Partitionstabelle ist aktuell identisch mit der Referenzdatei au
 ## Nächster sicherer Ablauf
 
 1. `ats-mini-dev` Storage-Initialisierung, Preferences-Partition und LittleFS-Init vollständig prüfen.
-2. Die benötigte Storage-Schnittstelle für ATS Mini OS definieren und modular implementieren; vorhandene Dateien dürfen nicht automatisch formatiert oder gelöscht werden.
-3. Runtime-Partitionzugriffe und Fehlerverhalten statisch prüfen.
-4. Nutzer startet anschließend den manuellen Compile-Workflow; keine automatische Action aus dieser Dokumentationsänderung.
-5. Artefakt lesend prüfen und separat einen Installationsplan mit Zielslot, exakter Datei, Adressen und Wiederherstellungsweg vorlegen.
+2. Die tatsächlich verfügbare NVS-/LittleFS-Partitionierung des DBFM-Setups klären, bevor die OS-Preferences-Partition geändert wird.
+3. Die benötigte Storage-Schnittstelle für ATS Mini OS definieren und modular implementieren; vorhandene Dateien dürfen nicht automatisch formatiert oder gelöscht werden.
+4. Runtime-Partitionzugriffe und Fehlerverhalten statisch prüfen.
+5. Nutzer startet anschließend den manuellen Compile-Workflow; keine automatische Action aus dieser Dokumentationsänderung.
+6. Artefakt lesend prüfen und separat einen Installationsplan mit Zielslot, exakter Datei, Adressen und Wiederherstellungsweg vorlegen.
 
 ## Explizit ausgeschlossen
 
