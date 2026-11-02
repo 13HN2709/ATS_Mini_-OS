@@ -3,9 +3,9 @@
 #include <Arduino.h>
 #include <Preferences.h>
 
-// Persistent settings owned by this module. Uses ESP32 NVS rather than a
-// shared LittleFS partition so this OS does not depend on filesystem layout.
-// Namespace is deliberately unique to ATS Mini OS.
+// Persistent settings owned by this module. Uses the same dedicated NVS
+// partition ("settings") as ats-mini-dev. The namespace remains unique to
+// ATS Mini OS so its keys do not collide with the reference firmware.
 class SettingsStore {
 public:
   bool begin();
