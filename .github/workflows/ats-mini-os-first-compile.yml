@@ -86,6 +86,11 @@ jobs:
           mkdir -p firmware/ats-mini-os/src/vendor/LovyanGFX
           cp -R "$HOME/Arduino/libraries/LovyanGFX/src/." firmware/ats-mini-os/src/vendor/LovyanGFX/
           cp "$HOME/Arduino/libraries/PU2CLR_SI4735/src/SI4735.cpp" firmware/ats-mini-os/src/vendor/SI4735Library.cpp
+          # Upstream getRdsDateTime() ORs the MJD bitfield into an uninitialized
+          # integer. Initialize date fields in this staged copy to remove UB and
+          # the compiler warning without changing the installed upstream library.
+          sed -i 's/uint32_t mjd, day, month, year;/uint32_t mjd = 0, day = 0, month = 0, year = 0;/' firmware/ats-mini-os/src/vendor/SI4735Library.cpp
+          grep -F 'uint32_t mjd = 0, day = 0, month = 0, year = 0;' firmware/ats-mini-os/src/vendor/SI4735Library.cpp
           test -f firmware/ats-mini-os/src/vendor/LovyanGFX/LovyanGFX.hpp
           test -f firmware/ats-mini-os/src/vendor/LovyanGFX/lgfx/v1/LGFX_Sprite.inl
           echo "Verified LGFX_Sprite.inl at firmware/ats-mini-os/src/vendor/LovyanGFX/lgfx/v1/LGFX_Sprite.inl"
