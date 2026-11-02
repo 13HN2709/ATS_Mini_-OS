@@ -92,6 +92,7 @@ jobs:
 
       - name: Compile ATS Mini OS scaffold
         run: |
+          set -o pipefail
           mkdir -p "build/${{ matrix.profile }}"
           arduino-cli compile \
             --output-dir "build/${{ matrix.profile }}" \
