@@ -50,6 +50,9 @@ bool TunerDriver::begin(uint32_t initialFrequencyKHz) {
   }
   Serial.printf("[TUNER] SI47XX detected at I2C address 0x%02X\n", static_cast<unsigned>(address));
   radio_.setup(kRadioResetPin, 0, kFmFunction);
+  // Match the legacy ATS Mini hardware path: let the SI4735 library manage the
+  // external active-HIGH mute during tuner operations, not just at boot.
+  radio_.setAudioMuteMcuPin(kAudioMutePin);
   radio_.setFM(kMinFrequency10KHz, kMaxFrequency10KHz,
                static_cast<uint16_t>(constrain(initialFrequencyKHz / 10UL,
                                                kMinFrequency10KHz, kMaxFrequency10KHz)),
