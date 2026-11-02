@@ -23,6 +23,7 @@ public:
   bool poll(EncoderEvent& event);
 
 private:
+  static constexpr uint8_t kEventQueueCapacity = 8;
   void queueEvent(EncoderEventType type, int16_t delta);
   uint8_t previousAB_ = 0;
   int8_t transitionAccumulator_ = 0;
@@ -31,5 +32,8 @@ private:
   bool longPressSent_ = false;
   uint32_t buttonChangedMs_ = 0;
   uint32_t pressStartedMs_ = 0;
-  EncoderEvent pendingEvent_{};
+  EncoderEvent eventQueue_[kEventQueueCapacity]{};
+  uint8_t queueHead_ = 0;
+  uint8_t queueTail_ = 0;
+  uint8_t queueCount_ = 0;
 };
