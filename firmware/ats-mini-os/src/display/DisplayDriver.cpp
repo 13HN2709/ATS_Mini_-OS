@@ -17,6 +17,12 @@ void centered(lgfx::LGFX_Device& d,const char* s,int x,int y,uint16_t c,const lg
 }
 
 bool DisplayDriver::begin() {
+#if !defined(LILYGO_SI473X)
+  // ATS Mini V4 has a separate backlight MOSFET on GPIO38; panel brightness
+  // alone does not drive this external backlight pin.
+  ledcAttach(38, 16000, 8);
+  ledcWrite(38, 0);
+#endif
   ready_=device_.init();
   if(!ready_){
     Serial.println("[DISPLAY] init failed; continuing with serial diagnostics.");
@@ -24,6 +30,9 @@ bool DisplayDriver::begin() {
   }
   device_.setRotation(1);
   device_.setBrightness(180);
+#if !defined(LILYGO_SI473X)
+  ledcWrite(38, 180);
+#endif
   device_.fillScreen(BLACK);
   Serial.printf("[DISPLAY] ready, panel ID=0x%06lX, size=%dx%d\n",
     static_cast<unsigned long>(device_.getDisplayId()),device_.width(),device_.height());
