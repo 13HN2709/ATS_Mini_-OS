@@ -57,11 +57,21 @@ bool TunerDriver::begin(uint32_t initialFrequencyKHz) {
                static_cast<uint16_t>(constrain(initialFrequencyKHz / 10UL,
                                                kMinFrequency10KHz, kMaxFrequency10KHz)),
                kDefaultSpacing10KHz);
+
+  // Mirror the known-good ATS Mini Dev FM setup sequence. These settings
+  // configure the receiver after setFM() has selected the startup frequency.
+  radio_.setTuneFrequencyAntennaCapacitor(1);
+  radio_.setSeekFmLimits(kMinFrequency10KHz, kMaxFrequency10KHz);
+  radio_.setSeekFmRssiThreshold(0);
+  radio_.setSeekFmSNRThreshold(1);
+
   radio_.setVolume(kDefaultVolume);
   radio_.RdsInit();
   radio_.setRdsConfig(1, 2, 2, 2, 2);
 
-  // Enable the amplifier only after SI4735 setup and volume configuration.
+  // Give the receiver time to settle before making the audio path live.
+  // Keep the amplifier disabled and the external mute asserted during setup.
+  delay(100);
   digitalWrite(kAmplifierEnablePin, HIGH);
   delay(5);
   digitalWrite(kAudioMutePin, LOW);
