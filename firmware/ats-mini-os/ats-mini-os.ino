@@ -5,6 +5,7 @@
 #include "src/display/DisplayDriver.h"
 #include "src/input/EncoderInput.h"
 #include "src/network/WifiClient.h"
+#include "src/system/PartitionDiagnostics.h"
 
 namespace {
 constexpr uint32_t SERIAL_BAUD = 115200;
@@ -22,6 +23,7 @@ void setup() {
   Serial.begin(SERIAL_BAUD); delay(250); performance.begin();
   Serial.println(); Serial.println("ATS Mini OS - modular FM bring-up");
   Serial.println("Display uses ATS Mini DEV reference configuration; hardware not yet validated.");
+  PartitionDiagnostics::printToSerial();
   encoder.begin();
   if (display.begin()) Serial.println("[DISPLAY] first UI initialized.");
   if (radio.begin(DEFAULT_FM_FREQUENCY_KHZ))
