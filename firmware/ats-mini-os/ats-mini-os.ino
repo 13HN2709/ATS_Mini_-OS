@@ -4,6 +4,7 @@
 #include "src/system/PerformanceManager.h"
 #include "src/display/DisplayDriver.h"
 #include "src/input/EncoderInput.h"
+#include "src/network/WifiClient.h"
 
 namespace {
 constexpr uint32_t SERIAL_BAUD = 115200;
@@ -12,6 +13,7 @@ PerformanceManager performance;
 RadioCore radio;
 DisplayDriver display;
 EncoderInput encoder;
+WifiClient wifi;
 uint32_t lastStatusMs = 0;
 uint32_t encoderEventCount = 0;
 const char* lastEncoderEvent = "WAIT";
@@ -25,10 +27,12 @@ void setup() {
   if (radio.begin(DEFAULT_FM_FREQUENCY_KHZ))
     Serial.printf("Radio ready: %.1f MHz\n",radio.snapshot().frequencyKHz/1000.0f);
   else Serial.println("Radio init failed; tuner module reports not ready.");
+  wifi.begin();
   Serial.printf("CPU profile: %s\n",performance.profileName());
 }
 void loop() {
   performance.update();
+  wifi.update();
   encoder.update();
   EncoderEvent inputEvent;
   while (encoder.poll(inputEvent)) {
