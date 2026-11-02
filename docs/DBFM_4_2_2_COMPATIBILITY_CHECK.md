@@ -39,7 +39,7 @@ Die `partitions.csv` des ATS-Mini-OS-Scaffolds ist aktuell identisch mit der Ref
 
 ## Vergleich mit dem aktuellen ATS-Mini-OS-Scaffold und Build #56
 
-Der aktuelle Scaffold enthält noch keine gleichwertige Storage-Schicht: In `ats-mini-os.ino` werden aktuell weder LittleFS noch Preferences initialisiert oder verwendet. Damit sind `memories.json`, EiBi-Schedules und die vorhandene Speicherlogik noch nicht in das neue OS übernommen.
+Das OS besitzt bereits `src/settings/SettingsStore.h/.cpp` für die letzte FM-Frequenz. Dieses Modul nutzt `Preferences.begin("atsmini_os", false)` ohne explizite Partitionsbezeichnung, also die Standard-NVS-Partition. Das unterscheidet sich von `ats-mini-dev`, dessen `Storage.h` `STORAGE_PARTITION "settings"` verwendet. Das OS hat außerdem noch keine LittleFS-Implementierung für `/schedules.bin`, `memories.json` oder EiBi-Schedules. Vor einer Übernahme muss geklärt werden, welche Partitionen die laufende DBFM-Umgebung tatsächlich anbietet und wie die bestehende Referenz sie auflöst; nicht blind auf `settings` umstellen und keinesfalls formatieren.
 
 Build #56: [GitHub Actions Run 41476309903](https://github.com/13HN2709/ATS_Mini_-OS/actions/runs/41476309903)
 
@@ -63,6 +63,8 @@ Bei einem normalen App-Image, das in einen DBFM-Slot installiert wird, wird nich
 - [x] Referenz-Partitionstabelle von `ats-mini-dev` mit der ATS-Mini-OS-Datei vergleichen: identisch.
 - [x] Referenz-Speichermechanismen lesen: Preferences über `settings`, EiBi über LittleFS `/schedules.bin`.
 - [x] Build #56 anhand der erzeugten OSPI-/QSPI-Artefakte auswerten.
+- [x] Vorhandenes OS-SettingsStore-Modul geprüft: Preferences nutzt aktuell Standard-NVS statt explizit `settings`.
+- [ ] Verifizieren, welche NVS-/LittleFS-Partitionen das laufende DBFM-Setup für die App tatsächlich bereitstellt.
 - [ ] Die benötigten Storage-Funktionen von `ats-mini-dev` mit der Architektur des OS abgleichen, bevor Code übernommen wird.
 - [ ] LittleFS-Initialisierung und Fehlerverhalten für das Ziel-OS festlegen; bestehende Dateien nicht formatieren oder löschen.
 - [ ] Preferences-/Settings-Zugriffe so planen, dass keine DBFM-ENV-/DES-Regionen versehentlich überschrieben werden.
