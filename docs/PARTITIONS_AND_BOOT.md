@@ -1,72 +1,73 @@
 # Partitionen, Bootpfad und Kompatibilität
 
-**Status:** DBFM v4.2.2 (DES) ist anhand des zugehörigen Release-README als dokumentierte Referenz identifiziert. Das tatsächliche Layout des Geräts und die Kompatibilität der aktuellen ATS-Mini-OS-App sind noch nicht am Gerät verifiziert. Keine Flash-Freigabe.
+**Status:** Referenzlayout aus `ats-mini-dev` und Build #56 wurden quellenbasiert geprüft. Der Nutzer bestätigt den erfolgreichen Betrieb von `ats-mini-dev` in beiden DBFM-Slots einschließlich LittleFS-Dateien. Das aktuelle ATS-Mini-OS-Scaffold besitzt diese Storage-Funktionen noch nicht vollständig. Keine Flash-Freigabe.
 
 ## Aktueller Referenzstand
 
-- Der Nutzer bestätigt, dass sein ATS Mini V4 mit **GNBD ATS Mini Dualboot / DBFM v4.2.2 (DES)** läuft und vorerst auf dieser Version bleiben soll.
-- Release-Dokumentation: https://github.com/GNBD/ats-mini-dualboot/tree/v4.2.2-dualboot
-- DBFM v4.2.2 dokumentiert N16R8 (16 MB Flash + 8 MB OPI-PSRAM), `FlashSize=16M`, APP0 bei `0x010000`, APP1 bei `0x390000`, je 3,5 MiB, Recovery bei `0x860000` sowie ein DES-Layout mit zwei Partitionstabellen.
-- Die Werte aus dem Release-README sind Sollwerte, kein direkter Auslesebeweis der tatsächlichen Partitionstabelle oder der aktiven DES-Umgebung am Gerät.
+- Gerät: AMNVOLT ATS Mini V4, N16R8, laut Nutzer 16 MB Flash / 8 MB OPI-PSRAM.
+- Bootmanager: GNBD DBFM v4.2.2 (DES); Version beibehalten, nicht aktualisieren.
+- Release-Referenz: https://github.com/GNBD/ats-mini-dualboot/tree/v4.2.2-dualboot
+- DBFM-Release-Dokumentation nennt APP0 bei `0x010000`, APP1 bei `0x390000`, je 3,5 MiB, Recovery bei `0x860000`, LittleFS bei `0xA00000` sowie ENV0/ENV1 bei `0xF9D000` / `0xFBD000`.
+- Diese Werte sind dokumentierte Referenzwerte, kein direkter Auslesebeweis der tatsächlichen DES-Auswahl oder des Gerätezustands.
 
-## Kritischer Konfigurationsunterschied
+## Was der Praxistest mit ats-mini-dev belegt
 
-- `firmware/ats-mini-os/partitions.csv` entspricht weiterhin der Referenz aus `ats-mini-dev`, die bis `0x800000` (8 MiB) reicht und APP0/APP1 an anderen Offsets anlegt.
-- `.github/workflows/ats-mini-os-first-compile.yml` baut derzeit explizit mit `FlashSize=8M` und prüft die erzeugten `flash_args` auf `8MB`.
-- Diese 8-MiB-Referenz ist **nicht kompatibel mit dem dokumentierten DBFM-v4.2.2-DES-Partitionslayout** und darf nicht als Partitionstabelle oder Installationsanleitung für das Gerät verwendet werden.
-- Ein reines App-Image enthält zwar nicht die Partitionstabelle als installierte Gerätekonfiguration; trotzdem müssen sein Header/Buildprofil, die verwendeten Partition-Labels und die Größe gegen das tatsächliche Ziel geprüft werden. Aus dem bloßen Vorhandensein einer `.ino.bin` folgt keine Flash-Freigabe.
-- Das aktuelle OS-README beschreibt einen Scaffold, in dem Display-/Encoder-Ansteuerung und vollständige Radio-Firmware noch fehlen. Ein Compile-Erfolg ist noch kein erfolgreicher Radio-Betrieb.
+Der Nutzer bestätigt, dass `ats-mini-dev` in beiden Slots lief und LittleFS-Dateien einschließlich EiBi-Schedules und `memories.json` nutzte. Die Quellcodeprüfung von `13HN2709/ats-mini-dev` (main) bestätigt:
 
-## Vor einem späteren App-Image- oder Flash-Schritt zu prüfen
+- `ats-mini/partitions.csv`: App0 `0x10000 / 0x300000`, App1 `0x310000 / 0x300000`, LittleFS `0x610000 / 0x1d0000`, Settings `0x7e0000 / 0x10000`, Coredump `0x7f0000 / 0x10000`.
+- `ats-mini/Storage.h`: `STORAGE_PARTITION "settings"`.
+- `ats-mini/Storage.cpp`: Preferences-Speicherung über die Partition `settings`.
+- `ats-mini/EIBI.cpp`: EiBi-Datei `/schedules.bin` und temporäre Datei `/schedules.tmp` auf LittleFS.
 
-- Tatsächliches Flash-/PSRAM-Profil des Geräts.
-- Aktive DBFM-Version, DES-Tabellenauswahl und tatsächliche Partitionstabelle.
-- Exakter Slot und sein Zustand (frei, aktiv, Standby); den aktiven Slot nicht überschreiben.
-- Größe, Offset und erwartetes Format des App-Images.
-- Ob die Firmware benötigte Labels/Partitionen (`nvs`, `littlefs`, `settings` etc.) im DBFM-v4.2.2-Layout korrekt findet und verwendet.
-- OTA-/Update-Verfahren und mögliche automatische Slot-Auswahl.
-- Backup vollständig, lesbar und Wiederherstellungsweg bekannt.
-- Verhalten bei fehlgeschlagenem Start und Rückkehr zum bisherigen Slot.
-- Signatur-, Header-, Verschlüsselungs- oder Prüfsummenanforderungen, falls vorhanden.
+Die ATS-Mini-OS-Partitionstabelle ist aktuell identisch mit der Referenzdatei aus `ats-mini-dev`. Die Abweichung von der dokumentierten DBFM-Tabelle ist **allein kein Beweis für Inkompatibilität**: Die vom Nutzer bestätigte Praxis zeigt, dass die Referenzfirmware in diesem Setup funktionierte. Das bedeutet nicht automatisch, dass das neue OS bereits gleichwertige Storage-Zugriffe oder denselben Runtime-Pfad besitzt.
+
+## ATS-Mini-OS-Scaffold und Build #56
+
+- Das aktuelle Scaffold verwendet `FlashSize=8M` für OSPI/QSPI und enthält die Referenz-Partitionstabelle aus `ats-mini-dev`.
+- Die aktuelle `ats-mini-os.ino` initialisiert bzw. verwendet noch keine gleichwertige LittleFS-/Preferences-Storage-Schicht.
+- Build #56: https://github.com/13HN2709/ATS_Mini_-OS/actions/runs/41476309903
+- App-Binärdateien: OSPI 956.624 Bytes; QSPI 954.368 Bytes. Beide passen größenmäßig in einen 3,5-MiB-Slot und besitzen ESP-Image-Magic `E9`.
+- Beide Deskriptoren zeigen `arduino-lib-builder`; der Name ist kein bestätigter Blocker. `ATSM` bei Offset 288 fehlt, aber ist nicht als allgemeine DBFM-v4.2.2-Installationsvoraussetzung bestätigt.
+- Build-Erfolg und Dateigröße sind kein Nachweis vollständiger Radio-Funktion oder Slot-Kompatibilität.
 
 ## Schutzanforderungen
 
 1. DBFM v4.2.2 nicht aktualisieren.
-2. Bootloader, Partitionstabellen, `otadata`, Recovery und Settings-Regionen nicht verändern.
-3. Kein Merged-/Full-Flash-Image und keine 8-MiB-Standard-Partitionstabelle auf das Gerät schreiben.
-4. Keine automatische Slot-Umschaltung und kein Überschreiben des aktiven Slots.
-5. Eine frühere Erwähnung von `ATSMiniFULLBackup.nbin` (16 MB) ist kein Nachweis, dass eine aktuelle, vollständige und lesbare Sicherung verfügbar ist. Vor einem riskanten Schritt muss das überprüft werden.
-6. Ein erfolgreicher Compile-Test ist keine Flash-Freigabe.
+2. Bootloader, tatsächliche Partitionstabelle, `otadata`, Recovery und DES-Tabellen nicht verändern.
+3. Kein Merged-/Full-Flash-Image und keine Standard-Partitionstabelle auf das Gerät schreiben.
+4. Nicht den aktiven Slot überschreiben und keine Slot-Umschaltung auf Verdacht durchführen.
+5. Backup und Wiederherstellungsweg vor einem späteren riskanten Schritt verifizieren.
+6. Erst die Storage- und Runtime-Abhängigkeiten des neuen OS mit der funktionierenden Referenz vergleichen.
+7. Ein erfolgreicher Compile-Test ist keine Flash-Freigabe.
 
 ## Nachweisprotokoll
 
 | Prüfpunkt | Nachweis / Quelle | Status |
 |---|---|---|
-| DBFM-Version | Nutzerangabe: v4.2.2; Release-README geprüft | Dokumentierter Referenzstand |
-| DBFM-Soll-Slots | Release-README: APP0 `0x010000`, APP1 `0x390000`, je 3,5 MiB | Dokumentiert, Gerät noch nicht ausgelesen |
-| DBFM-Soll-Recovery | Release-README: `0x860000` | Dokumentiert |
-| ATS-Mini-OS-Partitionstabelle | CSV bis 8 MiB, andere Offsets | Für DBFM v4.2.2 nicht verwenden |
-| ATS-Mini-OS Buildprofil | Workflow verlangt `FlashSize=8M` | Blocker für flashbereites Image |
-| Vollständige Firmware-Funktionalität | README kennzeichnet Scaffold; Display/Encoder fehlen | Nicht flashbereit für normalen Radioeinsatz |
-| Imageformat/-größe/-Hash | Kein neues geprüftes Artefakt in dieser Prüfung | Offen |
-| Aktiver Slot / DES-Tabellenauswahl | Kein Gerätereport/Dump vorliegend | Offen |
-| Backup aktuell und lesbar | Noch nicht verifiziert | Offen |
+| DBFM-Version | Nutzerangabe v4.2.2; Release-README | Dokumentierte Referenz |
+| DBFM-Soll-Slots | Release-README | Dokumentiert, Gerät nicht ausgelesen |
+| ats-mini-dev in App0 und App1 | Nutzererfahrung | Praktisch bestätigt |
+| LittleFS mit EiBi / memories.json | Nutzererfahrung; EIBI.cpp bestätigt `/schedules.bin` | Praktisch bestätigt |
+| Referenz-Partitionstabelle im OS | CSV-Dateien verglichen | Identisch mit ats-mini-dev |
+| OS-Storage-Schicht | aktueller Scaffold geprüft | Noch nicht implementiert/übernommen |
+| Build #56 App-Größe | erzeugte Artefakte | Geprüft, beide unter 3,5 MiB |
+| Tatsächlicher aktiver Slot / DES-Tabelle | kein Gerätereport/Dump | Offen |
+| Vollständige Radiofunktion | Scaffold-Hinweis im Quellcode | Nicht nachgewiesen |
+| Flash-Freigabe | kein Hardwaretest | Nicht freigegeben |
 
 ## Nächster sicherer Ablauf
 
-1. Buildkonfiguration und App-Abhängigkeiten für das DBFM-v4.2.2-N16R8-Ziel vorbereiten; keine Partitionstabelle des DBFM überschreiben.
-2. Den aktuellen Scaffold und den geplanten Testumfang prüfen; klar festlegen, ob ein Diagnose-App-Test oder eine vollständige Radio-Firmware das Ziel ist.
-3. Erst nach ausdrücklicher Zustimmung des Nutzers den manuellen Compile-Workflow starten.
-4. Artefakt lesend prüfen: Dateiname, Commit, Profil, Header, Größe und SHA-256. Noch keine Flash-Freigabe allein aus einem erfolgreichen Build ableiten.
-5. Vor einem Flash eine genaue Vorlage mit Zielslot, Schreibbereichen, Backup-/Rückfallweg und verbleibenden Risiken vorlegen.
+1. `ats-mini-dev` Storage-Initialisierung, Preferences-Partition und LittleFS-Init vollständig prüfen.
+2. Die benötigte Storage-Schnittstelle für ATS Mini OS definieren und modular implementieren; vorhandene Dateien dürfen nicht automatisch formatiert oder gelöscht werden.
+3. Runtime-Partitionzugriffe und Fehlerverhalten statisch prüfen.
+4. Nutzer startet anschließend den manuellen Compile-Workflow; keine automatische Action aus dieser Dokumentationsänderung.
+5. Artefakt lesend prüfen und separat einen Installationsplan mit Zielslot, exakter Datei, Adressen und Wiederherstellungsweg vorlegen.
 
 ## Explizit ausgeschlossen
 
-- Kein Upgrade von DBFM v4.2.2.
+- Kein DBFM-Upgrade.
 - Kein Bootloader-Flash.
-- Keine Partitionstabelle schreiben oder reparieren.
-- Keine Änderung an `otadata`.
-- Kein Merged-/Full-Flash-Image als App-Slot-Image verwenden.
-- Keine Slot-Umschaltung auf Verdacht.
-- Kein automatischer Build-/GitHub-Actions-Start ohne ausdrückliche Zustimmung.
+- Keine Änderung an der Geräte-Partitionstabelle oder `otadata`.
+- Kein Merged-/Full-Flash-Image als App-Slot-Image.
+- Kein automatischer Build-/GitHub-Actions-Start.
 - Kein Flash und keine Änderung am laufenden Gerät.
