@@ -1,4 +1,7 @@
-# Reference partition table from ats-mini-dev. Not yet approved for the final OS install path.
+# Partition table copied from 13HN2709/ats-mini-dev (main).
+# Keep this table identical to the tested reference. Do not change offsets or sizes
+# without an explicit project decision. A successful compile does not validate
+# flashing, boot-slot selection, or compatibility with the installed bootloader.
 # Name,   Type, SubType,  Offset,   Size,     Flags
 nvs,      data, nvs,      0x9000,   0x5000,
 otadata,  data, ota,      0xe000,   0x2000,
