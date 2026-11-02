@@ -128,9 +128,8 @@ jobs:
             echo "Firmware binary was not produced; see COMPILE-LOG.txt." > "$OUT/NO-FIRMWARE-BINARY.txt"
           fi
 
-          # Archive the actual staged sketch tree, including vendor sources used by this compile.
-          # git archive would omit these runner-staged files.
-          (cd firmware/ats-mini-os && zip -qr "../../$OUT/ATS-Mini-OS-Source-Code-$LABEL.zip" .)
+          # The source directory itself is uploaded as a GitHub artifact below.
+          # GitHub creates the downloadable ZIP, so do not create a nested source ZIP here.
 
           # Preserve diagnostic output even when compilation failed before creating a binary.
           if [ -s "build/$PROFILE/COMPILE-LOG.txt" ]; then
@@ -146,7 +145,7 @@ jobs:
             echo "FlashSize: 8M"
             echo "ESP32 Arduino core: 3.3.12"
             echo "PSRAM mode: ${{ matrix.psram }}"
-            echo "Third-party implementation sources are staged into the ZIP from the installed libraries used by this build."
+            echo "Third-party implementation sources are staged into the source artifact from the installed libraries used by this build."
             echo "This ZIP does not include the complete offline toolchain."
             echo "Compile success is not hardware or partition compatibility validation."
             echo "OTA package intentionally not emitted until OTA/partition compatibility is verified."
@@ -161,12 +160,12 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Upload source ZIP separately
-        if: always() && hashFiles(format('release-artifacts/{0}/*Source-Code*.zip', matrix.profile)) != ''
+      - name: Upload source tree separately
+        if: always() && hashFiles('firmware/ats-mini-os/ats-mini-os.ino') != ''
         uses: actions/upload-artifact@v4
         with:
           name: ATS-Mini-OS-Source-Code-${{ matrix.label }}
-          path: release-artifacts/${{ matrix.profile }}/*Source-Code*.zip
+          path: firmware/ats-mini-os/
           if-no-files-found: error
           retention-days: 14
 
