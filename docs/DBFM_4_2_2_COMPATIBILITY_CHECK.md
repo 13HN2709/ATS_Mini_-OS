@@ -64,7 +64,8 @@ Bei einem normalen App-Image, das in einen DBFM-Slot installiert wird, wird nich
 - [x] Referenz-Speichermechanismen lesen: Preferences über `settings`, EiBi über LittleFS `/schedules.bin`.
 - [x] Build #56 anhand der erzeugten OSPI-/QSPI-Artefakte auswerten.
 - [x] Vorhandenes OS-SettingsStore-Modul geprüft: Preferences nutzt aktuell Standard-NVS statt explizit `settings`.
-- [ ] Verifizieren, welche NVS-/LittleFS-Partitionen das laufende DBFM-Setup für die App tatsächlich bereitstellt.
+- [x] Read-only Diagnosemodul `src/system/PartitionDiagnostics.h/.cpp` ergänzt; gibt beim Start die Partitionen aus, die die ESP-IDF-Partition-API der laufenden App meldet. Es führt keinerlei Mount-, Format-, Lösch- oder Schreiboperationen aus.
+- [ ] Manuell kompilieren und danach – erst nach separater Freigabe – den seriellen Diagnose-Output auf dem Gerät erfassen, um die tatsächlich sichtbaren Partitionen zu bestimmen.
 - [ ] Die benötigten Storage-Funktionen von `ats-mini-dev` mit der Architektur des OS abgleichen, bevor Code übernommen wird.
 - [ ] LittleFS-Initialisierung und Fehlerverhalten für das Ziel-OS festlegen; bestehende Dateien nicht formatieren oder löschen.
 - [ ] Preferences-/Settings-Zugriffe so planen, dass keine DBFM-ENV-/DES-Regionen versehentlich überschrieben werden.
@@ -77,7 +78,7 @@ Bei einem normalen App-Image, das in einen DBFM-Slot installiert wird, wird nich
 - Keine Änderungen an der laufenden Gerätekonfiguration, DES-Tabellen, Recovery oder dem bekannten funktionierenden Slot.
 - Das 8-MiB-Merged-Image aus Build #56 ist nur ein Review-Artefakt und darf nicht als DBFM-App-Image geflasht werden.
 - Das derzeitige ATS-Mini-OS ist ein Scaffold; es ist noch keine voll funktionsfähige Radio-Firmware.
-- Die Analyse und Dokumentationsänderung haben keinen Build und keinen Flash-/Geräteschreibvorgang ausgelöst.
+- Die Analyse und Dokumentations-/Quellcodeänderungen haben keinen Build und keinen Flash-/Geräteschreibvorgang ausgelöst. Das neue Diagnosemodul ist noch nicht kompiliert oder auf Hardware ausgeführt.
 
 ## Quellen
 
