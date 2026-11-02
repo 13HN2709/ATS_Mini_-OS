@@ -118,16 +118,16 @@ jobs:
             LABEL="QSPI-DE"
           fi
 
-          # --output-dir gives each matrix profile a deterministic binary location.
-          APP_BIN="build/$PROFILE/ats-mini-os.ino.bin"
-          if [ -s "$APP_BIN" ]; then
+          # Arduino CLI may place ESP32-S3 outputs in a nested FQBN directory.
+          # Discover the real output path instead of assuming it is directly under build/$PROFILE.
+          APP_BIN="$(find "build/$PROFILE" -type f -name 'ats-mini-os.ino.bin' -print -quit)"
+          if [ -n "$APP_BIN" ] && [ -s "$APP_BIN" ]; then
             cp "$APP_BIN" "$OUT/ATS-Mini-OS-$LABEL.ino.bin"
           else
-            echo "Expected application binary missing: $APP_BIN" >&2
-            find firmware/ats-mini-os -maxdepth 2 -type f -name '*.bin' -print || true
+            echo "Expected application binary missing under build/$PROFILE" >&2
+            find "build/$PROFILE" -maxdepth 5 -type f -print || true
             echo "Firmware binary was not produced; see COMPILE-LOG.txt." > "$OUT/NO-FIRMWARE-BINARY.txt"
           fi
-
           # The source directory itself is uploaded as a GitHub artifact below.
           # GitHub creates the downloadable ZIP, so do not create a nested source ZIP here.
 
@@ -151,22 +151,25 @@ jobs:
             echo "OTA package intentionally not emitted until OTA/partition compatibility is verified."
           } > "$OUT/BUILD-NOTES.txt"
 
-          # Assemble a review-only bundle for planning the first flash.
-          # This is NOT an approved flashing package: bootloader/partition compatibility
-          # with the installed Dual Boot setup must be checked before any device write.
+          # Assemble a review-only bundle from the actual nested build output.
+          # This is NOT an approved flashing package.
           FLASH_REVIEW="$OUT/FIRST-FLASH-REVIEW-ONLY"
           mkdir -p "$FLASH_REVIEW"
-          # Preserve actual outputs; report missing flash inputs instead of assuming them.
+          BUILD_ROOT="build/$PROFILE"
           for file in \
-            "build/$PROFILE/ats-mini-os.ino.bin" \
-            "build/$PROFILE/ats-mini-os.ino.merged.bin" \
-            "build/$PROFILE/ats-mini-os.ino.bootloader.bin" \
-            "build/$PROFILE/ats-mini-os.ino.partitions.bin" \
-            "build/$PROFILE/boot_app0.bin" \
-            "build/$PROFILE/flash_args" \
-            "build/$PROFILE/partitions.csv"; do
-            if [ -s "$file" ]; then cp "$file" "$FLASH_REVIEW/"; fi
+            "ats-mini-os.ino.bin" \
+            "ats-mini-os.ino.merged.bin" \
+            "ats-mini-os.ino.bootloader.bin" \
+            "ats-mini-os.ino.partitions.bin" \
+            "boot_app0.bin" \
+            "flash_args" \
+            "partitions.csv"; do
+            source_file="$(find "$BUILD_ROOT" -type f -name "$file" -print -quit)"
+            if [ -n "$source_file" ] && [ -s "$source_file" ]; then
+              cp "$source_file" "$FLASH_REVIEW/"
+            fi
           done
+
           if [ -s "$FLASH_REVIEW/flash_args" ]; then
             {
               echo "Generated flash arguments from this build:"
@@ -178,16 +181,11 @@ jobs:
           else
             cat > "$FLASH_REVIEW/FLASH-ADDRESSES.txt" <<'EOF'
           NO GENERATED flash_args FILE WAS FOUND.
-          Addresses from ATS-Mini-Dev are reference values only, not verified outputs.
-          Do not assume boot_app0.bin exists if it is absent from this bundle.
-          Do not flash until the exact ATS-Mini-Dev offsets and files are confirmed.
+          Addresses are not verified for this build. Do not flash this bundle.
           EOF
           fi
-          for required in "ats-mini-os.ino.bin" "ats-mini-os.ino.bootloader.bin" "ats-mini-os.ino.partitions.bin" "boot_app0.bin" "flash_args" "partitions.csv"; do
-            if [ ! -s "$FLASH_REVIEW/$required" ]; then
-              echo "MISSING from review bundle: $required" >> "$FLASH_REVIEW/README-FIRST-FLASH-REVIEW.txt"
-            fi
-          done
+
+          # Write the safety note first, then append missing-file diagnostics.
           cat > "$FLASH_REVIEW/README-FIRST-FLASH-REVIEW.txt" <<EOF
           ATS Mini OS - FIRST FLASH REVIEW ONLY
           Profile: $LABEL
@@ -196,14 +194,18 @@ jobs:
           PSRAM mode: ${{ matrix.psram }}
 
           SAFETY: DO NOT FLASH THIS BUNDLE YET.
-          This is a review bundle to inspect the generated build outputs and flash arguments.
-          The merged image can include bootloader and partition data and may overwrite an
-          existing Dual Boot setup. Do not use it until bootloader, offsets, partition table,
-          and the exact first-flash method are confirmed against the known-good ATS-Mini-Dev
-          configuration and the user's backup.
+          This bundle is for inspecting actual generated outputs and flash arguments.
+          The merged image can include bootloader and partition data and may overwrite
+          an existing Dual Boot setup. Confirm offsets, partitions, bootloader and method
+          against the known-good ATS-Mini-Dev configuration and the user's backup.
           No device write is performed by this workflow.
           EOF
 
+          for required in "ats-mini-os.ino.bin" "ats-mini-os.ino.bootloader.bin" "ats-mini-os.ino.partitions.bin" "boot_app0.bin" "flash_args" "partitions.csv"; do
+            if [ ! -s "$FLASH_REVIEW/$required" ]; then
+              echo "MISSING from review bundle: $required" >> "$FLASH_REVIEW/README-FIRST-FLASH-REVIEW.txt"
+            fi
+          done
       - name: Upload first-flash review bundle (not for flashing yet)
         if: always() && hashFiles(format('release-artifacts/{0}/FIRST-FLASH-REVIEW-ONLY/*', matrix.profile)) != ''
         uses: actions/upload-artifact@v4
