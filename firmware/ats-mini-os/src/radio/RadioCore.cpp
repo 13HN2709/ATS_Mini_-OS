@@ -1,8 +1,6 @@
 #include "RadioCore.h"
 
 namespace {
-constexpr uint32_t kFrequencySaveDelayMs = 3000;
-
 void copyField(char* dst, size_t capacity, const char* src) {
   if (!capacity || !src) return;
   size_t i = 0;
@@ -12,9 +10,9 @@ void copyField(char* dst, size_t capacity, const char* src) {
 }
 
 bool RadioCore::begin(uint32_t initialFrequencyKHz) {
-  settings_.begin();
-  const uint32_t startupFrequency = settings_.lastFmFrequencyKHz(initialFrequencyKHz);
-  ready_ = tuner_.begin(startupFrequency);
+  // First milestone deliberately avoids persistent storage: boot and test the
+  // tuner/display/RDS path before adding settings, memories or schedules.
+  ready_ = tuner_.begin(initialFrequencyKHz);
   if (!ready_) return false;
 
   tuner_.refreshSignalQuality();
@@ -25,9 +23,7 @@ bool RadioCore::begin(uint32_t initialFrequencyKHz) {
   snapshot_.generation = ++generation_;
   lastPollMs_ = millis();
   lastRdsPollMs_ = lastPollMs_;
-  lastTuneChangeMs_ = lastPollMs_;
-  Serial.printf("[SETTINGS] NVS=%s savedFM=%lu kHz\n",
-                settings_.isReady() ? "ready" : "unavailable",
+  Serial.printf("[RADIO] Test mode; no settings/memories/schedules storage. Start=%lu kHz\n",
                 static_cast<unsigned long>(snapshot_.frequencyKHz));
   return true;
 }
@@ -55,14 +51,6 @@ void RadioCore::update() {
       snapshot_.rdsAvailable = true;
     }
   }
-
-  if (frequencySavePending_ && now - lastTuneChangeMs_ >= kFrequencySaveDelayMs) {
-    const bool saved = settings_.saveLastFmFrequencyKHz(snapshot_.frequencyKHz);
-    Serial.printf("[SETTINGS] FM frequency save: %s (%lu kHz)\n",
-                  saved ? "OK" : "FAILED",
-                  static_cast<unsigned long>(snapshot_.frequencyKHz));
-    frequencySavePending_ = false;
-  }
 }
 
 bool RadioCore::tune(uint32_t frequencyKHz) {
@@ -70,8 +58,6 @@ bool RadioCore::tune(uint32_t frequencyKHz) {
       !tuner_.tune(frequencyKHz)) return false;
   snapshot_.frequencyKHz = tuner_.frequencyKHz();
   snapshot_.generation = ++generation_;
-  lastTuneChangeMs_ = millis();
-  frequencySavePending_ = true;
   return true;
 }
 
