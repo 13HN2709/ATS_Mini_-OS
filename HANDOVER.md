@@ -956,3 +956,14 @@ Die Header- und Implementierungsdateien der offiziellen PU2CLR-Version 2.1.8 wur
 - Build-Artefakte des bisherigen Laufs heißen `ats-mini-os-compile-report-esp32s3-ospi` und `ats-mini-os-compile-report-esp32s3-qspi`; je ca. 46 MB und Compile-Reports, kein bestätigter flashbarer Firmware-Release. Ablaufdatum 16.11.2026.
 - Display-UI ist derzeit RDS-Testansicht (Frequenz, PS, PI/PTY, RT, Stereo/Mono, RSSI/SNR und RDS-Status). RT-Scrolling und Encoderbedienung/volle Radiofunktionen sind noch nicht vollständig integriert bzw. verifiziert. Compile-Erfolg allein bestätigt keine Hardwarefunktion.
 
+
+
+## Buildstatus – Run 41367291150 (2026-11-02)
+
+- Nutzer hat den manuellen Compile-only-Run geteilt: https://github.com/13HN2709/ATS_Mini_-OS/actions/runs/41367291150
+- Branch: `dev/first-build-preparation`; getesteter Commit: `4e31ef4ca13c20337e095ce77e238a983bf41b26`.
+- Beide Jobs erfolgreich: `Compile-only / esp32s3-qspi` und `Compile-only / esp32s3-ospi`. Alle angezeigten Schritte einschließlich `Compile ATS Mini OS scaffold` und `Preserve compile report` waren erfolgreich.
+- Damit sind die vorher dokumentierten Änderungen für Hardware-Audio-Mute an GPIO3 und Backlight-PWM an GPIO38 in diesem Compile-Lauf enthalten und kompilieren in beiden Profilen.
+- Artefakte sind Compile-Reports, keine bestätigten flashbaren Firmware-Images: `ats-mini-os-compile-report-esp32s3-ospi` und `ats-mini-os-compile-report-esp32s3-qspi`; je 46,543,028 Bytes, erstellt am 2026-11-02, Ablauf 2026-11-16.
+- Grenzen: nur Kompilierung bestätigt. Keine physischen Tests für Audio-Mute, Verstärker, Backlight, Display oder Radio; nichts geflasht und Bootloader/Partitionslayout nicht geändert.
+- Nächster Schritt: späterer, kontrollierter Test am ATS Mini V4 nach ausdrücklicher Freigabe; zuerst die sichere Teststrategie und Image-/Partitionskompatibilität separat prüfen. Nutzer führt alle Workflows selbst aus.
