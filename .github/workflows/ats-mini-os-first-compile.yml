@@ -135,6 +135,45 @@ jobs:
             exit 1
           }
 
+      - name: Validate app image against DBFM slot limits (read-only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          PROFILE="${{ matrix.profile }}"
+          BUILD_OUT="build/$PROFILE"
+          APP_BIN="$(find "$BUILD_OUT" firmware/ats-mini-os/build -type f -name 'ats-mini-os.ino.bin' -print -quit 2>/dev/null || true)"
+          if [ -z "$APP_BIN" ] || [ ! -s "$APP_BIN" ]; then
+            echo "ERROR: Arduino app image was not found after compile." >&2
+            exit 1
+          fi
+          python - "$APP_BIN" <<'PY'
+          import sys
+          from pathlib import Path
+
+          path = Path(sys.argv[1])
+          image = path.read_bytes()
+          size = len(image)
+          slot_limit = int(3.5 * 1024 * 1024)
+
+          if image[0:1] != b"\\xE9":
+              raise SystemExit(f"ERROR: {path} does not begin with ESP image magic 0xE9.")
+          if size > slot_limit:
+              raise SystemExit(
+                  f"ERROR: app image is {size} bytes; DBFM slot limit is {slot_limit} bytes (3.5 MiB)."
+              )
+
+          project = image[0x50:0x50 + 32].split(b"\\0", 1)[0] if len(image) >= 0x70 else b""
+          version = image[0x30:0x30 + 32].split(b"\\0", 1)[0] if len(image) >= 0x50 else b""
+          atsm = image[288:292] == b"ATSM"
+
+          print(f"App image: {path}")
+          print(f"App image size: {size} / {slot_limit} bytes (DBFM 3.5 MiB slot limit)")
+          print(f"ESP app descriptor project: {project.decode('utf-8', errors='replace') or '(not readable)'}")
+          print(f"ESP app descriptor version: {version.decode('utf-8', errors='replace') or '(not readable)'}")
+          print(f"ATSM marker at offset 288: {'present' if atsm else 'not present'}")
+          print("Note: ATSM is reported for comparison; its absence alone is not treated as a DBFM rejection.")
+          PY
+
       - name: Prepare named firmware and source artifacts
         if: always()
         shell: bash
