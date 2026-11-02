@@ -61,12 +61,16 @@ bool RadioCore::tune(uint32_t frequencyKHz) {
   return true;
 }
 
-bool RadioCore::nextChannel(int8_t direction) {
-  if (!ready_ || direction == 0) return false;
-  int32_t target = static_cast<int32_t>(snapshot_.frequencyKHz) +
-                   (direction > 0 ? static_cast<int32_t>(kChannelStepKHz)
-                                  : -static_cast<int32_t>(kChannelStepKHz));
-  if (target > static_cast<int32_t>(kMaxFrequencyKHz)) target = kMinFrequencyKHz;
-  if (target < static_cast<int32_t>(kMinFrequencyKHz)) target = kMaxFrequencyKHz;
-  return tune(static_cast<uint32_t>(target));
+bool RadioCore::nextChannel(int16_t acceleratedDelta) {
+  if (!ready_ || acceleratedDelta == 0) return false;
+  // The input driver supplies signed 1/2/4/8/16-step deltas, matching ATS Mini
+  // Dev's acceleration factors. Wrap cleanly across the FM band limits.
+  const int32_t span = static_cast<int32_t>(kMaxFrequencyKHz - kMinFrequencyKHz + kChannelStepKHz);
+  int32_t offset = static_cast<int32_t>(snapshot_.frequencyKHz) -
+                   static_cast<int32_t>(kMinFrequencyKHz);
+  offset += static_cast<int32_t>(acceleratedDelta) * static_cast<int32_t>(kChannelStepKHz);
+  offset %= span;
+  if (offset < 0) offset += span;
+  const uint32_t target = kMinFrequencyKHz + static_cast<uint32_t>(offset);
+  return tune(target);
 }
