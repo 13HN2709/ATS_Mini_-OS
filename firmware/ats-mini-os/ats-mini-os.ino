@@ -6,6 +6,8 @@
 #include "src/input/EncoderInput.h"
 #include "src/network/WifiClient.h"
 #include "src/system/PartitionDiagnostics.h"
+#include "src/settings/SettingsStore.h"
+#include "src/storage/LittleFsStore.h"
 
 namespace {
 constexpr uint32_t SERIAL_BAUD = 115200;
@@ -15,6 +17,7 @@ RadioCore radio;
 DisplayDriver display;
 EncoderInput encoder;
 WifiClient wifi;
+SettingsStore settings;
 uint32_t lastStatusMs = 0;
 uint32_t encoderEventCount = 0;
 const char* lastEncoderEvent = "WAIT";
@@ -24,6 +27,14 @@ void setup() {
   Serial.println(); Serial.println("ATS Mini OS - modular FM bring-up");
   Serial.println("Display uses ATS Mini DEV reference configuration; hardware not yet validated.");
   PartitionDiagnostics::printToSerial();
+
+  if (settings.begin()) {
+    Serial.println("[STORAGE] Preferences opened on partition 'settings' (namespace atsmini_os).");
+  } else {
+    Serial.println("[STORAGE] Preferences partition 'settings' unavailable; no fallback partition used.");
+  }
+  LittleFsStore::begin();
+
   encoder.begin();
   if (display.begin()) Serial.println("[DISPLAY] first UI initialized.");
   if (radio.begin(DEFAULT_FM_FREQUENCY_KHZ))
