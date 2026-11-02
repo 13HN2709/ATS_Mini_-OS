@@ -26,10 +26,11 @@ RadioDnsFmIdentity RadioDnsIdentity::buildFm(uint32_t frequencyKHz,
                                              const char* gcc) {
   RadioDnsFmIdentity result{};
 
-  // FM frequency must be represented in 100-kHz units and rendered as five
-  // decimal digits (e.g. 103900 kHz -> "10390", 87500 kHz -> "08750").
+  // RadioDNS encodes FM frequency in 10-kHz units as five decimal digits:
+  // 103900 kHz -> "10390", 87500 kHz -> "08750". The radio may use 50-kHz
+  // channel spacing, so validate 10-kHz representability rather than 100 kHz.
   if (frequencyKHz < 87500 || frequencyKHz > 108000 ||
-      frequencyKHz % 100 != 0) {
+      frequencyKHz % 10 != 0) {
     result.status = RadioDnsIdentityStatus::InvalidFrequency;
     return result;
   }
