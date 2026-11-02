@@ -7,11 +7,42 @@
 
 ## Ziel und tatsächlicher Ausgangspunkt
 
-Der Nutzer verwendet **nicht mehr den DiamondRadio-Bootloader**. Er hat sein zuvor über die YDiamondRadio-Webseite erstelltes Backup des früheren Bootloader-/Partitionszustands zurückgespielt. Diese bekannte, wiederhergestellte Konfiguration ist die Ausgangsbasis für die weitere Planung.
+Der Nutzer bestätigt, dass auf seinem ATS Mini V4 der **GNBD ATS Mini Dualboot / DBFM in Version 4.2.2 (DES)** läuft. Der Nutzer bleibt vorerst bewusst bei **v4.2.2**; neuere Versionen werden nicht automatisch installiert. Der Link zur verwendeten Version ist: https://github.com/GNBD/ats-mini-dualboot/releases/tag/v4.2.2-dualboot
 
-Der Nutzer nennt das Gerät als AMNVOLT ATS Mini V4 mit 16 MB Flash. Für den ersten Flash-Test ist ausschließlich das bekannte **16-MB-OSPI-Setup** vorgesehen; die 8-MB-Konfiguration bleibt experimentell. Bootloader und Partitionierung sollen unangetastet bleiben. Der genaue Bootloadername und die tatsächlichen aktiven Partitionen müssen anhand des wiederhergestellten Setups belegt werden, statt sie zu erraten.
+Das README am Tag `v4.2.2-dualboot` beschreibt das Zielgerät als ESP32-S3 **N16R8** (16 MB Flash + 8 MB PSRAM) und nennt ein 16-MB-Layout mit zwei App-Slots sowie einer Recovery-Partition. Der Default-Branch des Repositorys hat inzwischen eine neuere Version; für die hier geplante Arbeit ist aber der vom Nutzer bestätigte Stand v4.2.2 maßgeblich. Keine Bootloader-Aktualisierung ohne ausdrückliche Entscheidung des Nutzers.
 
-## Was aus dem Repository bekannt ist
+## Nachgewiesene DBFM-v4.2.2-Angaben (aus README am Release-Tag)
+
+Der README-Stand `v4.2.2-dualboot` dokumentiert:
+- Bootmanager/Recovery: `0x860000`
+- APP0: `0x010000`
+- APP1: `0x390000`
+- App-Slot-Größe: jeweils 3,5 MiB
+- ESP32-S3 N16R8, 16 MB Flash und 8 MB PSRAM; FQBN nennt `FlashSize=16M`, `PSRAM=opi`, `CPUFreq=80`, `FlashMode=qio`
+- ESP32-S3-OTA-App-Image für einen Slot verwenden; kein Merged-/Full-Flash-Image in einen App-Slot schreiben.
+- Das Projekt warnt, dass externe Full-Flash-/Merged-Images die DES-Partitionstabellen beschädigen können.
+
+Die dokumentierte 16-MB-Partitionstabelle (Table A / ENV0) lautet:
+
+| Partition | Offset | Größe |
+|---|---:|---:|
+| Table A | `0x008000` | 4 KiB |
+| `nvs` | `0x009000` | 20 KiB |
+| `otadata` | `0x00E000` | 8 KiB |
+| `app0` | `0x010000` | 3,5 MiB |
+| `app1` | `0x390000` | 3,5 MiB |
+| `ffat` | `0x710000` | 1,3 MiB |
+| `recovery` | `0x860000` | 1,625 MiB |
+| `littlefs` | `0xA00000` | 5,58 MiB |
+| `rec_settings` | `0xF95000` | 32 KiB |
+| `settings` (ENV0) | `0xF9D000` | 128 KiB |
+| `settings` (ENV1) | `0xFBD000` | 128 KiB |
+| `coredump` | `0xFDF000` | 128 KiB |
+| Table B | `0xFFF000` | 4 KiB |
+
+Table B unterscheidet sich laut README beim `settings`-Offset. DBFM verwendet eine DES-Konfiguration mit zwei Partitionstabellen und unterschiedlichen Settings-Regionen für die beiden Umgebungen. Die obigen Werte sind die vom Release-README dokumentierten Sollwerte, **noch kein direkter Auslesebeweis für die Partitionstabelle des konkreten Geräts**.
+
+## Was aus dem ATS Mini OS Repository bekannt ist
 
 Die Datei `firmware/ats-mini-os/partitions.csv` verwendet aktuell folgende 8-MiB-Referenzaufteilung:
 
@@ -25,47 +56,46 @@ Die Datei `firmware/ats-mini-os/partitions.csv` verwendet aktuell folgende 8-MiB
 | Settings | `0x7E0000` | `0x10000` |
 | Coredump | `0x7F0000` | `0x10000` |
 
-Die Tabelle reicht bis `0x800000` (8 MiB). Sie entspricht der dokumentierten ATS-Mini-DEV-Referenz, ist aber **nicht** als bestätigte Partitionstabelle des wiederhergestellten 16-MB-Setups nachgewiesen. Sie darf nicht ungeprüft auf das Gerät geschrieben oder als sichere APP0-/APP1-Zuordnung behandelt werden.
+Diese Tabelle reicht bis `0x800000` (8 MiB) und ist **nicht mit dem dokumentierten DBFM-v4.2.2-DES-Layout kompatibel**. Sie darf weder auf das Gerät geschrieben noch als Grundlage für Slot-Offsets, Flash-Image-Erstellung oder einen Flash-Befehl verwendet werden.
 
-Das bevorzugte Buildprofil für die Zielhardware ist OSPI-DE: ESP32-S3, Arduino-ESP32 3.3.12, `FlashSize=8M`, `PSRAM=opi`, `CPUFreq=80`, `FlashMode=qio`. Die Projektanforderung, für den späteren Test das bekannte 16-MB-OSPI-Setup beizubehalten, bedeutet nicht, dass wir die FlashSize- oder Partitionswerte eigenmächtig ändern dürfen.
+Das bisherige OSPI-Buildprofil im OS-Projekt nennt teils `FlashSize=8M`; das passt nicht zum im DBFM-v4.2.2-README angegebenen N16R8-Profil mit `FlashSize=16M`. Vor dem Erstflash muss das konkrete Buildprofil kontrolliert und für die reale Hardware nachvollziehbar festgelegt werden. Werte dürfen nicht nur zum Beseitigen eines Buildproblems geändert werden.
 
-## Flash-Adresshinweise – nicht als Schreibanweisung verwenden
+## Sicherheitsregeln für den Erstflash
 
-Für übliche Arduino-ESP32-Images kommen häufig die Adressen Bootloader `0x0`, Partitionstabelle `0x8000`, `boot_app0.bin` `0xE000` und App `0x10000` vor. Diese Standardwerte belegen nicht, welche Adressen der wiederhergestellte Bootloader verwendet.
-
-Vor einem Flash-Schritt müssen wir anhand der wiederhergestellten Boot-/Partitionskonfiguration und des tatsächlichen Installationswegs nachweisen:
-- welcher Bootloader und welches Partitionslayout aktiv sind;
-- welche Partitionen/Slots existieren und wie sie ausgewählt werden;
-- welche Bereiche das gewählte Flash-Verfahren tatsächlich schreibt;
-- ob ein reines App-Image in den vorgesehenen Slot passt und vom vorhandenen Bootpfad akzeptiert wird.
-
-Insbesondere dürfen `otadata`, Bootloader und Partitionstabelle nicht versuchsweise verändert werden, um einen Slot zu erzwingen.
+- Nur ein **reines, passendes ESP32-S3-OTA-App-Image** darf als Kandidat für APP0/APP1 betrachtet werden.
+- Das Image muss nachweislich in den ausgewählten 3,5-MiB-Slot passen.
+- Bootloader (`0x0`), Partitionstabellen (`0x8000` und DBFM-DES-Tabelle), `otadata`, Recovery (`0x860000`) und Settings-Bereiche werden bei diesem App-Test nicht verändert.
+- Keine Merged-/Full-Flash-Datei und keine Standard-Partitionstabelle des normalen ATS-Mini-Firmwareprojekts verwenden.
+- Kein Slot-Wechsel und keine Änderung an der Bootauswahl auf Verdacht.
+- Der konkrete Installationsweg muss geprüft werden, damit er wirklich nur den freigegebenen App-Slot schreibt. Die Dokumentation des DBFM nennt interne OTA/Web-UI und externe esptool-Installation als unterschiedliche Wege; deren tatsächliche Schreibbereiche müssen für unseren konkreten Kandidaten klar sein.
+- Nutzer bleibt auf v4.2.2; kein Update auf den neueren Default-Branch.
 
 ## Freigabesperren vor jedem Flash-Versuch
 
-- [ ] Die zurückgespielte Sicherung ist vollständig, extern vorhanden und lesbar; Dateiname, Größe und SHA-256 sind protokolliert.
-- [ ] Der **tatsächlich wiederhergestellte Bootloader** und seine Version sind identifiziert.
-- [ ] Das aktive Partitionslayout des wiederhergestellten 16-MB-Setups ist durch einen verlässlichen Nachweis bestätigt.
-- [ ] Die Zuordnung der App-Slots und die Boot-/Recovery-Logik sind dokumentiert.
-- [ ] Der konkrete Flash-/Recovery-Weg und seine Schreibbereiche sind bekannt.
-- [ ] Das OSPI-/PSRAM-Profil der konkreten Hardware ist belegt.
-- [ ] Das exportierte App-Image ist eindeutig identifiziert; seine Größe ist kleiner/gleich der nachgewiesenen Zielpartition.
-- [ ] SHA-256, Git-Commit, Profil und Dateiname des geprüften Images sind festgehalten.
-- [ ] Es ist nachgewiesen, dass der Installationsweg keine nicht freigegebenen Bereiche verändert.
+- [ ] Das vorhandene vollständige Backup ist extern vorhanden und lesbar; Dateiname, Größe und SHA-256 sind protokolliert.
+- [ ] Das Gerät meldet bzw. zeigt DBFM v4.2.2 (DES); keine ungeprüfte Annahme über einen anderen Bootmanager.
+- [ ] Das tatsächliche aktive Partitionslayout und die DBFM-DES-Tabellenauswahl sind am Gerät oder durch einen zuverlässigen Dump bestätigt.
+- [ ] OSPI/PSRAM-Hardwareprofil des Geräts ist bestätigt.
+- [ ] Das Buildprofil ist mit N16R8 / 16 MB Flash / OPI-PSRAM konsistent; Abweichungen sind erklärt.
+- [ ] Das exportierte App-Image ist eindeutig identifiziert; Dateiformat und Größe sind geprüft und passen in den Zielslot.
+- [ ] SHA-256, Git-Commit, Buildprofil und Dateiname des geprüften Images sind festgehalten.
+- [ ] Der ausgewählte Installationsweg und alle Schreibbereiche sind geprüft; keine nicht freigegebenen Bereiche werden verändert.
+- [ ] Rückfallweg über das vollständige Backup ist verfügbar.
 - [ ] Der Nutzer erteilt eine **separate, ausdrückliche Freigabe** für genau diesen Flash-Schritt.
 
 Solange ein Punkt offen ist: **nicht flashen**.
 
 ## Sicherer nächster Schritt
 
-Die zuvor wiederhergestellte Konfiguration als maßgeblich behandeln und die Hinweise auf DiamondRadio als aktiven Bootloader aus der Erstflash-Planung entfernen. Anschließend nur lesend die verfügbaren Backup-/Recovery-Informationen und das passende Flash-Verfahren untersuchen. Danach eine kurze Entscheidungsvorlage mit nachgewiesenen Schreibbereichen, offenem Prüfbedarf und klarer Rückfallstrategie erstellen.
+Die DBFM-v4.2.2-Dokumentation ist jetzt die Referenz für Slot-Adressen und DES-Layout. Als nächstes nur lesend abgleichen: (1) die aktuelle ATS-Mini-OS-Buildkonfiguration, (2) die tatsächliche Imagegröße und (3) ob sich ein reines App-Image sicher in einen freien/ausgewählten Slot installieren lässt, ohne Bootmanager, Partitionen, Recovery oder `otadata` zu überschreiben. Vor einem Schreibschritt wird eine kurze Entscheidungsvorlage vorgelegt.
 
 ## Explizit ausgeschlossen
 
-- Kein DiamondRadio-Bootloader als aktuelle Ausgangsbasis voraussetzen.
+- Kein Upgrade von DBFM v4.2.2.
 - Kein Bootloader-Flash.
-- Keine Partitionstabelle schreiben.
+- Keine Partitionstabelle schreiben oder reparieren.
 - Keine Änderung von `otadata`.
-- Kein Merged-Image als App-Slot-Image verwenden.
+- Kein Merged-/Full-Flash-Image als App-Slot-Image verwenden.
 - Keine Slot-Umschaltung auf Verdacht.
 - Kein neuer Build und kein Start von GitHub Actions im Rahmen dieses Reviews.
+- Kein Flash und keine Änderung am laufenden Gerät.
