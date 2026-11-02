@@ -156,9 +156,7 @@ jobs:
           # with the installed Dual Boot setup must be checked before any device write.
           FLASH_REVIEW="$OUT/FIRST-FLASH-REVIEW-ONLY"
           mkdir -p "$FLASH_REVIEW"
-          # Mirror the tested ATS-Mini-Dev output names and address manifest.
-          # Keep this as review-only until compatibility with the installed Dual Boot
-          # bootloader and the exact flash procedure has been explicitly confirmed.
+          # Preserve actual outputs; report missing flash inputs instead of assuming them.
           for file in \
             "build/$PROFILE/ats-mini-os.ino.bin" \
             "build/$PROFILE/ats-mini-os.ino.merged.bin" \
@@ -169,19 +167,27 @@ jobs:
             "build/$PROFILE/partitions.csv"; do
             if [ -s "$file" ]; then cp "$file" "$FLASH_REVIEW/"; fi
           done
-          cat > "$FLASH_REVIEW/FLASH-ADDRESSES.txt" <<'EOF'
-          Reference layout from ATS-Mini-Dev (verify against generated flash_args):
-          0x0000  ats-mini-os.ino.bootloader.bin
-          0x8000  ats-mini-os.ino.partitions.bin
-          0xE000  boot_app0.bin
-          0x10000 ats-mini-os.ino.bin
-          OR
-          0x0000  ats-mini-os.ino.merged.bin
-
-          Use either the four-file method OR the merged image, never both.
-          These are reference addresses, not authorization to flash this scaffold.
-          Compare flash_args and generated files before any device write.
+          if [ -s "$FLASH_REVIEW/flash_args" ]; then
+            {
+              echo "Generated flash arguments from this build:"
+              cat "$FLASH_REVIEW/flash_args"
+              echo
+              echo "Review only: compare every path and address against ATS-Mini-Dev."
+              echo "Do not flash until Dual Boot compatibility is explicitly verified."
+            } > "$FLASH_REVIEW/FLASH-ADDRESSES.txt"
+          else
+            cat > "$FLASH_REVIEW/FLASH-ADDRESSES.txt" <<'EOF'
+          NO GENERATED flash_args FILE WAS FOUND.
+          Addresses from ATS-Mini-Dev are reference values only, not verified outputs.
+          Do not assume boot_app0.bin exists if it is absent from this bundle.
+          Do not flash until the exact ATS-Mini-Dev offsets and files are confirmed.
           EOF
+          fi
+          for required in "ats-mini-os.ino.bin" "ats-mini-os.ino.bootloader.bin" "ats-mini-os.ino.partitions.bin" "boot_app0.bin" "flash_args" "partitions.csv"; do
+            if [ ! -s "$FLASH_REVIEW/$required" ]; then
+              echo "MISSING from review bundle: $required" >> "$FLASH_REVIEW/README-FIRST-FLASH-REVIEW.txt"
+            fi
+          done
           cat > "$FLASH_REVIEW/README-FIRST-FLASH-REVIEW.txt" <<EOF
           ATS Mini OS - FIRST FLASH REVIEW ONLY
           Profile: $LABEL
