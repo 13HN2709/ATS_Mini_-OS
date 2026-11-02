@@ -275,6 +275,13 @@ jobs:
             echo "Next step: inspect this bundle and compare against the user's known-good backup and reference firmware before any device write."
             echo "Do not flash this bundle yet."
           } > "$FLASH_REVIEW/FLASH-STATUS.txt"
+          # Make the review bundle auditable without implying flash approval.
+          (
+            cd "$FLASH_REVIEW"
+            find . -maxdepth 1 -type f ! -name SHA256SUMS.txt -print0 \
+              | sort -z \
+              | xargs -0 -r sha256sum
+          ) > "$FLASH_REVIEW/SHA256SUMS.txt"
       - name: Upload first-flash review bundle (not for flashing yet)
         if: always() && hashFiles(format('release-artifacts/{0}/FIRST-FLASH-REVIEW-ONLY/*', matrix.profile)) != ''
         uses: actions/upload-artifact@v4
