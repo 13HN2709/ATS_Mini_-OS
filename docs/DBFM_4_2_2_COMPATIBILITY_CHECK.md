@@ -39,7 +39,7 @@ Die `partitions.csv` des ATS-Mini-OS-Scaffolds ist aktuell identisch mit der Ref
 
 ## Vergleich mit dem aktuellen ATS-Mini-OS-Scaffold und Build #56
 
-Das OS nutzt jetzt in `SettingsStore.cpp` ausdrücklich die NVS-Partition `settings`, entsprechend `ats-mini-dev`; der Namespace `atsmini_os` bleibt eigenständig, damit keine Schlüssel mit der Referenzfirmware kollidieren. Zusätzlich mountet `LittleFsStore` die Partition mit Label `littlefs` und denselben Mount-Parametern wie `ats-mini-dev`. Wichtig: `LittleFS.begin(false, ...)` deaktiviert Formatierung bei Mount-Fehlern. Es gibt keinen Format-, Lösch- oder Schreibaufruf. Die Speicheradapter werden beim Start nur geöffnet/gemountet; EiBi- und `memories.json`-Dateiverwaltung ist noch nicht portiert und wird erst bei Implementierung der zugehörigen Funktionen ergänzt.
+Für den ersten Hardware-Meilenstein wurde die Laufzeit bewusst auf UKW-Test reduziert: `RadioCore` verwendet vorerst keine Settings-/Memories-/Schedules-Persistenz, und die Startsequenz mountet LittleFS nicht. Die Speicherintegration kommt später. Der Tuner-Code setzt bereits die SI4735-Lautstärke auf 35, initialisiert RDS und fragt PS/RT/PI/PTY ab. Diese Einstellungen und die tatsächliche Audioausgabe sind noch nicht auf Hardware bestätigt.
 
 Build #56: [GitHub Actions Run 41476309903](https://github.com/13HN2709/ATS_Mini_-OS/actions/runs/41476309903)
 
@@ -66,10 +66,11 @@ Bei einem normalen App-Image, das in einen DBFM-Slot installiert wird, wird nich
 - [x] Vorhandenes OS-SettingsStore-Modul geprüft: Preferences nutzt aktuell Standard-NVS statt explizit `settings`.
 - [x] Read-only Diagnosemodul `src/system/PartitionDiagnostics.h/.cpp` ergänzt; gibt beim Start die Partitionen aus, die die ESP-IDF-Partition-API der laufenden App meldet. Es führt keinerlei Mount-, Format-, Lösch- oder Schreiboperationen aus.
 - [ ] Manuell kompilieren und danach – erst nach separater Freigabe – den seriellen Diagnose-Output auf dem Gerät erfassen, um die tatsächlich sichtbaren Partitionen zu bestimmen.
-- [x] Preferences-Zugriff auf die Referenzpartition `settings` umgestellt, mit eigenem OS-Namespace.
-- [x] Nicht-destruktiven LittleFS-Mount mit Label `littlefs` ergänzt; Format-on-failure ist deaktiviert.
-- [ ] Manuell kompilieren, sobald wieder ein PC verfügbar ist; bisher keine Buildprüfung dieser Änderung.
-- [ ] Die Dateiformate und Speicherfunktionen für EiBi und `memories.json` gezielt übernehmen, ohne bestehende Dateien zu verändern.
+- [x] Ersten Meilenstein auf UKW, Audio und RDS fokussiert; Settings-/Memories-/Schedules-Persistenz aus dem Startpfad entfernt.
+- [x] Tuner-Code auf Startlautstärke 35 geprüft; RDS-Initialisierung und PS/RT/PI/PTY-Abfrage vorhanden.
+- [ ] Manuell kompilieren, sobald wieder ein PC verfügbar ist; diese letzten Änderungen sind noch nicht gebaut.
+- [ ] Auf dem Gerät Boot, UKW-Empfang, Audio und tatsächliche RDS-Daten prüfen.
+- [ ] Speicherfunktionen für EiBi und `memories.json` erst in einer späteren Ausbaustufe übernehmen.
 - [ ] Laufzeit-Ausgabe prüfen, sobald ein sicherer, separat freigegebener Test möglich ist; keine Annahme treffen, dass alle Partitionen unter DBFM identisch sichtbar sind.
 - [ ] Nur das reine App-Image als möglichen späteren Slot-Test betrachten; kein Merged-/Full-Flash-Image und keine Partitionstabelle flashen.
 - [ ] Erst nach separater Prüfung und ausdrücklicher Freigabe einen Installationsplan erstellen.
