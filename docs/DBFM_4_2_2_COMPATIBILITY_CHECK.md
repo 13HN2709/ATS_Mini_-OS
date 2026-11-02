@@ -44,8 +44,8 @@ Die 8M-Buildoption erklärt also, warum das bisherige Image auf einem 16-MB-Chip
 
 ## Blocker vor einer ersten Installation von ATS Mini OS
 
-- [ ] Den tatsächlich erzeugten App-Binärdatei-Typ und die Image-Größe nach einem vom Nutzer gestarteten Build prüfen; die Datei muss in den 3.5-MiB-Slot passen.
-- [ ] Klären, ob und welche DBFM-Firmware-Identitäts-/ATSM-Metadaten das neue OS benötigt. Die bekannte Referenz-Workflow-Prüfung erwartet `ATSM` an Offset 288; unser Scaffold erzeugt diese Metadaten aktuell nicht nachweislich.
+- [ ] Den tatsächlich erzeugten App-Binärdatei-Typ und die Image-Größe nach einem vom Nutzer gestarteten Build prüfen; die Datei muss in den 3.5-MiB-Slot passen. Der manuelle Compile-Workflow enthält nun eine schreibfreie Prüfung auf ESP-Image-Magic und Slotgröße.
+- [ ] Den ESP-App-Descriptor und das `ATSM`-Markerfeld im erzeugten Image protokollieren. Der bekannte Referenz-Workflow prüft `ATSM` an Offset 288; die DBFM-v4.2.2-README nennt dieses Markerfeld nicht als allgemeine Installationsvoraussetzung. Daher meldet unser Workflow den Marker nur, statt allein wegen seines Fehlens abzubrechen.
 - [ ] Runtime-Partitionzugriffe mit der DBFM-Tabelle prüfen: `nvs`, `otadata`, `app0`, `app1`, `littlefs`, `settings` und alle OTA-Aufrufe.
 - [ ] Sicherstellen, dass nur das reine App-Image in App0 oder App1 geladen wird. Keine `partitions.bin`, kein Bootloader, kein `boot_app0.bin`, kein Merged-/Full-Flash-Image im App-Slot.
 - [ ] Zuerst Build- und Binärdatei-Prüfungen dokumentieren. Erst danach einen separaten, ausdrücklich freigegebenen Installationsplan erstellen.
@@ -54,6 +54,7 @@ Die 8M-Buildoption erklärt also, warum das bisherige Image auf einem 16-MB-Chip
 
 - DBFM bleibt bei v4.2.2; kein Bootloader-Upgrade.
 - Die vorhandene Partitionstabelle, DES-Tabellen, `otadata`, Recovery und der bekannte funktionierende Slot werden nicht geändert.
+- Der manuelle Workflow wurde um eine schreibfreie Image-Header-/Slotgrößenprüfung ergänzt. Der Workflow wurde **nicht** gestartet; es liegen daher noch keine gemessene Imagegröße und kein Prüfergebnis vor.
 - Diese Dokumentation hat weder einen Build noch eine GitHub Action oder einen Flash-/Geräteschreibvorgang ausgelöst.
 - Die derzeitige ATS-Mini-OS-`partitions.csv` ist eine Build-Referenz und **nicht** als Tabelle zum Flashen auf das Gerät freigegeben.
 
