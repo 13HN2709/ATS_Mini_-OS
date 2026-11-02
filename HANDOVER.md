@@ -978,3 +978,13 @@ Die Header- und Implementierungsdateien der offiziellen PU2CLR-Version 2.1.8 wur
 - Noch nicht kompiliert; der vorherige grüne Run `41367291150` enthält diese beiden Commits nicht. Nutzer muss den manuellen Compile-only-Workflow erneut starten und QSPI/OSPI kontrollieren.
 - Danach bleibt der praktische Encoder-Test am Gerät offen: Drehrichtung, Frequenzschritt 100 kHz, Grenzüberlauf 87,5/108,0 MHz, kurzer Tastendruck, langer Tastendruck und Anzeige-/Radio-Konsistenz. Die aktuelle Firmware ordnet kurzen/lange Tastendruck-Ereignisse bislang nur seriellen Diagnosemeldungen zu; Menüaktionen sind nicht implementiert.
 - Grenzen unverändert: keine Actions durch den Assistenten gestartet, nichts geflasht, Bootloader/Partitionen und bestehende Firmware-Repositories unangetastet.
+
+
+## Benannte OSPI-DE-/QSPI-DE-Artefakte (2026-11-02)
+
+- Nutzerwunsch: getrennte deutsche Builds für OSPI und QSPI mit klaren Dateinamen im Stil `ATS-Mini-OS.ino.bin`, dazu Quellcode-ZIP; künftig nach geprüfter Kompatibilität auch eine echte OTA-Datei.
+- Workflow-Commit auf `dev/first-build-preparation`: `c3f99a2360691128e5289bd6414326cff3a1b6a0` – [Workflow ansehen](https://github.com/13HN2709/ATS_Mini_-OS/commit/c3f99a2360691128e5289bd6414326cff3a1b6a0).
+- Der manuelle Workflow verwendet nun `arduino-cli compile --export-binaries`, benennt das jeweilige App-Image `ATS-Mini-OS-OSPI-DE.ino.bin` bzw. `ATS-Mini-OS-QSPI-DE.ino.bin` und packt den Firmware-Projektordner als `ATS-Mini-OS-Source-Code-OSPI-DE.zip` bzw. `ATS-Mini-OS-Source-Code-QSPI-DE.zip` ein. Die Dateien werden in getrennten GitHub-Artefakten mit 14 Tagen Aufbewahrung bereitgestellt; ein Build-NOTEs-Text weist auf Grenzen hin.
+- Wichtig: Diese Workflow-Änderung ist noch nicht durch einen neuen Run verifiziert. Der Nutzer muss den manuellen Workflow selbst starten; der Assistent startet keine Actions.
+- OTA-Datei absichtlich noch nicht erzeugt: Vorher müssen OTA-Updatepfad, App-Binärformat und Partition-/Bootloader-Kompatibilität geprüft werden. Das bisherige 8-MiB-Compile-Profil ist kein Freigabenachweis für das 16-MiB-Gerät; nichts flashen.
+- Vorhandene Build-Reports sind Diagnosematerial, nicht mit freigegebenen Firmware-Images gleichzusetzen. Compile-Erfolg beweist keine Hardwarefunktion.
