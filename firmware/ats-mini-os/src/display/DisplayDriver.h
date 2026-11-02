@@ -241,6 +241,10 @@ private:
   bool ready_ = false;
   uint32_t lastGeneration_ = UINT32_MAX;
   uint32_t lastDrawMs_ = 0;
+  char lastStationRow_[32] = {};
+  char lastRadioTextRow_[65] = {};
+  bool haveStationRow_ = false;
+  bool haveRadioTextRow_ = false;
   void draw(const RadioSnapshot& state, bool radioReady, const char* lastInputEvent, uint32_t inputEventCount);
 };
 
