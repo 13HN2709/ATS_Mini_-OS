@@ -128,7 +128,7 @@ jobs:
 
           # Archive the actual staged sketch tree, including vendor sources used by this compile.
           # git archive would omit these runner-staged files.
-          (cd firmware/ats-mini-os && zip -qr "../../../$OUT/ATS-Mini-OS-Source-Code-$LABEL.zip" .)
+          (cd firmware/ats-mini-os && zip -qr "../../$OUT/ATS-Mini-OS-Source-Code-$LABEL.zip" .)
 
           # Include only the named application binary, source archive, notes, and compact compile log.
           cp "build/$PROFILE/COMPILE-LOG.txt" "$OUT/COMPILE-LOG.txt"
