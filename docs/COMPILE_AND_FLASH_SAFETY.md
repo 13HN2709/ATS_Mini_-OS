@@ -29,3 +29,13 @@ Before approving any first flash:
 3. Confirm which method is intended: the merged image at offset `0x0000`, or separate files with verified offsets. Never mix the two methods.
 4. Inspect the generated bundle and verify no required files are missing; the current missing `flash_args` means no ready-to-run flashing command should be inferred.
 5. Flash only after the user explicitly approves the specific profile and method. No workflow step writes to a device.
+
+
+## Review of run #41442794297
+
+The run completed both compile jobs successfully. Inspecting the downloaded OSPI-DE source artifact revealed two packaging issues that were not obvious from the green job status:
+
+- The generated `flash_args` was present under the sketch-local build directory, outside the workflow's original search root. Its first line reports `--flash-mode dio --flash-freq 80m --flash-size 8MB`, while the requested profile specifies `FlashMode=qio`. This mismatch is a hard stop; do not flash until the origin of the differing mode is understood and the actual build output is verified.
+- The source-code artifact accidentally included a sketch-local `build/` directory with compiled binaries, ELF/map files, and generated build metadata. The workflow now excludes that directory from the source-only artifact and searches both build output roots for review files.
+
+Commit `90e4a311ad9beeb9750258b6fa1da4d2047501c9` updates the workflow to include a discovered `flash_args` in the review bundle, report a mismatch against the requested QIO profile, and keep build outputs out of the source archive. This workflow edit has not yet been tested by a user-started run. The first-flash gate remains closed; the next run must verify that the review bundle contains the real `flash_args`, explicitly reports the mode mismatch if it remains, and that the source archive no longer contains `build/`.
