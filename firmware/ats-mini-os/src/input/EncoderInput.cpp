@@ -80,13 +80,16 @@ void EncoderInput::update() {
   interrupts();
 
   const uint32_t now = millis();
-  while (steps > 0) {
-    queueEvent(EncoderEventType::RotateClockwise, acceleratedDelta(1, now));
-    --steps;
-  }
-  while (steps < 0) {
-    queueEvent(EncoderEventType::RotateCounterClockwise, acceleratedDelta(-1, now));
-    ++steps;
+  if (steps != 0) {
+    const int8_t direction = steps > 0 ? 1 : -1;
+    const int16_t magnitude = steps > 0 ? steps : -steps;
+    const int16_t accelerated = acceleratedDelta(direction, now);
+    // Coalesce a burst into one event so the small main-loop queue cannot
+    // discard fast encoder movement when several detents arrive between polls.
+    const int16_t delta = static_cast<int16_t>(accelerated * magnitude);
+    queueEvent(direction > 0 ? EncoderEventType::RotateClockwise
+                             : EncoderEventType::RotateCounterClockwise,
+               delta);
   }
 
   const bool rawPressed = digitalRead(kEncoderButtonPin) == LOW;
