@@ -10,30 +10,27 @@ This is the first code-bearing scaffold, not yet the complete radio firmware.
 
 ## Explicitly not implemented yet
 - ATS Mini parallel display driver and controller detection.
-- SI4735 radio initialization, audio path, RDS and RadioDNS.
+- Full SI4735 radio integration, RDS and RadioDNS pipeline.
 - Menu/UI to select the four CPU profiles.
 - Actual clock changes: CPU operating points must be verified before calling `setCpuFrequencyMhz()`.
-- Final 16 MB partition/dual-boot packaging. The checked-in partition CSV is a reference for compilation only, not a flash instruction.
+- Final firmware release and verified dual-boot packaging.
 
-Do not flash this scaffold to a radio. It is intended for the first compile check after the user authorizes build start.
+## Build and flash safety
+The manual-only workflow `.github/workflows/ats-mini-os-first-compile.yml` compiles OSPI and QSPI as separate profiles. Both use `FlashSize=8M`; OSPI-DE uses `PSRAM=opi` and QSPI-DE uses `PSRAM=enabled`. The user has confirmed OSPI-DE builds successfully and runs in their Dual Boot setup. This does not make the QSPI profile interchangeable with OSPI-DE.
 
+The partition CSV is retained as a compile reference. Do not flash this scaffold or change partition offsets/sizes based only on the physical 16 MB flash capacity. A compile is not proof of partition, bootloader, or hardware compatibility. The workflow has no flash/device-write step and must only be started by the user.
+
+The source ZIP is assembled from the actual sketch tree after third-party source files are staged by the runner. It includes those staged implementations, along with project files. It is not a promise that every toolchain package is included for a completely offline build.
 
 ## Dauerhafte Entwicklungsregel: Modularität
 
 Jede fachlich eigenständige Funktion bekommt ihre eigenen `.h`- und `.cpp`-Dateien unter `src/`. Die `.ino`-Datei bleibt ein dünner Einstiegspunkt. Keine `.cpp`-Datei per `#include` einbinden. Module dürfen nur über dokumentierte Schnittstellen miteinander kommunizieren; Änderungen an einem Modul sollen keine unabhängigen Funktionen verändern. Bei Schnittstellenänderungen sind alle Aufrufer zu prüfen und die Übergabe in `HANDOVER.md` zu aktualisieren.
 
-## Compile workflow
-
-A manual-only compile workflow is prepared at `.github/workflows/ats-mini-os-first-compile.yml`. It requires the input `COMPILE` and builds OSPI/QSPI as separate jobs. It has no flash or device-write step and has not been run. The current partition CSV is a reference only and must not be used to flash the user's 16 MB dual-boot device.
-
-
 ## Modular FM bring-up (implementation added; compile pending)
 - Added `src/tuner/TunerDriver.h/.cpp` as the sole SI4735 library/hardware owner.
 - Added `src/radio/RadioCore.h/.cpp` as the radio-state API, with FM tune, 100 kHz channel stepping, a snapshot, and periodic RSSI/SNR/stereo reads.
-- The `.ino` now initializes the radio at 103.9 MHz and prints diagnostic status over serial every two seconds. Display and encoder are deliberately not active yet.
-- Compile workflow installs `PU2CLR SI4735` before compiling.
-- Hardware assumptions are based on the ATS Mini V4 reference pin map: LDO 15, reset 16, SDA 18, SCL 17. Must validate compile first, then validate on hardware with serial diagnostics. Do not flash until explicitly approved. No workflow run has been started for this code yet.
-
+- The `.ino` initializes the radio at 103.9 MHz and prints diagnostic status over serial every two seconds. Display and encoder are deliberately not active yet.
+- Hardware assumptions are based on the ATS Mini V4 reference pin map: LDO 15, reset 16, SDA 18, SCL 17. Validate compile first, then hardware with serial diagnostics. Do not flash until explicitly approved.
 
 ## Persistente Einstellungen
 
