@@ -41,10 +41,14 @@ void EncoderInput::update() {
   transitionAccumulator_ += kTransitionTable[transition];
   previousAB_ = currentAB;
 
-  if (transitionAccumulator_ >= 4) {
+  // The ATS Mini Dev decoder emits half-step events (at both 00 and 11).
+  // Waiting for four transitions here required a full detent and made the OS
+  // feel noticeably slower. Emit after two valid transitions, matching that
+  // half-step cadence while keeping the existing direction table and accel.
+  if (transitionAccumulator_ >= 2) {
     queueEvent(EncoderEventType::RotateClockwise, acceleratedDelta(1, millis()));
     transitionAccumulator_ = 0;
-  } else if (transitionAccumulator_ <= -4) {
+  } else if (transitionAccumulator_ <= -2) {
     queueEvent(EncoderEventType::RotateCounterClockwise, acceleratedDelta(-1, millis()));
     transitionAccumulator_ = 0;
   }
