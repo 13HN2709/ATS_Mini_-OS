@@ -151,6 +151,45 @@ jobs:
             echo "OTA package intentionally not emitted until OTA/partition compatibility is verified."
           } > "$OUT/BUILD-NOTES.txt"
 
+          # Assemble a review-only bundle for planning the first flash.
+          # This is NOT an approved flashing package: bootloader/partition compatibility
+          # with the installed Dual Boot setup must be checked before any device write.
+          FLASH_REVIEW="$OUT/FIRST-FLASH-REVIEW-ONLY"
+          mkdir -p "$FLASH_REVIEW"
+          for file in \
+            "build/$PROFILE/ats-mini-os.ino.merged.bin" \
+            "build/$PROFILE/ats-mini-os.ino.bootloader.bin" \
+            "build/$PROFILE/ats-mini-os.ino.partitions.bin" \
+            "build/$PROFILE/boot_app0.bin" \
+            "build/$PROFILE/flash_args" \
+            "build/$PROFILE/partitions.csv"; do
+            if [ -s "$file" ]; then cp "$file" "$FLASH_REVIEW/"; fi
+          done
+          cat > "$FLASH_REVIEW/README-FIRST-FLASH-REVIEW.txt" <<EOF
+          ATS Mini OS - FIRST FLASH REVIEW ONLY
+          Profile: $LABEL
+          FlashSize: 8M
+          ESP32 Arduino core: 3.3.12
+          PSRAM mode: ${{ matrix.psram }}
+
+          SAFETY: DO NOT FLASH THIS BUNDLE YET.
+          This is a review bundle to inspect the generated build outputs and flash arguments.
+          The merged image can include bootloader and partition data and may overwrite an
+          existing Dual Boot setup. Do not use it until bootloader, offsets, partition table,
+          and the exact first-flash method are confirmed against the known-good ATS-Mini-Dev
+          configuration and the user's backup.
+          No device write is performed by this workflow.
+          EOF
+
+      - name: Upload first-flash review bundle (not for flashing yet)
+        if: always() && hashFiles(format('release-artifacts/{0}/FIRST-FLASH-REVIEW-ONLY/*', matrix.profile)) != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: ATS-Mini-OS-${{ matrix.label }}-FIRST-FLASH-REVIEW-ONLY
+          path: release-artifacts/${{ matrix.profile }}/FIRST-FLASH-REVIEW-ONLY/
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Upload firmware binary separately
         if: always() && hashFiles(format('release-artifacts/{0}/*.ino.bin', matrix.profile)) != ''
         uses: actions/upload-artifact@v4
