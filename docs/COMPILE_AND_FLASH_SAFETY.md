@@ -19,7 +19,7 @@ The private development branch contains temporary phone-hotspot credentials in `
 
 ## First-flash packaging gate (2026-11-02)
 
-The successful compile run #41438359444 produced OSPI-DE and QSPI-DE review bundles, but neither bundle is approved for flashing. The current Arduino CLI compile invocation does not produce `flash_args`; offsets printed in the bundle are reference notes, not a generated flashing command. The generated merged image is an alternative to separate images, not something to combine with them.
+The successful compile run #41438359444 produced OSPI-DE and QSPI-DE review bundles, but neither bundle is approved for flashing. The initial review packaging missed `flash_args` because it was under the sketch-local build directory; the source artifact later revealed it. In run #41442794297, that file reported `--flash-mode dio` even though the requested profile specifies `FlashMode=qio`, so the mismatch must be investigated before flashing. Offsets printed in the bundle are reference notes, not a substitute for checking the generated arguments. The generated merged image is an alternative to separate images, not something to combine with them.
 
 The workflow now writes `FLASH-STATUS.txt` with `FIRST-FLASH STATUS: NOT APPROVED` and sanitizes `WifiTestConfig.h` in the downloadable source artifact by blanking its test SSID/password. The private working branch's local test configuration is not modified by that packaging step. The next user-started compile should verify both the sanitized source artifact and the new status file.
 
@@ -27,7 +27,7 @@ Before approving any first flash:
 1. Use OSPI-DE only as the primary target; keep `FlashSize=8M`, `PSRAM=opi`, and the current partition CSV unchanged.
 2. Compare the actual partition table, bootloader, offsets, and boot method against the user's known-good backup and the real reference build—not only the checked-in CSV comparison.
 3. Confirm which method is intended: the merged image at offset `0x0000`, or separate files with verified offsets. Never mix the two methods.
-4. Inspect the generated bundle and verify no required files are missing; the current missing `flash_args` means no ready-to-run flashing command should be inferred.
+4. Inspect the generated bundle, verify no required files are missing, and resolve the generated `flash_args` mode mismatch (`dio` versus requested `qio`) before inferring any flashing command.
 5. Flash only after the user explicitly approves the specific profile and method. No workflow step writes to a device.
 
 
