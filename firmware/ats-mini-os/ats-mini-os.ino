@@ -13,6 +13,8 @@ RadioCore radio;
 DisplayDriver display;
 EncoderInput encoder;
 uint32_t lastStatusMs = 0;
+uint32_t encoderEventCount = 0;
+const char* lastEncoderEvent = "WAIT";
 }
 void setup() {
   Serial.begin(SERIAL_BAUD); delay(250); performance.begin();
@@ -30,18 +32,22 @@ void loop() {
   encoder.update();
   EncoderEvent inputEvent;
   while (encoder.poll(inputEvent)) {
+    ++encoderEventCount;
     switch (inputEvent.type) {
       case EncoderEventType::RotateClockwise:
       case EncoderEventType::RotateCounterClockwise:
+        lastEncoderEvent = inputEvent.type == EncoderEventType::RotateClockwise ? "CW" : "CCW";
         if (radio.nextChannel(inputEvent.delta))
           Serial.printf("[INPUT] tune step %s -> %.1f MHz\n",
             inputEvent.delta > 0 ? "CW" : "CCW",
             radio.snapshot().frequencyKHz / 1000.0f);
         break;
       case EncoderEventType::ShortPress:
+        lastEncoderEvent = "SHORT";
         Serial.println("[INPUT] short press");
         break;
       case EncoderEventType::LongPress:
+        lastEncoderEvent = "LONG";
         Serial.println("[INPUT] long press");
         break;
       case EncoderEventType::None:
@@ -50,7 +56,7 @@ void loop() {
     }
   }
   radio.update();
-  display.render(radio.snapshot(),radio.isReady());
+  display.render(radio.snapshot(),radio.isReady(),lastEncoderEvent,encoderEventCount);
   const uint32_t now=millis();
   if(now-lastStatusMs>=2000) {
     lastStatusMs=now; const RadioSnapshot& s=radio.snapshot();
