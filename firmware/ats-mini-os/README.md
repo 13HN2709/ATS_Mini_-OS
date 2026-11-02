@@ -58,6 +58,11 @@ Die Layout-Architektur wird getrennte Familien für FM/VHF und ALL-BAND erhalten
 - `Layout-TEF6686.cpp` bleibt weitgehend unverändert und wird nicht als Experimentierfläche für die neuen Designs verwendet.
 - Erst die First-Flash-/Boot-/Partitions-Sicherheitsprüfung und die dafür nötigen Grundfunktionen abschließen; anschließend die Layout-Familien schrittweise implementieren und jeweils separat kompilieren/testen.
 
-### Umsetzungspriorität
-Die erste funktionale Layout-Phase konzentriert sich ausdrücklich auf **FM/VHF mit Senderlogos**. Erst wenn FM-Empfang, RDS/PS, Radiotext, Logo-Zuordnung/-Anzeige, Netzwerkverhalten und die FM-Layouts stabil getestet sind, beginnen wir mit den ALL-BAND-Layouts für AM/USB/LSB. Die FM-Logo-Funktion ist der Hauptwunsch und hat Vorrang vor zusätzlichen Bandmodi.
+### Umsetzungspriorität und Reihenfolge
+Die Umsetzung erfolgt bewusst in kleinen, prüfbaren Etappen – nicht erst alle FM-Funktionen fertigstellen, bevor ALL-BAND beginnt:
 
+1. **Zuerst das erste FM-Layout fertigstellen:** das bereits begonnene und gut funktionierende Layout weiterführen, stabilisieren und optisch abschließen. Senderlogos und FM-spezifische Informationen gehören zu diesem Layout-Ziel.
+2. **Danach das erste ALL-BAND-Layout erstellen:** `FutureALLBand_1.cpp` für AM/USB/LSB und weitere unterstützte Bänder im „Future Broadcast“-Stil.
+3. **Anschließend die übrigen Funktionen ergänzen:** weitere Layout-Varianten, RadioDNS-/Logo-Verbesserungen, zusätzliche Bedien- und Radiofunktionen sowie die restlichen Betriebsarten schrittweise integrieren und testen.
+
+Diese Reihenfolge ersetzt die frühere Planung, ALL-BAND erst nach vollständigem Abschluss sämtlicher FM-Funktionen zu beginnen. Das erste FM-Layout bleibt der unmittelbare Schwerpunkt; das erste ALL-BAND-Layout folgt direkt danach.
