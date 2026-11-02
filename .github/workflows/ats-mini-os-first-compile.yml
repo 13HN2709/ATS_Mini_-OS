@@ -155,15 +155,15 @@ jobs:
           size = len(image)
           slot_limit = int(3.5 * 1024 * 1024)
 
-          if image[0:1] != b"\\xE9":
+          if image[0:1] != b"\xE9":
               raise SystemExit(f"ERROR: {path} does not begin with ESP image magic 0xE9.")
           if size > slot_limit:
               raise SystemExit(
                   f"ERROR: app image is {size} bytes; DBFM slot limit is {slot_limit} bytes (3.5 MiB)."
               )
 
-          project = image[0x50:0x50 + 32].split(b"\\0", 1)[0] if len(image) >= 0x70 else b""
-          version = image[0x30:0x30 + 32].split(b"\\0", 1)[0] if len(image) >= 0x50 else b""
+          project = image[0x50:0x50 + 32].split(b"\0", 1)[0] if len(image) >= 0x70 else b""
+          version = image[0x30:0x30 + 32].split(b"\0", 1)[0] if len(image) >= 0x50 else b""
           atsm = image[288:292] == b"ATSM"
 
           print(f"App image: {path}")
