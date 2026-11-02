@@ -99,7 +99,7 @@ jobs:
             --warnings all \
             --libraries "$HOME/Arduino/libraries" \
             --build-property "compiler.cpp.extra_flags=-Ifirmware/ats-mini-os/src/vendor/LovyanGFX -Ifirmware/ats-mini-os/src/vendor/LovyanGFX/lgfx -Ifirmware/ats-mini-os/src/vendor/LovyanGFX/lgfx/v1 -I$HOME/Arduino/libraries/PU2CLR_SI4735/src" \
-            firmware/ats-mini-os
+            firmware/ats-mini-os 2>&1 | tee "build/${{ matrix.profile }}/COMPILE-LOG.txt"
 
       - name: Prepare named firmware and source artifacts
         if: always()
@@ -128,10 +128,8 @@ jobs:
           # Source archive contains the firmware project, not generated build files.
           git archive --format=zip --output="$OUT/ATS-Mini-OS-Source-Code-$LABEL.zip" HEAD firmware/ats-mini-os
 
-          # Keep the existing diagnostic report separate from the installable-looking files.
-          mkdir -p "$OUT/compile-report"
-          cp -R firmware/ats-mini-os/. "$OUT/compile-report/" 2>/dev/null || true
-          if [ -d build ]; then cp -R build "$OUT/compile-report/build"; fi
+          # Include only the named application binary, source archive, notes, and compact compile log.
+          cp "build/$PROFILE/COMPILE-LOG.txt" "$OUT/COMPILE-LOG.txt"
           {
             echo "Profile: $PROFILE"
             echo "Label: $LABEL"
