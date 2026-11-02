@@ -28,7 +28,8 @@ bool DisplayDriver::begin() {
     Serial.println("[DISPLAY] init failed; continuing with serial diagnostics.");
     return false;
   }
-  device_.setRotation(1);
+  // Match ATS Mini Dev: the ATS Mini V4 panel is correctly oriented at rotation 3.
+  device_.setRotation(3);
   device_.setBrightness(180);
 #if !defined(LILYGO_SI473X)
   ledcWrite(38, 180);
@@ -51,7 +52,8 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,const char* la
 
 void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady,const char* lastInputEvent,uint32_t inputEventCount) {
   const int w=device_.width();
-  device_.fillScreen(BLACK);
+  // The frame/background are drawn once in begin(); avoid clearing the full
+  // panel on every refresh, which makes the display appear to reload/flicker.
   device_.drawRoundRect(5,5,w-10,160,7,GREEN);
 
   text(device_,"ATS MINI OS  |  RDS TEST",13,8,CYAN,&lgfx::fonts::Font2);
