@@ -28,7 +28,7 @@ void EncoderInput::begin() {
   buttonChangedMs_ = millis();
   pressStartedMs_ = pressed ? buttonChangedMs_ : 0;
   longPressSent_ = false;
-  pendingEvent_ = {};
+  queueHead_ = queueTail_ = queueCount_ = 0;
   Serial.printf("[INPUT] encoder ready A=%u B=%u SW=%u\n",
                 kEncoderPinA, kEncoderPinB, kEncoderButtonPin);
 }
@@ -73,17 +73,26 @@ void EncoderInput::update() {
 }
 
 bool EncoderInput::poll(EncoderEvent& event) {
-  if (pendingEvent_.type == EncoderEventType::None) {
+  if (queueCount_ == 0) {
     event = {};
     return false;
   }
-  event = pendingEvent_;
-  pendingEvent_ = {};
+  event = eventQueue_[queueHead_];
+  queueHead_ = static_cast<uint8_t>((queueHead_ + 1) % kEventQueueCapacity);
+  --queueCount_;
   return true;
 }
 
 void EncoderInput::queueEvent(EncoderEventType type, int16_t delta) {
-  pendingEvent_.type = type;
-  pendingEvent_.delta = delta;
-  pendingEvent_.timestampMs = millis();
+  // Keep older events intact; if the small queue fills, drop the newest event
+  // rather than silently overwriting an event already waiting for poll().
+  if (queueCount_ >= kEventQueueCapacity) {
+    Serial.println("[INPUT] encoder event queue full; dropping newest event");
+    return;
+  }
+  eventQueue_[queueTail_].type = type;
+  eventQueue_[queueTail_].delta = delta;
+  eventQueue_[queueTail_].timestampMs = millis();
+  queueTail_ = static_cast<uint8_t>((queueTail_ + 1) % kEventQueueCapacity);
+  ++queueCount_;
 }
