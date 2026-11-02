@@ -1,7 +1,10 @@
 #include "SettingsStore.h"
 
 bool SettingsStore::begin() {
-  ready_ = preferences_.begin(kNamespace, false);
+  // Match ats-mini-dev: use the dedicated NVS partition named "settings".
+  // Do not fall back to the default NVS partition, which may belong to the
+  // boot environment rather than this application's settings storage.
+  ready_ = preferences_.begin(kNamespace, false, "settings");
   return ready_;
 }
 
