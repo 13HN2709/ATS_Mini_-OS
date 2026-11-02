@@ -145,11 +145,38 @@ jobs:
             echo "OTA package intentionally not emitted until OTA/partition compatibility is verified."
           } > "$OUT/BUILD-NOTES.txt"
 
-      - name: Upload named firmware artifact
-        if: always()
+      - name: Upload firmware binary separately
+        if: always() && hashFiles('release-artifacts/${{ matrix.profile }}/*.ino.bin') != ''
         uses: actions/upload-artifact@v4
         with:
-          name: ATS-Mini-OS-${{ matrix.profile }}-DE
-          path: release-artifacts/${{ matrix.profile }}/
+          name: ATS-Mini-OS-${{ matrix.profile }}-Firmware-BIN
+          path: release-artifacts/${{ matrix.profile }}/*.ino.bin
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload source ZIP separately
+        if: always() && hashFiles('release-artifacts/${{ matrix.profile }}/*Source-Code*.zip') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: ATS-Mini-OS-${{ matrix.profile }}-Source-Code-ZIP
+          path: release-artifacts/${{ matrix.profile }}/*Source-Code*.zip
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload compile log separately
+        if: always() && hashFiles('release-artifacts/${{ matrix.profile }}/COMPILE-LOG.txt') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: ATS-Mini-OS-${{ matrix.profile }}-Compile-Log
+          path: release-artifacts/${{ matrix.profile }}/COMPILE-LOG.txt
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload build notes separately
+        if: always() && hashFiles('release-artifacts/${{ matrix.profile }}/BUILD-NOTES.txt') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: ATS-Mini-OS-${{ matrix.profile }}-Build-Notes
+          path: release-artifacts/${{ matrix.profile }}/BUILD-NOTES.txt
           if-no-files-found: error
           retention-days: 14
