@@ -70,7 +70,8 @@ void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady,const char* last
 
   device_.drawFastHLine(13,67,w-26,DARK_GREEN);
 
-  // Station name (PS) stays in its own fixed row.
+  // Clear only the PS row so shorter station names do not leave old characters.
+  device_.fillRect(12,70,w-24,18,BLACK);
   text(device_,"PS:",13,72,YELLOW,&lgfx::fonts::Font2);
   text(device_,s.stationName[0]?s.stationName:(radioReady?"Warte auf PS...":"RADIO OFFLINE"),
        45,72,WHITE,&lgfx::fonts::Font2);
@@ -86,6 +87,8 @@ void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady,const char* last
   text(device_,rdsIds,13,91,CYAN,&lgfx::fonts::Font2);
 
   device_.drawFastHLine(13,111,w-26,DARK_GREEN);
+  // RT changes independently of PS; clear its own row before drawing new text.
+  device_.fillRect(12,113,w-24,18,BLACK);
   text(device_,"RT:",13,115,YELLOW,&lgfx::fonts::Font2);
   // RT is kept independent of PS. Long text will be clipped for now; scrolling
   // can be added after the first hardware validation of the received RDS data.
