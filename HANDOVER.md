@@ -465,3 +465,13 @@ Am 1. November 2026 wurde `docs/RADIODNS_INTERFACES_AND_TEST_LAYOUT.md` ergänzt
 - Wichtig: Diese Workflow-Änderung ist noch nicht durch einen neuen Run verifiziert. Der Nutzer muss den manuellen Workflow selbst starten; der Assistent startet keine Actions.
 - OTA-Datei absichtlich noch nicht erzeugt: Vorher müssen OTA-Updatepfad, App-Binärformat und Partition-/Bootloader-Kompatibilität geprüft werden. Das bisherige 8-MiB-Compile-Profil ist kein Freigabenachweis für das 16-MiB-Gerät; nichts flashen.
 - Vorhandene Build-Reports sind Diagnosematerial, nicht mit freigegebenen Firmware-Images gleichzusetzen. Compile-Erfolg beweist keine Hardwarefunktion.
+
+
+## Build-Artefakt-Diagnose – 2026-11-02
+
+- GitHub Actions Run: https://github.com/13HN2709/ATS_Mini_-OS/actions/runs/41369282686
+- Beide Profile (esp32s3-qspi und esp32s3-ospi) haben den eigentlichen Compile-Schritt erfolgreich abgeschlossen (Sketch ca. 395 KB QSPI / 397 KB OSPI; diese Werte sind nur die gemeldete Sketchgröße).
+- Fehler danach: Der Artefakt-Schritt suchte firmware/ats-mini-os/ats-mini-os.ino.bin, fand dort aber keine .bin; deshalb schlugen die beiden Jobs beim Vorbereiten/Upload der Artefakte fehl und es wurden keine Artefakte veröffentlicht.
+- Korrektur auf dev/first-build-preparation: Commit 25f3ecc6a282aeffd403b800fab397f78a0b0d8e ändert die Ausgabe auf einen deterministischen --output-dir pro Profil (build/esp32s3-qspi bzw. build/esp32s3-ospi) und lässt den Artefakt-Schritt dort nach ats-mini-os.ino.bin suchen.
+- Nächster Schritt: Nutzer startet manuell einen neuen Compile-only-Run und sendet den Link zur Prüfung. Assistent startet keine Workflows.
+- Noch nicht bestätigt: erfolgreicher Export der .ino.bin, Source-Code-ZIPs, Hardwareverhalten, Flash-/Partitionskompatibilität und OTA-Verfahren. Keine Flashfreigabe; derzeitige Build-Option enthält weiterhin FlashSize=8M, während das Gerät 16 MB hat. Keine Firmware flashen.
