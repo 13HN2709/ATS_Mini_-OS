@@ -100,3 +100,8 @@ bool RadioCore::nextChannel(int16_t acceleratedDelta) {
   const uint32_t target = kMinFrequencyKHz + static_cast<uint32_t>(offset);
   return tune(target);
 }
+
+RadioDnsFmIdentity RadioCore::radioDnsIdentity() const {
+  return RadioDnsIdentity::buildFm(snapshot_.frequencyKHz, snapshot_.piCode,
+                                   snapshot_.eccValid ? snapshot_.gcc : "");
+}
