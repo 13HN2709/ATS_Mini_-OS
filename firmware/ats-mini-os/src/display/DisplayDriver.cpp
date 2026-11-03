@@ -1,4 +1,5 @@
 #include "DisplayDriver.h"
+#include <LittleFS.h>
 
 namespace {
 constexpr uint16_t BLACK=0x0000, WHITE=0xFFFF, GREEN=0x07E0, CYAN=0x07FF, DARK_GREEN=0x0320, YELLOW=0xFFE0;
@@ -58,13 +59,30 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
   if(s.generation==lastGeneration_ && now-lastDrawMs_<500)return;
   lastGeneration_=s.generation;
   lastDrawMs_=now;
-  draw(s,radioReady,wifiConnected,lastInputEvent,inputEventCount);
+  char logoKey[32] = {};
+  char logoPath[48] = {};
+  bool logoIsJpg = false;
+  const RadioDnsFmIdentity identity = RadioDnsIdentity::buildFm(
+    s.frequencyKHz, s.piCode, s.eccValid ? s.gcc : "");
+  if (identity.status == RadioDnsIdentityStatus::Ready) {
+    snprintf(logoKey, sizeof(logoKey), "%s_%s_%s",
+      identity.gcc, identity.pi, identity.frequency);
+    snprintf(logoPath, sizeof(logoPath), "/RDS/%s.png", logoKey);
+    if (!LittleFS.exists(logoPath)) {
+      snprintf(logoPath, sizeof(logoPath), "/RDS/%s.jpg", logoKey);
+      if (LittleFS.exists(logoPath)) logoIsJpg = true;
+      else logoPath[0] = 0;
+    }
+  }
+  draw(s,radioReady,wifiConnected,lastInputEvent,inputEventCount,
+       logoPath[0] ? logoPath : nullptr,logoIsJpg);
 }
 
 
 template <typename Canvas>
 void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiConnected,
-                const char* lastInputEvent,uint32_t inputEventCount) {
+                const char* lastInputEvent,uint32_t inputEventCount,
+                const char* logoPath,bool logoIsJpg) {
   const int w=canvas.width();
   const int h=canvas.height();
   canvas.fillRect(7,4,116,24,BLACK);
@@ -100,10 +118,20 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
 
   canvas.drawFastHLine(10,31,w-20,DARK_GREEN);
 
-  // Logo slot is reserved for the upcoming RadioDNS downloader/cache.
+  // Display a cached RadioDNS station logo when one has been downloaded.
+  canvas.fillRoundRect(12,42,86,76,4,BLACK);
   canvas.drawRoundRect(11,41,88,78,5,DARK_GREEN);
-  centered(canvas,"LOGO",55,58,0x7BEF,&lgfx::fonts::Font2);
-  centered(canvas,"RadioDNS",55,80,DARK_GREEN,&lgfx::fonts::Font0);
+  bool logoDrawn = false;
+  if (logoPath && logoPath[0]) {
+    if (logoIsJpg)
+      logoDrawn = canvas.drawJpgFile(LittleFS, logoPath, 13, 43, 84, 74);
+    else
+      logoDrawn = canvas.drawPngFile(LittleFS, logoPath, 13, 43, 84, 74);
+  }
+  if (!logoDrawn) {
+    centered(canvas,logoPath ? "LOGO ERR" : "NO LOGO",55,58,0x7BEF,&lgfx::fonts::Font2);
+    centered(canvas,"RadioDNS",55,80,DARK_GREEN,&lgfx::fonts::Font0);
+  }
 
   const char* station=s.stationName[0]?s.stationName:(radioReady?"Warte auf PS...":"RADIO OFFLINE");
   canvas.fillRect(105,39,w-115,27,BLACK);
@@ -135,13 +163,13 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   canvas.fillRect(10,h-16,w-20,15,BLACK);
   text(canvas,status,11,h-13,0x7BEF,&lgfx::fonts::Font0);
 }
-void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady,bool wifiConnected,const char* lastInputEvent,uint32_t inputEventCount) {
+void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady,bool wifiConnected,const char* lastInputEvent,uint32_t inputEventCount,const char* logoPath,bool logoIsJpg) {
   if (useSprite_) {
     sprite_.fillSprite(BLACK);
-    drawLayout(sprite_,s,radioReady,wifiConnected,lastInputEvent,inputEventCount);
+    drawLayout(sprite_,s,radioReady,wifiConnected,lastInputEvent,inputEventCount,logoPath,logoIsJpg);
     sprite_.pushSprite(0,0);
   } else {
     device_.fillScreen(BLACK);
-    drawLayout(device_,s,radioReady,wifiConnected,lastInputEvent,inputEventCount);
+    drawLayout(device_,s,radioReady,wifiConnected,lastInputEvent,inputEventCount,logoPath,logoIsJpg);
   }
 }
