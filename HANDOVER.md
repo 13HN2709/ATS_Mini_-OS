@@ -1066,3 +1066,11 @@ Die Header- und Implementierungsdateien der offiziellen PU2CLR-Version 2.1.8 wur
 - Der derzeit bestätigte Stand bleibt: PS/RT flackern nicht; Nutzer meldet stabiles RDS. Es gibt **noch keinen bestätigten RT-Fehler** und zu diesem ToDo wurden keine Codeänderungen oder Builds vorgenommen.
 - Keine GitHub Actions durch den Assistenten starten; der Nutzer führt Builds manuell aus. Keine Flash-, Bootloader- oder Partitionsänderungen.
 
+## Neues RadioDNS-Testlayout und WLAN-Dauerverbindung (2026-11-03)
+
+- Nutzerentscheidung: Während der ersten RadioDNS-Logo-Tests WLAN beim Systemstart einschalten, mit dem aktuell konfigurierten WLAN verbinden und eingeschaltet lassen. Kein WLAN-Aus-/Einschalten nach jedem Senderwechsel in dieser Testphase.
+- Der bestehende `WifiClient::begin()` wird bereits in `setup()` aufgerufen und nutzt Station-Modus, Auto-Reconnect und nicht persistente Laufzeitkonfiguration. Das neue Layout zeigt den Verbindungszustand an; WLAN bleibt im Hauptloop aktiv.
+- Layoutänderung auf `dev/first-build-preparation`: Kopfzeile mit Frequenz (zwei Nachkommastellen), BT-/WLAN-Indikatoren und Batterie-Umriss, Trennlinie, reservierter Senderlogo-Bereich links, Sendername und Radiotext rechts, PTY-Genre unten. Dunkler Hintergrund, Neon-Grün und Cyan.
+- Das Logo-Feld ist aktuell **nur ein Platzhalter**. RadioDNS-Auflösung, Logo-Download, Bilddecoder und lokaler Cache sind noch nicht implementiert. Der Batterie-Indikator zeigt bewusst keinen Prozentwert, da ein belastbarer Akkustand-Pin/-Treiber noch nicht identifiziert ist; BT ist vorerst ein Layout-Indikator, keine bestätigte Bluetooth-Verbindungsanzeige.
+- Die Test-WLAN-Zugangsdaten liegen derzeit in einer privaten Testkonfiguration; vor einem öffentlichen Release müssen sie aus dem Quellcode entfernt und durch eine sichere Einstellungs-/Provisionierungslösung ersetzt werden.
+- Noch nicht kompiliert oder am Gerät getestet. Nutzer startet den manuellen Compile-Workflow selbst. Keine GitHub Actions gestartet, nichts geflasht; keine Bootloader-/Partitionsänderungen.
