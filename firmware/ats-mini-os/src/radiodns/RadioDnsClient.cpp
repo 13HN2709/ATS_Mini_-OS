@@ -441,7 +441,6 @@ void RadioDnsClient::runLookup(const RadioDnsFmIdentity& identity) {
 
   char host[256] = {};
   uint16_t port = 0;
-  bool useTls = false;
   int status = -1;
   String xml;
   String base;
@@ -471,7 +470,6 @@ void RadioDnsClient::runLookup(const RadioDnsFmIdentity& identity) {
                           authoritativeFqdn);
       return;
     }
-    useTls = true;
     base = String("https://") + host + ":" + String(port) +
            "/radiodns/spi/3.1/SI.xml";
     logRadioDns(cache_, String("TLS metadata server: ") + base);
