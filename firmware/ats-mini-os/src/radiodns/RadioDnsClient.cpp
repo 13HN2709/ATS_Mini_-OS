@@ -224,10 +224,13 @@ bool RadioDnsClient::begin(RadioDnsCache* cache) {
 void RadioDnsClient::update(const RadioDnsFmIdentity& identity, bool wifiConnected) {
   if (!cache_ || !cache_->ready() || !wifiConnected || busy_ ||
       identity.status != RadioDnsIdentityStatus::Ready) return;
-  if (haveRequested_ && strcmp(lastRequestedFqdn_, identity.fqdn) == 0) return;
+  const uint32_t now = millis();
+  if (haveRequested_ && strcmp(lastRequestedFqdn_, identity.fqdn) == 0 &&
+      now - lastAttemptMs_ < 60000) return;
   strncpy(lastRequestedFqdn_, identity.fqdn, sizeof(lastRequestedFqdn_) - 1);
   lastRequestedFqdn_[sizeof(lastRequestedFqdn_) - 1] = 0;
   haveRequested_ = true;
+  lastAttemptMs_ = now;
   LookupJob* job = new (std::nothrow) LookupJob{this, identity};
   if (!job) { Serial.println("[RADIODNS] no memory for lookup job"); return; }
   busy_ = true;
