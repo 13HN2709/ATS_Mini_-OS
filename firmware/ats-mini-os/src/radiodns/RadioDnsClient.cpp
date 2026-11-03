@@ -69,6 +69,7 @@ enum class DnsSrvResult {
   Refused,
   OtherDnsError,
   NoSrvRecord,
+  NoRequestedRecord,
   MalformedResponse
 };
 
@@ -85,6 +86,7 @@ const char* dnsSrvResultText(DnsSrvResult result) {
     case DnsSrvResult::Refused: return "DNS query refused";
     case DnsSrvResult::OtherDnsError: return "DNS error response";
     case DnsSrvResult::NoSrvRecord: return "DNS response has no SRV answer";
+    case DnsSrvResult::NoRequestedRecord: return "DNS response has no requested record";
     case DnsSrvResult::MalformedResponse: return "malformed DNS response";
   }
   return "unknown DNS result";
@@ -194,7 +196,7 @@ DnsSrvResult dnsCnameLookup(const char* fqdn, char* target, size_t targetCap,
     }
     pos += rdlen;
   }
-  return DnsSrvResult::NoSrvRecord;
+  return DnsSrvResult::NoRequestedRecord;
 }
 
 DnsSrvResult dnsSrvLookup(const char* fqdn, char* host, size_t hostCap,
