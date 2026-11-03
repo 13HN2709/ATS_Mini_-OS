@@ -41,81 +41,67 @@ bool DisplayDriver::begin() {
   return true;
 }
 
-void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,const char* lastInputEvent,uint32_t inputEventCount) {
+void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConnected,const char* lastInputEvent,uint32_t inputEventCount) {
   if(!ready_)return;
   const uint32_t now=millis();
   if(s.generation==lastGeneration_ && now-lastDrawMs_<500)return;
   lastGeneration_=s.generation;
   lastDrawMs_=now;
-  draw(s,radioReady,lastInputEvent,inputEventCount);
+  draw(s,radioReady,wifiConnected,lastInputEvent,inputEventCount);
 }
 
-void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady,const char* lastInputEvent,uint32_t inputEventCount) {
+void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady,bool wifiConnected,const char* lastInputEvent,uint32_t inputEventCount) {
   const int w=device_.width();
-  // The frame/background are drawn once in begin(); avoid clearing the full
-  // panel on every refresh, which makes the display appear to reload/flicker.
-  device_.drawRoundRect(5,5,w-10,160,7,GREEN);
+  const int h=device_.height();
+  device_.fillRect(0,0,w,36,BLACK);
+  device_.fillRect(0,36,w,h-36,BLACK);
 
-  text(device_,"ATS MINI OS  |  RDS TEST",13,8,CYAN,&lgfx::fonts::Font2);
-
+  // Header: two decimal places for FM, with compact status indicators.
   char freq[20];
-  if(s.frequencyKHz>=1000) {
-    snprintf(freq,sizeof(freq),"%lu.%03lu MHz",
-      static_cast<unsigned long>(s.frequencyKHz/1000),
-      static_cast<unsigned long>(s.frequencyKHz%1000));
-  } else {
-    snprintf(freq,sizeof(freq),"%lu kHz",static_cast<unsigned long>(s.frequencyKHz));
-  }
-  centered(device_,freq,w/2,25,GREEN,&lgfx::fonts::Font7);
+  snprintf(freq,sizeof(freq),"%lu.%02lu MHz",
+    static_cast<unsigned long>(s.frequencyKHz/1000),
+    static_cast<unsigned long>((s.frequencyKHz%1000)/10));
+  text(device_,freq,10,7,GREEN,&lgfx::fonts::Font2);
 
-  device_.drawFastHLine(13,67,w-26,DARK_GREEN);
+  text(device_,"BT",204,8,CYAN,&lgfx::fonts::Font0);
+  text(device_,wifiConnected?"WiFi+":"WiFi-",226,8,wifiConnected?CYAN:0x7BEF,&lgfx::fonts::Font0);
+  // Battery is only a visual placeholder until the hardware level is identified.
+  // Do not display a fabricated percentage or charge state.
+  device_.drawRoundRect(w-31,7,20,10,2,CYAN);
+  device_.fillRect(w-10,10,2,4,CYAN);
 
-  // Only redraw PS when its content changes. Clearing it on every RDS update
-  // caused visible blinking while the rest of the screen stayed stable.
-  const char* station = s.stationName[0] ? s.stationName : (radioReady ? "Warte auf PS..." : "RADIO OFFLINE");
-  if(!haveStationRow_ || strncmp(lastStationRow_,station,sizeof(lastStationRow_)) != 0) {
-    device_.fillRect(12,70,w-24,18,BLACK);
-    text(device_,"PS:",13,72,YELLOW,&lgfx::fonts::Font2);
-    text(device_,station,45,72,WHITE,&lgfx::fonts::Font2);
-    strncpy(lastStationRow_,station,sizeof(lastStationRow_)-1);
-    lastStationRow_[sizeof(lastStationRow_)-1] = '\0';
-    haveStationRow_ = true;
-  }
+  device_.drawFastHLine(10,31,w-20,DARK_GREEN);
 
-  // PI and PTY are displayed as raw values to make decoding verifiable.
-  char rdsIds[48];
-  if(s.piCode) {
-    snprintf(rdsIds,sizeof(rdsIds),"PI:%04X  PTY:%02u",static_cast<unsigned>(s.piCode),
-             static_cast<unsigned>(s.pty));
-  } else {
-    snprintf(rdsIds,sizeof(rdsIds),"PI:----  PTY:%02u",static_cast<unsigned>(s.pty));
-  }
-  text(device_,rdsIds,13,91,CYAN,&lgfx::fonts::Font2);
+  // Logo slot is reserved for the upcoming RadioDNS downloader/cache.
+  device_.drawRoundRect(11,41,88,78,5,DARK_GREEN);
+  centered(device_,"LOGO",55,58,0x7BEF,&lgfx::fonts::Font2);
+  centered(device_,"RadioDNS",55,80,DARK_GREEN,&lgfx::fonts::Font0);
 
-  device_.drawFastHLine(13,111,w-26,DARK_GREEN);
-  // RT updates independently of PS; redraw only when the received text changes.
-  const char* rt = s.radioText[0] ? s.radioText : "Warte auf Radiotext...";
-  if(!haveRadioTextRow_ || strncmp(lastRadioTextRow_,rt,sizeof(lastRadioTextRow_)) != 0) {
-    device_.fillRect(12,113,w-24,18,BLACK);
-    text(device_,"RT:",13,115,YELLOW,&lgfx::fonts::Font2);
-    // Long text is clipped for now; scrolling can be added after validation.
-    text(device_,rt,43,115,WHITE,&lgfx::fonts::Font2);
-    strncpy(lastRadioTextRow_,rt,sizeof(lastRadioTextRow_)-1);
-    lastRadioTextRow_[sizeof(lastRadioTextRow_)-1] = '\0';
-    haveRadioTextRow_ = true;
-  }
+  const char* station=s.stationName[0]?s.stationName:(radioReady?"Warte auf PS...":"RADIO OFFLINE");
+  device_.fillRect(107,40,w-117,25,BLACK);
+  text(device_,station,109,44,WHITE,&lgfx::fonts::Font2);
 
-  char inputStatus[40];
-  snprintf(inputStatus,sizeof(inputStatus),"ENC:%s  EVENTS:%lu",
-    lastInputEvent ? lastInputEvent : "WAIT",static_cast<unsigned long>(inputEventCount));
-  text(device_,inputStatus,13,132,CYAN,&lgfx::fonts::Font0);
+  device_.fillRect(107,68,w-117,49,BLACK);
+  text(device_,"RT",109,69,YELLOW,&lgfx::fonts::Font0);
+  const char* rt=s.radioText[0]?s.radioText:"Warte auf Radiotext...";
+  text(device_,rt,109,82,WHITE,&lgfx::fonts::Font2);
 
-  char status[72];
-  snprintf(status,sizeof(status),"%s RSSI:%d SNR:%d RDS:%s",
-    s.stereo?"ST":"MO",static_cast<int>(s.rssi),static_cast<int>(s.snr),
-    s.rdsAvailable?"RX":"--");
-  text(device_,status,13,148,GREEN,&lgfx::fonts::Font0);
+  // Standard RDS PTY labels (0-31), shown at the bottom of the layout.
+  static const char* const ptyNames[32]={
+    "NONE","NEWS","CURRENT AFFAIRS","INFO","SPORT","EDUCATION","DRAMA","CULTURE",
+    "SCIENCE","VARIED","POP MUSIC","ROCK MUSIC","EASY LISTENING","LIGHT CLASSICS",
+    "SERIOUS CLASSICS","OTHER MUSIC","WEATHER","FINANCE","CHILDREN","SOCIAL",
+    "RELIGION","PHONE IN","TRAVEL","LEISURE","JAZZ","COUNTRY","NATIONAL MUSIC",
+    "OLDIES","FOLK MUSIC","DOCUMENTARY","ALARM TEST","ALARM"
+  };
+  device_.drawFastHLine(10,127,w-20,DARK_GREEN);
+  text(device_,"PTY",11,135,CYAN,&lgfx::fonts::Font0);
+  text(device_,ptyNames[s.pty<32?s.pty:0],36,133,GREEN,&lgfx::fonts::Font2);
 
-  text(device_,radioReady?"TUNER:READY":"TUNER:ERROR",w-100,148,
-       radioReady?GREEN:0xF800,&lgfx::fonts::Font0);
+  // Small diagnostic footer retained during alpha testing.
+  char status[48];
+  snprintf(status,sizeof(status),"%s  PI:%04X  %s",
+    s.stereo?"ST":"MO",static_cast<unsigned>(s.piCode),
+    s.rdsAvailable?"RDS":"NO RDS");
+  text(device_,status,11,h-13,0x7BEF,&lgfx::fonts::Font0);
 }
