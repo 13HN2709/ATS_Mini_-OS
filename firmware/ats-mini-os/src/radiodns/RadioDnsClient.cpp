@@ -6,6 +6,7 @@
 #include <WiFiClient.h>
 #include <WiFiClientSecure.h>
 #include <ctype.h>
+#include <new>
 #include <stdio.h>
 #include <string.h>
 
