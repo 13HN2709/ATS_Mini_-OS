@@ -1193,3 +1193,12 @@ Die Header- und Implementierungsdateien der offiziellen PU2CLR-Version 2.1.8 wur
 
 
 - Ergänzende Absicherung im selben Diagnosezweig: Die Logo-Endung wird nicht mehr aus der URL geraten, sondern anhand der tatsächlichen Datei-Signatur (JPEG/PNG) erkannt. So wird ein Logo mit URL-Query oder abweichender Endung nicht automatisch an den falschen Decoder übergeben. Commit: https://github.com/13HN2709/ATS_Mini_-OS/commit/cb73054d79e5f95f9206cb6d72a1311969d26ce0
+
+
+## RadioDNS: modernes SPI-SRV vor Legacy-EPG testen (2026-11-03)
+
+- Neues Geräteprotokoll: CNAME-Auflösung für Antenne Münster funktioniert und liefert `c276.radioplayer.org`. Die bisherige Abfrage `_radioepg._tcp.c276.radioplayer.org` endet mit NXDOMAIN. Daher erreicht der Ablauf SI.xml/Logo-Download noch nicht.
+- Ursache wahrscheinlich im verwendeten Dienstpfad: RadioDNS SPI v3.2.1 definiert `_radiospi._tcp` für HTTPS; `_radioepg._tcp` ist der ältere HTTP-Pfad. Radioplayer hat außerdem mitgeteilt, dass sein Metadatenangebot seit Oktober 2023 ClientID-Authentifizierung verlangen kann.
+- Änderung: zuerst `_radiospi._tcp.<authoritative-FQDN>` abfragen und bei Erfolg HTTPS für `/radiodns/spi/3.1/SI.xml` verwenden. Wenn der moderne Dienst nicht existiert, wird weiterhin `_radioepg._tcp` als Legacy-Fallback versucht. Beide Pfade protokollieren Dienstname, RCODE, Antwortanzahl und Zielserver. HTTP 401 wird als tatsächliches Authentifizierungsresultat protokolliert; es kann ClientID-Zugang durch Radioplayer erfordern.
+- Geänderte Datei: `firmware/ats-mini-os/src/radiodns/RadioDnsClient.cpp`.
+- Noch nicht kompiliert oder am Gerät getestet. Keine GitHub Actions gestartet, nichts geflasht; Bootloader, Partitionstabelle und bestehende Daten bleiben unverändert.
