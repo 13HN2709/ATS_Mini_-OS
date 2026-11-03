@@ -1250,3 +1250,13 @@ Auf Branch `dev/first-build-preparation` wurde ein erstes scrollbares Vollbild-M
   - Kandidatenfolge erweitert: eea42b2aa80b616d5a122f442f6f67329ddfbcce
   - Doppelte Kandidaten entfernt: 60223fbc70a0c8027f163b006c1bd0b349f08660
 - Noch nicht kompiliert und nicht am Gerät geprüft. Der Assistent hat keine GitHub Actions gestartet und nichts geflasht. Nächster Schritt: Nutzer startet wie vereinbart manuell Compile-only, danach Gerätetest und /radiodns-log senden. Der Log soll für D392/D394 zeigen, welche Varianten 404/200 liefern und welche tatsächlich als Rasterbild übernommen werden.
+
+
+## 23. Logo proportional an die Layoutfläche anpassen – 2026-11-03
+
+- In `firmware/ats-mini-os/src/display/DisplayDriver.cpp` wird vor dem Zeichnen die Quellgröße des Logos aus dem PNG-IHDR beziehungsweise aus dem JPEG-Start-of-Frame-Header gelesen.
+- Für die vorhandene Logo-Innenfläche (84 × 74 Pixel) wird ein einheitlicher Skalierungsfaktor berechnet. Das vollständige Logo wird proportional verkleinert/vergrößert und innerhalb des bestehenden Rahmens zentriert.
+- Wichtig: LovyanGFX behandelt `maxWidth` und `maxHeight` als Begrenzung/Clipping, nicht als automatische proportionale Anpassung. Der neue Code verwendet deshalb die expliziten `scale_x`-/`scale_y`-Parameter.
+- Rahmen, Layout und Logo-Downloadpfad bleiben unverändert. Wenn die Bilddimensionen nicht erkannt werden, wird das Logo nicht gezeichnet und die bestehende Fehleranzeige greift.
+- Änderung committed: `a21f219d9a65465fe5818215cfc59f1cadb81ae6` (DisplayDriver.cpp).
+- **Noch nicht kompiliert und nicht auf dem ATS Mini V4 getestet.** Kein GitHub-Actions-Workflow gestartet und kein Flash durchgeführt.
