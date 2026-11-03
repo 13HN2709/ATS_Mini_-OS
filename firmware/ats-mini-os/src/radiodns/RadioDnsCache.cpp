@@ -32,7 +32,7 @@ bool RadioDnsCache::begin() {
     return false;
   }
   ready_ = true;
-  Serial.printf("[RADIODNS] cache ready at /RDS on partition '%s' (anchor: %s)\\n",
+  Serial.printf("[RADIODNS] cache ready at /RDS on partition '%s' (anchor: %s)\n",
                 StorageDiscovery::partitionLabel(), StorageDiscovery::anchorPath());
   return true;
 }
