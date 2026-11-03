@@ -1057,3 +1057,12 @@ Die Header- und Implementierungsdateien der offiziellen PU2CLR-Version 2.1.8 wur
 - Kein Flashen durch den Assistenten; keine Änderungen an Bootloader, Bootmanager, Recovery, Partitionslayout oder den bestehenden APP-Slots ohne separate ausdrückliche Freigabe.
 - Gerät ist ATS Mini V4 mit 16 MB Flash; die Workflow-Compile-Profile zeigen derzeit `FlashSize=8M` und sind **keine Freigabe zum Flashen**. Bestehendes Backup und Bootloader unangetastet lassen.
 - Der letzte Encoder-Hardwaretest ist positiv, aber neue Layout-/RadioDNS-Änderungen sind noch nicht gebaut oder auf Hardware getestet.
+
+## ToDo nach Fertigstellung des Hauptsystems – RT-Text-Tuning (2026-11-03)
+
+- Der Nutzer vermutet, dass die längere Zeit bis zum ersten Radiotext (RT) möglicherweise nicht durch die RDS-Verarbeitung verursacht wird: Der Empfang zuhause scheint sich von dem am Arbeitsplatz zu unterscheiden. Daher **keine vorschnellen Änderungen** an RDS-Polling, SI4735-Konfiguration oder RT-Segmentverarbeitung vornehmen.
+- **RT-Text-Tuning ausdrücklich zurückstellen, bis das Hauptsystem steht.** Zuerst das modulare Radio-Layout und die grundlegenden Systemfunktionen fertigstellen; danach unter vergleichbaren Empfangsbedingungen testen und bei Bedarf die RT-Erkennung/-Zusammensetzung mit ATS-Mini-DEV vergleichen.
+- Beim späteren Test PS (Sendername) und RT (Radiotext) getrennt beobachten: Zeit bis zum ersten vollständigen RT, ob Text stückweise aufgebaut wird und ob sich das Verhalten zwischen Standort/Empfang unterscheidet.
+- Der derzeit bestätigte Stand bleibt: PS/RT flackern nicht; Nutzer meldet stabiles RDS. Es gibt **noch keinen bestätigten RT-Fehler** und zu diesem ToDo wurden keine Codeänderungen oder Builds vorgenommen.
+- Keine GitHub Actions durch den Assistenten starten; der Nutzer führt Builds manuell aus. Keine Flash-, Bootloader- oder Partitionsänderungen.
+
