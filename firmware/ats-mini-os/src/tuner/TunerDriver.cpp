@@ -65,7 +65,8 @@ bool TunerDriver::begin(uint32_t initialFrequencyKHz) {
   radio_.setSeekFmRssiThreshold(0);
   radio_.setSeekFmSNRThreshold(1);
 
-  radio_.setVolume(kDefaultVolume);
+  volume_ = kDefaultVolume;
+  radio_.setVolume(volume_);
   radio_.RdsInit();
   radio_.setRdsConfig(1, 2, 2, 2, 2);
 
@@ -76,6 +77,13 @@ bool TunerDriver::begin(uint32_t initialFrequencyKHz) {
   delay(5);
   digitalWrite(kAudioMutePin, LOW);
   ready_ = true;
+  return true;
+}
+
+bool TunerDriver::setVolume(uint8_t volume) {
+  if (!ready_) return false;
+  volume_ = static_cast<uint8_t>(constrain(volume, 0, 63));
+  radio_.setVolume(volume_);
   return true;
 }
 
