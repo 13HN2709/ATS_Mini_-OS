@@ -197,16 +197,11 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
 
   char logoKey[32] = {};
   // Use the exact same identity (including the validated temporary GCC fallback)
-  // as RadioDnsClient. Rebuilding from ECC-only snapshot fields made the logo
-  // key empty whenever ECC was absent, even after a successful RAM download.
-  if (logoIdentity.status == RadioDnsIdentityStatus::Ready) {
-    snprintf(logoKey, sizeof(logoKey), "%s_%s_%s",
-      logoIdentity.gcc, logoIdentity.pi, logoIdentity.frequency);
+  char logoKey[40] = {};
+  if (s.piCode != 0 && s.frequencyKHz != 0) {
+    snprintf(logoKey, sizeof(logoKey), "%04X_%lu",
+      static_cast<unsigned>(s.piCode), static_cast<unsigned long>(s.frequencyKHz));
   }
-
-  const uint8_t* logoData = nullptr;
-  size_t logoLength = 0;
-  bool logoIsJpg = false;
   const bool logoLocked = logoClient && logoKey[0] &&
     logoClient->lockLogo(logoKey, logoData, logoLength, logoIsJpg);
   draw(s,radioReady,wifiConnected,lastInputEvent,inputEventCount,
@@ -255,7 +250,7 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
 
   canvas.drawFastHLine(10,31,w-20,DARK_GREEN);
 
-  // Display a cached RadioDNS station logo when one has been downloaded.
+  // Display a cached station logo when one has been downloaded.
   canvas.fillRoundRect(12,42,86,76,4,BLACK);
   canvas.drawRoundRect(11,41,88,78,5,DARK_GREEN);
   bool logoDrawn = false;
