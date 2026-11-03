@@ -1212,3 +1212,12 @@ Die Header- und Implementierungsdateien der offiziellen PU2CLR-Version 2.1.8 wur
 - Es werden weiterhin keine Senderlogos oder SI.xml-Daten dauerhaft gespeichert. Das bestehende RadioDNS-Debug-Log bleibt für die Fehlersuche persistent.
 - Die Länderordnerzuordnung ist absichtlich zunächst nur für den bestätigten deutschen Testfall umgesetzt; weitere Länder werden erst nach Prüfung der FM-DX-Ländercodeliste ergänzt.
 - **Status: Code geändert, noch nicht kompiliert und nicht auf dem Gerät geprüft.** Keine GitHub Actions gestartet und nichts geflasht. Nutzer führt den manuellen Compile-only-Workflow aus; Bootloader, Partitionstabelle und vorhandene Dateien bleiben unangetastet.
+
+
+## RadioDNS: Logo-Identität zwischen Download und Display angleichen (2026-11-03)
+
+- Nutzer bestätigt: FM-DX-Logo-Download ist erfolgreich (HTTP 200, PNG mit 15.538 Bytes in RAM), aber auf dem Display bleibt NO LOGO.
+- Ursache im Code gefunden: RadioDnsClient verwendet radio.radioDnsIdentity(), das bei fehlendem ECC für den deutschen Test-PI D399 korrekt den vorübergehenden GCC-Fallback DE0 bildet. DisplayDriver::render() hat die Identität dagegen erneut aus dem Snapshot aufgebaut und bei fehlendem ECC einen leeren GCC übergeben. Dadurch blieb logoKey leer und lockLogo() konnte die erfolgreich geladenen Bytes nie an den Renderer übergeben.
+- Korrektur: Die bereits gebildete RadioDnsFmIdentity wird jetzt aus ats-mini-os.ino an DisplayDriver::render() übergeben. Das Display verwendet damit exakt dieselbe Identität und denselben Schlüssel wie der Downloader; es gibt keine doppelte, abweichende Identitätsbildung mehr.
+- Geänderte Dateien: firmware/ats-mini-os/src/display/DisplayDriver.h, firmware/ats-mini-os/src/display/DisplayDriver.cpp, firmware/ats-mini-os/ats-mini-os.ino.
+- Noch nicht kompiliert oder am Gerät getestet. Keine GitHub Actions gestartet, nichts geflasht. Der Nutzer führt wie vereinbart zuerst den manuellen Compile-only-Workflow aus. Bootloader, Partitionstabelle und vorhandene Dateien bleiben unverändert.
