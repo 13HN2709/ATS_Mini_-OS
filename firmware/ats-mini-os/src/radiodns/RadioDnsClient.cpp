@@ -199,7 +199,7 @@ DnsSrvResult dnsCnameLookup(const char* fqdn, char* target, size_t targetCap,
   return DnsSrvResult::NoRequestedRecord;
 }
 
-DnsSrvResult dnsSrvLookup(const char* fqdn, char* host, size_t hostCap,
+DnsSrvResult dnsSrvLookup(const char* fqdn, const char* service, char* host, size_t hostCap,
                           uint16_t& port, uint8_t& responseCode,
                           uint16_t& answerCount) {
   host[0] = 0;
@@ -215,7 +215,7 @@ DnsSrvResult dnsSrvLookup(const char* fqdn, char* host, size_t hostCap,
   packet[2] = 1; packet[5] = 1; // recursive query, one question
   size_t q = 12;
   char query[256];
-  snprintf(query, sizeof(query), "_radioepg._tcp.%s", fqdn);
+  snprintf(query, sizeof(query), "%s._tcp.%s", service, fqdn);
   if (!encodeDnsName(packet, sizeof(packet), q, query) || q + 4 > sizeof(packet))
     return DnsSrvResult::MalformedResponse;
   packet[q++] = 0; packet[q++] = 33; // SRV
@@ -500,20 +500,38 @@ void RadioDnsClient::runLookup(const RadioDnsFmIdentity& identity) {
   uint16_t port = 0;
   uint8_t dnsRcode = 0xff;
   uint16_t dnsAnswers = 0;
-  const DnsSrvResult dnsResult =
-      dnsSrvLookup(authoritativeFqdn, host, sizeof(host), port, dnsRcode, dnsAnswers);
-  if (dnsResult != DnsSrvResult::Success) {
-    logRadioDns(cache_, String("SRV DNS lookup failed: result=") + dnsSrvResultText(dnsResult) +
-      "; fqdn=" + identity.fqdn +
-      "; query=_radioepg._tcp." + String(authoritativeFqdn) +
+  bool secureMetadata = false;
+  DnsSrvResult dnsResult =
+      dnsSrvLookup(authoritativeFqdn, "_radiospi", host, sizeof(host), port, dnsRcode, dnsAnswers);
+  if (dnsResult == DnsSrvResult::Success) {
+    secureMetadata = true;
+    logRadioDns(cache_, String("SPI SRV lookup succeeded: query=_radiospi._tcp.") +
+      authoritativeFqdn + "; answers=" + String(unsigned(dnsAnswers)) +
+      "; metadata-server=" + host + ":" + String(unsigned(port)) + "; protocol=HTTPS");
+  } else {
+    logRadioDns(cache_, String("SPI SRV lookup failed: result=") + dnsSrvResultText(dnsResult) +
+      "; query=_radiospi._tcp." + String(authoritativeFqdn) +
       "; DNS-server=" + WiFi.dnsIP(0).toString() +
       "; rcode=" + (dnsRcode == 0xff ? String("n/a") : String(unsigned(dnsRcode))) +
-      "; answers=" + String(unsigned(dnsAnswers)));
-    return;
+      "; answers=" + String(unsigned(dnsAnswers)) + "; trying legacy RadioEPG");
+    dnsRcode = 0xff;
+    dnsAnswers = 0;
+    dnsResult = dnsSrvLookup(authoritativeFqdn, "_radioepg", host, sizeof(host), port, dnsRcode, dnsAnswers);
+    if (dnsResult != DnsSrvResult::Success) {
+      logRadioDns(cache_, String("RadioEPG SRV lookup failed: result=") + dnsSrvResultText(dnsResult) +
+        "; fqdn=" + identity.fqdn +
+        "; query=_radioepg._tcp." + String(authoritativeFqdn) +
+        "; DNS-server=" + WiFi.dnsIP(0).toString() +
+        "; rcode=" + (dnsRcode == 0xff ? String("n/a") : String(unsigned(dnsRcode))) +
+        "; answers=" + String(unsigned(dnsAnswers)));
+      return;
+    }
+    logRadioDns(cache_, String("RadioEPG SRV lookup succeeded: query=_radioepg._tcp.") +
+      authoritativeFqdn + "; answers=" + String(unsigned(dnsAnswers)) +
+      "; metadata-server=" + host + ":" + String(unsigned(port)) + "; protocol=HTTP");
   }
-  logRadioDns(cache_, String("SRV DNS lookup succeeded: answers=") + String(unsigned(dnsAnswers)) +
-    "; metadata-server=" + host + ":" + String(unsigned(port)));
-  String base = String("http://") + host + ":" + String(port) + "/radiodns/spi/3.1/SI.xml";
+  String base = String(secureMetadata ? "https://" : "http://") + host + ":" +
+      String(port) + "/radiodns/spi/3.1/SI.xml";
   int status = -1;
   String xml = httpGet(base, kMaxSiBytes, status);
   if (status != HTTP_CODE_OK || xml.isEmpty()) {
