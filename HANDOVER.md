@@ -1190,3 +1190,6 @@ Die Header- und Implementierungsdateien der offiziellen PU2CLR-Version 2.1.8 wur
   - [CNAME-Diagnose präzisiert](https://github.com/13HN2709/ATS_Mini_-OS/commit/8645f8e5ffa992673706d6ddef851ccb956d9d31)
 - **Teststatus: noch nicht kompiliert und nicht auf dem Gerät geprüft.** Der Assistent hat keine GitHub Actions gestartet und nichts geflasht. Nutzer soll den manuellen Compile-only-Workflow ausführen; erst nach erfolgreichem Compile folgt der Test auf dem ATS Mini V4. Bootloader, Partitionstabelle und bestehende Dateien wurden nicht verändert.
 - Beim Gerätetest bitte `/radiodns-log` nach einer neuen Suche abrufen. Gesucht werden die Meldungen `CNAME DNS lookup succeeded`, `SRV DNS lookup succeeded`, `SI.xml received` und `logo ready in RAM for display`. Wenn der Ablauf bis zum RAM-Logo reicht, prüfen wir danach, ob es sichtbar ist. Erst danach wird das Speicherproblem separat angegangen.
+
+
+- Ergänzende Absicherung im selben Diagnosezweig: Die Logo-Endung wird nicht mehr aus der URL geraten, sondern anhand der tatsächlichen Datei-Signatur (JPEG/PNG) erkannt. So wird ein Logo mit URL-Query oder abweichender Endung nicht automatisch an den falschen Decoder übergeben. Commit: https://github.com/13HN2709/ATS_Mini_-OS/commit/cb73054d79e5f95f9206cb6d72a1311969d26ce0
