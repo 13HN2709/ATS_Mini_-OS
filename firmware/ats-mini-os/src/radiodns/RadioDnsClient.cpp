@@ -7,6 +7,7 @@
 #include <WiFiClientSecure.h>
 #include <ctype.h>
 #include <new>
+#include <esp_heap_caps.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -87,6 +88,113 @@ const char* dnsSrvResultText(DnsSrvResult result) {
     case DnsSrvResult::MalformedResponse: return "malformed DNS response";
   }
   return "unknown DNS result";
+}
+
+
+bool decodeDnsName(const uint8_t* packet, size_t length, size_t& pos,
+                   char* output, size_t outputCap) {
+  if (!output || outputCap == 0) return false;
+  output[0] = 0;
+  size_t cursor = pos;
+  size_t consumed = 0;
+  bool jumped = false;
+  size_t written = 0;
+  for (size_t guard = 0; guard < 128 && cursor < length; ++guard) {
+    const uint8_t n = packet[cursor++];
+    if (n == 0) {
+      if (!jumped) consumed = cursor - pos;
+      pos += consumed;
+      output[written] = 0;
+      return true;
+    }
+    if ((n & 0xC0) == 0xC0) {
+      if (cursor >= length) return false;
+      const size_t ptr = (size_t(n & 0x3F) << 8) | packet[cursor++];
+      if (ptr >= length) return false;
+      if (!jumped) { consumed = cursor - pos; jumped = true; }
+      cursor = ptr;
+      continue;
+    }
+    if ((n & 0xC0) != 0 || cursor + n > length) return false;
+    if (written && written + 1 >= outputCap) return false;
+    if (written) output[written++] = '.';
+    if (written + n >= outputCap) return false;
+    for (uint8_t i = 0; i < n; ++i) {
+      char ch = static_cast<char>(packet[cursor++]);
+      output[written++] = static_cast<char>(tolower(static_cast<unsigned char>(ch)));
+    }
+  }
+  return false;
+}
+
+DnsSrvResult dnsCnameLookup(const char* fqdn, char* target, size_t targetCap,
+                            uint8_t& responseCode, uint16_t& answerCount) {
+  target[0] = 0;
+  responseCode = 0xff;
+  answerCount = 0;
+  IPAddress dns = WiFi.dnsIP(0);
+  if (dns == IPAddress(0,0,0,0)) return DnsSrvResult::NoDnsServer;
+  uint8_t packet[kDnsPacketSize] = {};
+  const uint16_t id = static_cast<uint16_t>(esp_random());
+  packet[0] = id >> 8; packet[1] = id & 0xff;
+  packet[2] = 1; packet[5] = 1;
+  size_t q = 12;
+  if (!encodeDnsName(packet, sizeof(packet), q, fqdn) || q + 4 > sizeof(packet))
+    return DnsSrvResult::MalformedResponse;
+  packet[q++] = 0; packet[q++] = 5;
+  packet[q++] = 0; packet[q++] = 1;
+  WiFiUDP udp;
+  if (!udp.begin(0)) return DnsSrvResult::UdpBeginFailed;
+  if (!udp.beginPacket(dns, 53) || udp.write(packet, q) != q || !udp.endPacket()) {
+    udp.stop(); return DnsSrvResult::SendFailed;
+  }
+  const uint32_t started = millis();
+  int packetSize = 0;
+  while (millis() - started < 1800) {
+    packetSize = udp.parsePacket();
+    if (packetSize > 0) break;
+    vTaskDelay(pdMS_TO_TICKS(20));
+  }
+  if (packetSize <= 0) { udp.stop(); return DnsSrvResult::Timeout; }
+  if (packetSize > int(sizeof(packet))) {
+    while (udp.available()) udp.read();
+    udp.stop(); return DnsSrvResult::MalformedResponse;
+  }
+  const int got = udp.read(packet, sizeof(packet));
+  udp.stop();
+  if (got < 12 || read16(packet) != id || !(packet[2] & 0x80))
+    return DnsSrvResult::InvalidResponse;
+  responseCode = packet[3] & 0x0f;
+  answerCount = read16(packet + 6);
+  if (responseCode == 3) return DnsSrvResult::NameError;
+  if (responseCode == 2) return DnsSrvResult::ServerFailure;
+  if (responseCode == 5) return DnsSrvResult::Refused;
+  if (responseCode != 0) return DnsSrvResult::OtherDnsError;
+  if (packet[2] & 0x02) return DnsSrvResult::MalformedResponse;
+  size_t pos = 12;
+  const uint16_t questions = read16(packet + 4);
+  for (uint16_t i = 0; i < questions; ++i) {
+    if (!skipDnsName(packet, got, pos) || pos + 4 > size_t(got))
+      return DnsSrvResult::MalformedResponse;
+    pos += 4;
+  }
+  for (uint16_t i = 0; i < answerCount; ++i) {
+    if (!skipDnsName(packet, got, pos) || pos + 10 > size_t(got))
+      return DnsSrvResult::MalformedResponse;
+    const uint16_t type = read16(packet + pos);
+    const uint16_t klass = read16(packet + pos + 2);
+    const uint16_t rdlen = read16(packet + pos + 8);
+    pos += 10;
+    if (pos + rdlen > size_t(got)) return DnsSrvResult::MalformedResponse;
+    if (type == 5 && klass == 1 && rdlen > 0) {
+      size_t namePos = pos;
+      if (decodeDnsName(packet, got, namePos, target, targetCap) && target[0])
+        return DnsSrvResult::Success;
+      return DnsSrvResult::MalformedResponse;
+    }
+    pos += rdlen;
+  }
+  return DnsSrvResult::NoSrvRecord;
 }
 
 DnsSrvResult dnsSrvLookup(const char* fqdn, char* host, size_t hostCap,
@@ -291,7 +399,29 @@ String findLogoUrl(const String& xml, const char* bearer) {
 
 bool RadioDnsClient::begin(RadioDnsCache* cache) {
   cache_ = cache;
-  return cache_ != nullptr;
+  if (!logoMutex_) logoMutex_ = xSemaphoreCreateMutex();
+  return cache_ != nullptr && logoMutex_ != nullptr;
+}
+
+bool RadioDnsClient::lockLogo(const char* cacheKey, const uint8_t*& data,
+                              size_t& length, bool& isJpg) {
+  data = nullptr;
+  length = 0;
+  isJpg = false;
+  if (!logoMutex_ || xSemaphoreTake(logoMutex_, portMAX_DELAY) != pdTRUE)
+    return false;
+  if (!logoData_ || !logoLength_ || !cacheKey || strcmp(logoKey_, cacheKey) != 0) {
+    xSemaphoreGive(logoMutex_);
+    return false;
+  }
+  data = logoData_;
+  length = logoLength_;
+  isJpg = logoIsJpg_;
+  return true;
+}
+
+void RadioDnsClient::unlockLogo() {
+  if (logoMutex_) xSemaphoreGive(logoMutex_);
 }
 
 void RadioDnsClient::update(const RadioDnsFmIdentity& identity, bool wifiConnected) {
@@ -342,21 +472,38 @@ void RadioDnsClient::runLookup(const RadioDnsFmIdentity& identity) {
   if (!WiFi.isConnected()) { logRadioDns(cache_, "WiFi dropped before lookup task ran"); return; }
   char key[32];
   snprintf(key, sizeof(key), "%s_%s_%s", identity.gcc, identity.pi, identity.frequency);
-  if (cache_->assetExists(key, "png") || cache_->assetExists(key, "jpg")) {
-    logRadioDns(cache_, String("cache hit: /RDS/") + key + ".*");
+  // Diagnostic phase: deliberately bypass the persistent asset cache. Existing
+  // files are left untouched; each test lookup downloads into RAM only.
+
+  char authoritativeFqdn[256] = {};
+  uint8_t cnameRcode = 0xff;
+  uint16_t cnameAnswers = 0;
+  const DnsSrvResult cnameResult = dnsCnameLookup(
+      identity.fqdn, authoritativeFqdn, sizeof(authoritativeFqdn),
+      cnameRcode, cnameAnswers);
+  if (cnameResult != DnsSrvResult::Success) {
+    logRadioDns(cache_, String("CNAME DNS lookup failed: result=") + dnsSrvResultText(cnameResult) +
+      "; fqdn=" + identity.fqdn + "; query=" + identity.fqdn +
+      "; DNS-server=" + WiFi.dnsIP(0).toString() +
+      "; rcode=" + (cnameRcode == 0xff ? String("n/a") : String(unsigned(cnameRcode))) +
+      "; answers=" + String(unsigned(cnameAnswers)) +
+      "; no authoritative FQDN discovered");
     return;
   }
+  logRadioDns(cache_, String("CNAME DNS lookup succeeded: fqdn=") + identity.fqdn +
+    "; authoritative-FQDN=" + authoritativeFqdn +
+    "; answers=" + String(unsigned(cnameAnswers)));
 
   char host[256] = {};
   uint16_t port = 0;
   uint8_t dnsRcode = 0xff;
   uint16_t dnsAnswers = 0;
   const DnsSrvResult dnsResult =
-      dnsSrvLookup(identity.fqdn, host, sizeof(host), port, dnsRcode, dnsAnswers);
+      dnsSrvLookup(authoritativeFqdn, host, sizeof(host), port, dnsRcode, dnsAnswers);
   if (dnsResult != DnsSrvResult::Success) {
     logRadioDns(cache_, String("SRV DNS lookup failed: result=") + dnsSrvResultText(dnsResult) +
       "; fqdn=" + identity.fqdn +
-      "; query=_radioepg._tcp." + identity.fqdn +
+      "; query=_radioepg._tcp." + String(authoritativeFqdn) +
       "; DNS-server=" + WiFi.dnsIP(0).toString() +
       "; rcode=" + (dnsRcode == 0xff ? String("n/a") : String(unsigned(dnsRcode))) +
       "; answers=" + String(unsigned(dnsAnswers)));
@@ -371,7 +518,7 @@ void RadioDnsClient::runLookup(const RadioDnsFmIdentity& identity) {
     logRadioDns(cache_, String("SI.xml request failed (HTTP/status ") + String(status) + "); URL=" + base);
     return;
   }
-  logRadioDns(cache_, String("SI.xml received bytes=") + xml.length() + " saved=" + (cache_->saveMetadata(key, xml.c_str()) ? "yes" : "no"));
+  logRadioDns(cache_, String("SI.xml received bytes=") + xml.length() + " persistence=disabled (RAM-only test)");
 
   String logoUrl = findLogoUrl(xml, identity.bearer);
   if (logoUrl.isEmpty()) {
@@ -387,8 +534,28 @@ void RadioDnsClient::runLookup(const RadioDnsFmIdentity& identity) {
     logRadioDns(cache_, String("logo download failed (HTTP/status ") + String(logoStatus) + "); URL=" + logoUrl);
     return;
   }
-  if (cache_->saveAsset(key, ext, reinterpret_cast<const uint8_t*>(logo.c_str()), logo.length()))
-    logRadioDns(cache_, String("logo cached at /RDS/") + key + "." + ext + " bytes=" + String(logo.length()));
-  else
-    logRadioDns(cache_, String("logo cache write failed: /RDS/") + key + "." + ext + " bytes=" + String(logo.length()));
+  uint8_t* ramCopy = static_cast<uint8_t*>(
+    heap_caps_malloc(logo.length(), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
+  if (!ramCopy) ramCopy = static_cast<uint8_t*>(heap_caps_malloc(logo.length(), MALLOC_CAP_8BIT));
+  if (!ramCopy) {
+    logRadioDns(cache_, String("logo downloaded but RAM allocation failed; bytes=") + String(logo.length()));
+    return;
+  }
+  memcpy(ramCopy, logo.c_str(), logo.length());
+  if (!logoMutex_ || xSemaphoreTake(logoMutex_, portMAX_DELAY) != pdTRUE) {
+    heap_caps_free(ramCopy);
+    logRadioDns(cache_, "logo downloaded but RAM handoff mutex unavailable");
+    return;
+  }
+  uint8_t* oldLogo = logoData_;
+  logoData_ = ramCopy;
+  logoLength_ = logo.length();
+  logoIsJpg_ = strcmp(ext, "jpg") == 0;
+  strncpy(logoKey_, key, sizeof(logoKey_) - 1);
+  logoKey_[sizeof(logoKey_) - 1] = 0;
+  xSemaphoreGive(logoMutex_);
+  if (oldLogo) heap_caps_free(oldLogo);
+  logRadioDns(cache_, String("logo ready in RAM for display: key=") + key +
+    "; format=" + ext + "; bytes=" + String(logo.length()) +
+    "; persistent saving disabled");
 }
