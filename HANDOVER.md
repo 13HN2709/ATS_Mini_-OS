@@ -1272,3 +1272,13 @@ Auf Branch `dev/first-build-preparation` wurde ein erstes scrollbares Vollbild-M
 - Display-Logo-Rahmen und die bereits bestätigte Skalierungslogik wurden nicht geändert.
 - WDR 3, WDR 4 und WDR COSMO müssen am Gerät/API noch verifiziert werden; Verfügbarkeit korrekter Community-Favicons ist nicht garantiert. Die PI-Zuordnung für COSMO muss anhand tatsächlicher RDS-Daten bestätigt werden.
 - **Buildstatus:** nicht kompiliert; keine GitHub Actions gestartet. **Flashstatus:** nicht geflasht.
+
+
+## 2026-11-03 – FM-DX Programm-Logos
+
+- Quelle geprüft: `Highpoint2000/webserver-station-logos`, Plugin `StationLogo/updateStationLogo.js`.
+- Das Plugin verwendet `https://tef.noobish.eu/logos/`, den ITU-Länderordner und sucht priorisiert `PI_PROGRAMNAME.svg`, danach `PI_PROGRAMNAME.png`, danach allgemeine `PI.svg` / `PI.png`.
+- Programmname wird in Großbuchstaben umgewandelt; Leerzeichen und Sonderzeichen werden entfernt. Bei gleichem PI kann damit das konkrete Programm ausgewählt werden.
+- `StationLogoClient.cpp` versucht jetzt vor dem generischen PI-Logo die FM-DX-Dateinamen `PI_PROGRAMNAME.png) mit erwarteten Programmnamen, RDS-PS und Radiotext. SVG wird nicht an den aktuellen ESP32-Decoder übergeben, da die Anzeige aktuell PNG/JPEG erwartet.
+- PI-Zuordnung `D391 -> 1LIVE` als gezielte Kandidatenzuordnung ergänzt; muss am Gerät mit empfangenem PI bestätigt werden.
+- Änderung noch nicht kompiliert und nicht auf Hardware getestet. Keine Actions gestartet, kein Flash.
