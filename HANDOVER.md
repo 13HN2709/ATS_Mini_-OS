@@ -1157,3 +1157,14 @@ Die Header- und Implementierungsdateien der offiziellen PU2CLR-Version 2.1.8 wur
 - Status: **noch nicht kompiliert oder am Gerät getestet**. Nutzer startet Compile-only-Workflow selbst; keine GitHub Actions gestartet und nichts geflasht. Bootloader, Partitionstabelle und vorhandene Dateien wurden nicht verändert.
 - Nächster Schritt nach dem manuellen Compile-only-Test: Nutzer testet mit OSPI-DE, wartet auf `lookup started`, ruft danach `/radiodns-log` ab und sendet den neuen Log. Dann lässt sich anhand der tatsächlichen SRV-/HTTP-/Logo-Meldung gezielt weiterarbeiten. Recovery-Dateiansicht ist kein verlässlicher Beleg für das Vorhandensein/Fehlen von `/RDS`, sofern LittleFS dort nicht explizit angezeigt wird.
 
+## RadioDNS: DNS-SRV-Fehler unterscheiden (2026-11-03)
+
+- Nutzer hat das Log vom Gerät bereitgestellt. Entscheidend war: `SRV lookup failed: no _radioepg._tcp SRV record ... DNS server=10.186.154.24`. Das war bisher eine irreführend pauschale Meldung: Der Code hat Timeout, DNS-Antwortfehler und tatsächlich fehlende SRV-Antwort nicht unterschieden.
+- `firmware/ats-mini-os/src/radiodns/RadioDnsClient.cpp` protokolliert jetzt getrennte Ergebnisse: kein DNS-Server, UDP-Socket-/Sendeproblem, Timeout, ungültige/abgeschnittene Antwort, NXDOMAIN, SERVFAIL, REFUSED, sonstiger DNS-Fehler und erfolgreiche Antwort ohne SRV-Record. Bei Fehlern werden FQDN, vollständiger SRV-Qname, DNS-Server, RCODE und Answer-Anzahl protokolliert; bei Erfolg der gefundene Metadatenserver und Port.
+- Fallback-Pfad in `RadioCore.cpp` geprüft: gültiger empfangener ECC hat Vorrang; ohne ECC wird der temporäre Testwert `DE0` nur bei PI-Ländercode-Nibble `D` verwendet. Das ist weiterhin ein ausdrücklich temporärer Test-Fallback und kein Beweis, dass die Senderidentität korrekt ist.
+- Commits:
+  - DNS-Ergebnisse detaillierter protokollieren: https://github.com/13HN2709/ATS_Mini_-OS/commit/e021cace4cc991bea807b843b4b4ac1236cdc213
+  - DNS-Answer-Anzahl auch bei DNS-Fehlerantworten erfassen: https://github.com/13HN2709/ATS_Mini_-OS/commit/d60df0fbfe903491084f09c4055292e18462b45a
+- Noch nicht kompiliert oder am Gerät getestet. Nutzer startet den manuellen Compile-only-Workflow selbst. Keine Actions gestartet, nichts geflasht und keine Bootloader-/Partition-/Datenänderung vorgenommen.
+- Nächster Schritt: manueller Compile-only-Build, danach Gerätetest und Abruf von `/radiodns-log`. Die neue Meldung soll zeigen, ob der Resolver ein echtes NXDOMAIN, einen Timeout oder einen anderen DNS-Fehler liefert. Erst dann die Ursache beheben.
+
