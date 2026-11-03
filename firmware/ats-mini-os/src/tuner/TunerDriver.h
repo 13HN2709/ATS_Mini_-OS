@@ -9,16 +9,36 @@ public:
     clearRdsBuffer2A();
     clearRdsBuffer2B();
   }
+
+  // Read the complete current RDS group already fetched by pollRds().
+  // SI4735 2.1.8 getRdsPI() returns only BLOCKAL, so combine both PI bytes here.
+  uint16_t currentPiCode() const {
+    return static_cast<uint16_t>(
+      (static_cast<uint16_t>(currentRdsStatus.resp.BLOCKAH) << 8) |
+      currentRdsStatus.resp.BLOCKAL);
+  }
+
+  uint8_t currentBlockCError() const {
+    return currentRdsStatus.resp.BLEC;
+  }
+
+  uint16_t currentBlockC() const {
+    return static_cast<uint16_t>(
+      (static_cast<uint16_t>(currentRdsStatus.resp.BLOCKCH) << 8) |
+      currentRdsStatus.resp.BLOCKCL);
+  }
 };
 
 struct TunerRdsData {
   bool received = false;
   bool piValid = false;
   bool ptyValid = false;
+  bool eccValid = false;
   bool stationNameUpdated = false;
   bool radioTextUpdated = false;
   uint16_t piCode = 0;
   uint8_t pty = 0;
+  uint8_t eccCode = 0;
   char stationName[9] = {};
   char radioText[65] = {};
 };
