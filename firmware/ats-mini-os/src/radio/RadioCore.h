@@ -9,6 +9,8 @@ public:
   bool begin(uint32_t initialFrequencyKHz = 95400);
   void update();
   bool tune(uint32_t frequencyKHz);
+  bool setVolume(uint8_t volume);
+  uint8_t volume() const { return tuner_.volume(); }
   bool nextChannel(int16_t acceleratedDelta);
   bool isReady() const { return ready_; }
   const RadioSnapshot& snapshot() const { return snapshot_; }
