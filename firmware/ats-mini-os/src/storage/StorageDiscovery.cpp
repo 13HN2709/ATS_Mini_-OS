@@ -72,7 +72,7 @@ bool begin() {
       const bool knownLittleFsAddress =
           part->address == 0x00A00000UL || part->address == 0x00610000UL;
       if (strcmp(part->label, "littlefs") == 0 && knownLittleFsAddress) {
-        Serial.printf("[STORAGE] approved LittleFS offset: 0x%08lX\\n",
+        Serial.printf("[STORAGE] approved LittleFS offset: 0x%08lX\n",
                       static_cast<unsigned long>(part->address));
         strncpy(g_partitionLabel, part->label, sizeof(g_partitionLabel) - 1);
         g_partitionLabel[sizeof(g_partitionLabel) - 1] = '\0';
