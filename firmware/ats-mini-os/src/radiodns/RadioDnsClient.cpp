@@ -15,6 +15,11 @@ constexpr size_t kDnsPacketSize = 1500;
 constexpr size_t kMaxSiBytes = 180000;
 constexpr size_t kMaxLogoBytes = 220000;
 struct LookupJob { RadioDnsClient* self; RadioDnsFmIdentity identity; };
+void logRadioDns(RadioDnsCache* cache, const String& message) {
+  String line = String(millis()) + " ms " + message + "\\n";
+  Serial.print("[RADIODNS] "); Serial.println(message);
+  if (cache) cache->appendLog(line.c_str());
+}
 
 uint16_t read16(const uint8_t* p) { return (uint16_t(p[0]) << 8) | p[1]; }
 uint32_t read32(const uint8_t* p) { return (uint32_t(p[0]) << 24) | (uint32_t(p[1]) << 16) | (uint32_t(p[2]) << 8) | p[3]; }
@@ -222,8 +227,13 @@ bool RadioDnsClient::begin(RadioDnsCache* cache) {
 }
 
 void RadioDnsClient::update(const RadioDnsFmIdentity& identity, bool wifiConnected) {
-  if (!cache_ || !cache_->ready() || !wifiConnected || busy_ ||
-      identity.status != RadioDnsIdentityStatus::Ready) return;
+  static int lastGateCode = -1;
+  const int gateCode = (!cache_ || !cache_->ready()) ? 1 : (!wifiConnected ? 2 : (identity.status != RadioDnsIdentityStatus::Ready ? 10 + static_cast<int>(identity.status) : 0));
+  if (gateCode != lastGateCode) {
+    lastGateCode = gateCode;
+    if (cache_ && cache_->ready()) logRadioDns(cache_, String("gate state=") + gateCode + " wifi=" + (wifiConnected ? "connected" : "disconnected") + " identityStatus=" + String(static_cast<int>(identity.status)) + " PI=" + identity.pi + " GCC=" + identity.gcc + " FQDN=" + identity.fqdn);
+  }
+  if (!cache_ || !cache_->ready() || !wifiConnected || busy_ || identity.status != RadioDnsIdentityStatus::Ready) return;
   const uint32_t now = millis();
   if (haveRequested_ && strcmp(lastRequestedFqdn_, identity.fqdn) == 0 &&
       now - lastAttemptMs_ < 60000) return;
@@ -252,7 +262,8 @@ void RadioDnsClient::taskEntry(void* arg) {
 }
 
 void RadioDnsClient::runLookup(const RadioDnsFmIdentity& identity) {
-  if (!WiFi.isConnected()) return;
+  logRadioDns(cache_, String("lookup started: fqdn=") + identity.fqdn + " bearer=" + identity.bearer);
+  if (!WiFi.isConnected()) { logRadioDns(cache_, "WiFi dropped before lookup task ran"); return; }
   char key[32];
   snprintf(key, sizeof(key), "%s_%s_%s", identity.gcc, identity.pi, identity.frequency);
   if (cache_->assetExists(key, "png") || cache_->assetExists(key, "jpg")) {
@@ -274,14 +285,14 @@ void RadioDnsClient::runLookup(const RadioDnsFmIdentity& identity) {
     Serial.printf("[RADIODNS] SI.xml request failed (HTTP %d)\n", status);
     return;
   }
-  if (!cache_->saveMetadata(key, xml.c_str()))
-    Serial.println("[RADIODNS] SI.xml could not be cached");
+  logRadioDns(cache_, String("SI.xml received bytes=") + xml.length() + " saved=" + (cache_->saveMetadata(key, xml.c_str()) ? "yes" : "no"));
 
   String logoUrl = findLogoUrl(xml, identity.bearer);
   if (logoUrl.isEmpty()) {
-    Serial.println("[RADIODNS] matching service/logo not found in SI.xml");
+    logRadioDns(cache_, String("no matching service/logo; bearer=") + identity.bearer + " XML preview=" + xml.substring(0, 900));
     return;
   }
+  logRadioDns(cache_, String("logo URL selected: ") + logoUrl);
   String lower = logoUrl; lower.toLowerCase();
   const char* ext = lower.endsWith(".jpg") || lower.endsWith(".jpeg") ? "jpg" : "png";
   int logoStatus = -1;
