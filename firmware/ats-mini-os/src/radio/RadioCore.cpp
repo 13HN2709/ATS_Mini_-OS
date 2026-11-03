@@ -80,6 +80,10 @@ bool RadioCore::tune(uint32_t frequencyKHz) {
   return true;
 }
 
+bool RadioCore::setVolume(uint8_t volume) {
+  return ready_ && tuner_.setVolume(volume);
+}
+
 bool RadioCore::nextChannel(int16_t acceleratedDelta) {
   if (!ready_ || acceleratedDelta == 0) return false;
   // The input driver supplies signed 1/2/4/8/16-step deltas, matching ATS Mini
