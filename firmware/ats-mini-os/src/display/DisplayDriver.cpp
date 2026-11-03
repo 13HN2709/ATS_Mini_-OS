@@ -3,13 +3,15 @@
 namespace {
 constexpr uint16_t BLACK=0x0000, WHITE=0xFFFF, GREEN=0x07E0, CYAN=0x07FF, DARK_GREEN=0x0320, YELLOW=0xFFE0;
 
-void text(lgfx::LGFX_Device& d,const char* s,int x,int y,uint16_t c,const lgfx::IFont* f) {
+template <typename Canvas>
+void text(Canvas& d,const char* s,int x,int y,uint16_t c,const lgfx::IFont* f) {
   d.setTextColor(c,BLACK);
   d.setFont(f);
   d.drawString(s ? s : "",x,y);
 }
 
-void centered(lgfx::LGFX_Device& d,const char* s,int x,int y,uint16_t c,const lgfx::IFont* f) {
+template <typename Canvas>
+void centered(Canvas& d,const char* s,int x,int y,uint16_t c,const lgfx::IFont* f) {
   d.setTextColor(c,BLACK);
   d.setFont(f);
   d.drawCenterString(s ? s : "",x,y);
@@ -59,11 +61,12 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
   draw(s,radioReady,wifiConnected,lastInputEvent,inputEventCount);
 }
 
-void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady,bool wifiConnected,const char* lastInputEvent,uint32_t inputEventCount) {
-  const int w=device_.width();
-  const int h=device_.height();
-  lgfx::LGFX_Device& canvas = useSprite_ ? static_cast<lgfx::LGFX_Device&>(sprite_) : static_cast<lgfx::LGFX_Device&>(device_);
-  if (useSprite_) canvas.fillRect(0,0,w,h,BLACK);
+
+template <typename Canvas>
+void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiConnected,
+                const char* lastInputEvent,uint32_t inputEventCount) {
+  const int w=canvas.width();
+  const int h=canvas.height();
   canvas.fillRect(7,4,116,24,BLACK);
   canvas.fillRect(198,4,w-205,24,BLACK);
 
@@ -131,5 +134,14 @@ void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady,bool wifiConnect
     s.rdsAvailable?"RDS":"NO RDS");
   canvas.fillRect(10,h-16,w-20,15,BLACK);
   text(canvas,status,11,h-13,0x7BEF,&lgfx::fonts::Font0);
-  if (useSprite_) sprite_.pushSprite(0, 0);
+}
+void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady,bool wifiConnected,const char* lastInputEvent,uint32_t inputEventCount) {
+  if (useSprite_) {
+    sprite_.fillSprite(BLACK);
+    drawLayout(sprite_,s,radioReady,wifiConnected,lastInputEvent,inputEventCount);
+    sprite_.pushSprite(0,0);
+  } else {
+    device_.fillScreen(BLACK);
+    drawLayout(device_,s,radioReady,wifiConnected,lastInputEvent,inputEventCount);
+  }
 }
