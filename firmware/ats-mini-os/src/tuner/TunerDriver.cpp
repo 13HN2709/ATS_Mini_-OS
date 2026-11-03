@@ -7,7 +7,7 @@ constexpr uint8_t kI2cSclPin = 17;
 constexpr uint16_t kMinFrequency10KHz = 8750;
 constexpr uint16_t kMaxFrequency10KHz = 10800;
 constexpr uint16_t kDefaultSpacing10KHz = 10;
-constexpr uint8_t kDefaultVolume = 35;
+constexpr uint8_t kDefaultVolume = 25;
 constexpr uint8_t kFmFunction = 0;
 // ATS Mini V4 audio controls: mute is active HIGH; amplifier enable is active HIGH.
 constexpr uint8_t kAudioMutePin = 3;
