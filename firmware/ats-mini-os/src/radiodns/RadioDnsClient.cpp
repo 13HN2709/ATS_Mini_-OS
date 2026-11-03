@@ -250,12 +250,12 @@ void RadioDnsClient::update(const RadioDnsFmIdentity& identity, bool wifiConnect
   haveRequested_ = true;
   lastAttemptMs_ = now;
   LookupJob* job = new (std::nothrow) LookupJob{this, identity};
-  if (!job) { Serial.println("[RADIODNS] no memory for lookup job"); return; }
+  if (!job) { logRadioDns(cache_, "no memory for lookup job"); return; }
   busy_ = true;
   if (xTaskCreate(taskEntry, "RadioDNS", 8192, job, 1, nullptr) != pdPASS) {
     busy_ = false;
     delete job;
-    Serial.println("[RADIODNS] could not start lookup task");
+    logRadioDns(cache_, "could not start lookup task");
   }
 }
 
@@ -275,22 +275,22 @@ void RadioDnsClient::runLookup(const RadioDnsFmIdentity& identity) {
   char key[32];
   snprintf(key, sizeof(key), "%s_%s_%s", identity.gcc, identity.pi, identity.frequency);
   if (cache_->assetExists(key, "png") || cache_->assetExists(key, "jpg")) {
-    Serial.printf("[RADIODNS] cache hit: /RDS/%s.*\n", key);
+    logRadioDns(cache_, String("cache hit: /RDS/") + key + ".*");
     return;
   }
 
   char host[256] = {};
   uint16_t port = 0;
   if (!dnsSrvLookup(identity.fqdn, host, sizeof(host), port)) {
-    Serial.printf("[RADIODNS] no _radioepg._tcp SRV record for %s\n", identity.fqdn);
+    logRadioDns(cache_, String("SRV lookup failed: no _radioepg._tcp SRV record for ") + identity.fqdn + "; DNS server=" + WiFi.dnsIP(0).toString());
     return;
   }
-  Serial.printf("[RADIODNS] metadata server %s:%u\n", host, unsigned(port));
+  logRadioDns(cache_, String("metadata server ") + host + ":" + String(unsigned(port)));
   String base = String("http://") + host + ":" + String(port) + "/radiodns/spi/3.1/SI.xml";
   int status = -1;
   String xml = httpGet(base, kMaxSiBytes, status);
   if (status != HTTP_CODE_OK || xml.isEmpty()) {
-    Serial.printf("[RADIODNS] SI.xml request failed (HTTP %d)\n", status);
+    logRadioDns(cache_, String("SI.xml request failed (HTTP/status ") + String(status) + "); URL=" + base);
     return;
   }
   logRadioDns(cache_, String("SI.xml received bytes=") + xml.length() + " saved=" + (cache_->saveMetadata(key, xml.c_str()) ? "yes" : "no"));
@@ -306,11 +306,11 @@ void RadioDnsClient::runLookup(const RadioDnsFmIdentity& identity) {
   int logoStatus = -1;
   String logo = httpGet(logoUrl, kMaxLogoBytes, logoStatus);
   if (logoStatus != HTTP_CODE_OK || logo.isEmpty()) {
-    Serial.printf("[RADIODNS] logo download failed (HTTP %d)\n", logoStatus);
+    logRadioDns(cache_, String("logo download failed (HTTP/status ") + String(logoStatus) + "); URL=" + logoUrl);
     return;
   }
   if (cache_->saveAsset(key, ext, reinterpret_cast<const uint8_t*>(logo.c_str()), logo.length()))
-    Serial.printf("[RADIODNS] logo cached at /RDS/%s.%s\n", key, ext);
+    logRadioDns(cache_, String("logo cached at /RDS/") + key + "." + ext + " bytes=" + String(logo.length()));
   else
-    Serial.println("[RADIODNS] logo cache write failed");
+    logRadioDns(cache_, String("logo cache write failed: /RDS/") + key + "." + ext + " bytes=" + String(logo.length()));
 }
