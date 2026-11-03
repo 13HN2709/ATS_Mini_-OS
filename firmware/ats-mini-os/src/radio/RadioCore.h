@@ -2,6 +2,7 @@
 #include <Arduino.h>
 #include "RadioSnapshot.h"
 #include "../tuner/TunerDriver.h"
+#include "../radiodns/RadioDnsIdentity.h"
 
 class RadioCore {
 public:
@@ -11,6 +12,7 @@ public:
   bool nextChannel(int16_t acceleratedDelta);
   bool isReady() const { return ready_; }
   const RadioSnapshot& snapshot() const { return snapshot_; }
+  RadioDnsFmIdentity radioDnsIdentity() const;
 private:
   static constexpr uint32_t kMinFrequencyKHz = 87500;
   static constexpr uint32_t kMaxFrequencyKHz = 108000;
