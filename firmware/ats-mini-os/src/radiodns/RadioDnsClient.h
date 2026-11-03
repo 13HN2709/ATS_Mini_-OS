@@ -16,6 +16,7 @@ public:
 private:
   static void taskEntry(void* arg);
   void runLookup(const RadioDnsFmIdentity& identity);
+  bool storeLogoInRam(const String& logo, const char* key, const char* source);
   RadioDnsCache* cache_ = nullptr;
   volatile bool busy_ = false;
   bool haveRequested_ = false;
