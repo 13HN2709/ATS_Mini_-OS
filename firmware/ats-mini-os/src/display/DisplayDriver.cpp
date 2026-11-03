@@ -195,8 +195,6 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
     return;
   }
 
-  char logoKey[32] = {};
-  // Use the exact same identity (including the validated temporary GCC fallback)
   char logoKey[40] = {};
   if (s.piCode != 0 && s.frequencyKHz != 0) {
     snprintf(logoKey, sizeof(logoKey), "%04X_%lu",
@@ -277,7 +275,7 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   }
   if (!logoDrawn) {
     centered(canvas,logoData ? "LOGO ERR" : "NO LOGO",55,58,0x7BEF,&lgfx::fonts::Font2);
-    centered(canvas,"RadioDNS",55,80,DARK_GREEN,&lgfx::fonts::Font0);
+    centered(canvas,"FM-DX / Radio Browser",55,80,DARK_GREEN,&lgfx::fonts::Font0);
   }
 
   const char* station=s.stationName[0]?s.stationName:(radioReady?"Warte auf PS...":"RADIO OFFLINE");
