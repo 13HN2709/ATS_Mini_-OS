@@ -1,5 +1,4 @@
 #include "RadioCore.h"
-#include "../radiodns/RadioDnsIdentity.h"
 #include <stdio.h>
 
 namespace {
@@ -57,12 +56,6 @@ void RadioCore::update() {
         snprintf(snapshot_.gcc, sizeof(snapshot_.gcc), "%1X%02X",
           static_cast<unsigned>((snapshot_.piCode >> 12) & 0x0F),
           static_cast<unsigned>(snapshot_.eccCode));
-        const RadioDnsFmIdentity identity = RadioDnsIdentity::buildFm(
-            snapshot_.frequencyKHz, snapshot_.piCode, snapshot_.gcc);
-        if (identity.status == RadioDnsIdentityStatus::Ready) {
-          Serial.printf("[RADIODNS] FM identity ready: %s | bearer=%s\n",
-                        identity.fqdn, identity.bearer);
-        }
       }
       if (rds.stationNameUpdated) copyField(snapshot_.stationName, sizeof(snapshot_.stationName), rds.stationName);
       if (rds.radioTextUpdated) copyField(snapshot_.radioText, sizeof(snapshot_.radioText), rds.radioText);
