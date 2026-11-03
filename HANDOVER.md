@@ -1111,3 +1111,16 @@ Die Header- und Implementierungsdateien der offiziellen PU2CLR-Version 2.1.8 wur
 - LittleFS wird mit `formatOnFail=false` eingebunden. Keine Formatierung, kein Löschen, keine Änderung an Partitionsgrößen oder Bootloader.
 - Commit: `7ed519f5492a81ce711aa1bc1ca629ce1213f5ab`.
 - Status: Codeänderung committed, noch nicht neu kompiliert oder am Gerät getestet. Nutzer startet den manuellen Compile-only-Workflow selbst; keine GitHub Actions durch den Assistenten gestartet und nichts geflasht.
+
+## Referenz: offizieller GNBD ATS Mini DualBoot (2026-11-03)
+
+- Vom Nutzer angegebener Release-Link für den tatsächlich verwendeten DualBoot Manager 4.2.2:
+  https://github.com/GNBD/ats-mini-dualboot/releases#release-v4.2.2-dualboot
+- Versionsgebundene README v4.2.2:
+  https://github.com/GNBD/ats-mini-dualboot/blob/v4.2.2-dualboot/ats-mini-recovery-DBFM/README.md
+- In der dokumentierten Partitionstabelle von v4.2.2 steht `littlefs` bei Offset `0xA00000`, Größe 5.58 MiB. Die gleiche LittleFS-Startadresse ist auch in der geprüften README von v4.3.5 dokumentiert:
+  https://github.com/GNBD/ats-mini-dualboot/blob/v4.3.5-dualboot/ats-mini-recovery-DBFM/README.md
+- v4.2.2 Release-Datum laut GitHub: 2026-10-30. Die Release-Beschreibung kennzeichnet es als Test-Build.
+- Für die ATS-Mini-OS Storage Discovery bleibt `0xA00000` die erste Kandidatenadresse für das DBFM-Layout. `0x610000` bleibt ausschließlich der alternative Kandidat für das Stock-/ATS-Mini-Dev-Layout. Es sind alternative Layouts.
+- Sicherheitsregel bleibt unverändert: Nur verwenden, wenn die aktive Laufzeit-Partitionstabelle tatsächlich eine DATA-Partition mit Label `littlefs` an genau der Kandidatenadresse meldet und eine bekannte Ankerdatei gefunden wird. Niemals rohe Flash-Adressen mounten; nicht formatieren, löschen oder Partitionen/Bootloader ändern.
+- Diese Links bei späteren DBFM-Updates erneut prüfen, insbesondere die versionsgebundene README/Partitionstabelle. Eine bestätigte Adresse in der Dokumentation ersetzt nicht den späteren Gerätetest.
