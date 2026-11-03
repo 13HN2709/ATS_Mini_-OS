@@ -6,6 +6,7 @@
 #include "src/input/EncoderInput.h"
 #include "src/network/WifiClient.h"
 #include "src/radiodns/RadioDnsCache.h"
+#include "src/radiodns/RadioDnsClient.h"
 #include "src/system/PartitionDiagnostics.h"
 
 namespace {
@@ -17,6 +18,7 @@ DisplayDriver display;
 EncoderInput encoder;
 WifiClient wifi;
 RadioDnsCache radioDnsCache;
+RadioDnsClient radioDnsClient;
 uint32_t lastStatusMs = 0;
 uint32_t encoderEventCount = 0;
 const char* lastEncoderEvent = "WAIT";
@@ -27,6 +29,7 @@ void setup() {
   Serial.println("First milestone: display, SI4735 audio, RDS. No memories/EiBi storage.");
   PartitionDiagnostics::printToSerial();
   radioDnsCache.begin();
+  radioDnsClient.begin(&radioDnsCache);
 
   encoder.begin();
   if (display.begin()) Serial.println("[DISPLAY] first UI initialized.");
@@ -66,6 +69,7 @@ void loop() {
     }
   }
   radio.update();
+  radioDnsClient.update(radio.radioDnsIdentity(), wifi.connected());
   display.render(radio.snapshot(),radio.isReady(),wifi.connected(),lastEncoderEvent,encoderEventCount);
   const uint32_t now=millis();
   if(now-lastStatusMs>=2000) {
