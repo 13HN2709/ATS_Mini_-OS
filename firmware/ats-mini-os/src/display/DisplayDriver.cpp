@@ -18,6 +18,52 @@ void centered(Canvas& d,const char* s,int x,int y,uint16_t c,const lgfx::IFont* 
   d.drawCenterString(s ? s : "",x,y);
 }
 
+bool getLogoDimensions(const uint8_t* data, size_t length, uint16_t& width, uint16_t& height) {
+  width = height = 0;
+  if (!data || length < 10) return false;
+
+  // PNG stores its dimensions as big-endian integers in the IHDR chunk.
+  static const uint8_t pngSignature[8] = {137, 80, 78, 71, 13, 10, 26, 10};
+  if (length >= 24 && memcmp(data, pngSignature, sizeof(pngSignature)) == 0) {
+    const uint32_t w = (static_cast<uint32_t>(data[16]) << 24) |
+                       (static_cast<uint32_t>(data[17]) << 16) |
+                       (static_cast<uint32_t>(data[18]) << 8) | data[19];
+    const uint32_t h = (static_cast<uint32_t>(data[20]) << 24) |
+                       (static_cast<uint32_t>(data[21]) << 16) |
+                       (static_cast<uint32_t>(data[22]) << 8) | data[23];
+    if (!w || !h || w > 65535 || h > 65535) return false;
+    width = static_cast<uint16_t>(w);
+    height = static_cast<uint16_t>(h);
+    return true;
+  }
+
+  // JPEG dimensions are carried by a Start Of Frame marker.
+  if (length < 4 || data[0] != 0xFF || data[1] != 0xD8) return false;
+  size_t pos = 2;
+  while (pos + 4 <= length) {
+    if (data[pos] != 0xFF) { ++pos; continue; }
+    while (pos < length && data[pos] == 0xFF) ++pos;
+    if (pos >= length) break;
+    const uint8_t marker = data[pos++];
+    if (marker == 0xD9 || marker == 0xDA) break;
+    if (marker == 0x01 || (marker >= 0xD0 && marker <= 0xD7)) continue;
+    if (pos + 2 > length) break;
+    const uint16_t segmentLength = (static_cast<uint16_t>(data[pos]) << 8) | data[pos + 1];
+    if (segmentLength < 2 || pos + segmentLength > length) break;
+    const bool isSof = (marker >= 0xC0 && marker <= 0xC3) ||
+                       (marker >= 0xC5 && marker <= 0xC7) ||
+                       (marker >= 0xC9 && marker <= 0xCB) ||
+                       (marker >= 0xCD && marker <= 0xCF);
+    if (isSof && segmentLength >= 7) {
+      height = (static_cast<uint16_t>(data[pos + 3]) << 8) | data[pos + 4];
+      width = (static_cast<uint16_t>(data[pos + 5]) << 8) | data[pos + 6];
+      return width > 0 && height > 0;
+    }
+    pos += segmentLength;
+  }
+  return false;
+}
+
 template <typename Canvas>
 void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume) {
   const int w = canvas.width();
@@ -215,10 +261,25 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   canvas.drawRoundRect(11,41,88,78,5,DARK_GREEN);
   bool logoDrawn = false;
   if (logoData && logoLength) {
-    if (logoIsJpg)
-      logoDrawn = canvas.drawJpg(logoData, logoLength, 13, 43, 84, 74);
-    else
-      logoDrawn = canvas.drawPng(logoData, logoLength, 13, 43, 84, 74);
+    constexpr int logoX = 13, logoY = 43, logoW = 84, logoH = 74;
+    uint16_t sourceW = 0, sourceH = 0;
+    if (getLogoDimensions(logoData, logoLength, sourceW, sourceH)) {
+      // LovyanGFX maxWidth/maxHeight are clipping bounds, not a fit-to-box
+      // operation. Calculate one uniform scale and center the complete logo.
+      const float scaleX = static_cast<float>(logoW) / sourceW;
+      const float scaleY = static_cast<float>(logoH) / sourceH;
+      const float scale = scaleX < scaleY ? scaleX : scaleY;
+      const int drawW = static_cast<int>(sourceW * scale + 0.5f);
+      const int drawH = static_cast<int>(sourceH * scale + 0.5f);
+      const int drawX = logoX + (logoW - drawW) / 2;
+      const int drawY = logoY + (logoH - drawH) / 2;
+      if (logoIsJpg)
+        logoDrawn = canvas.drawJpg(logoData, logoLength, drawX, drawY,
+                                   0, 0, 0, 0, scale, scale);
+      else
+        logoDrawn = canvas.drawPng(logoData, logoLength, drawX, drawY,
+                                   0, 0, 0, 0, scale, scale);
+    }
   }
   if (!logoDrawn) {
     centered(canvas,logoData ? "LOGO ERR" : "NO LOGO",55,58,0x7BEF,&lgfx::fonts::Font2);
