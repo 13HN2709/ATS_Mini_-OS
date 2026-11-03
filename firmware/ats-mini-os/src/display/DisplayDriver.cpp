@@ -170,8 +170,7 @@ bool DisplayDriver::begin() {
 
 void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConnected,
                            const char* lastInputEvent,uint32_t inputEventCount,
-                           const RadioDnsFmIdentity& logoIdentity,
-                           RadioDnsClient* logoClient, bool menuOpen,
+                           StationLogoClient* logoClient, bool menuOpen,
                            uint8_t menuPage, uint8_t menuSelection, uint8_t volume) {
   if(!ready_)return;
   const uint32_t now=millis();
