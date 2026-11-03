@@ -53,8 +53,8 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
 void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady,bool wifiConnected,const char* lastInputEvent,uint32_t inputEventCount) {
   const int w=device_.width();
   const int h=device_.height();
-  device_.fillRect(0,0,w,36,BLACK);
-  device_.fillRect(0,36,w,h-36,BLACK);
+  device_.fillRect(7,4,116,24,BLACK);
+  device_.fillRect(198,4,w-205,24,BLACK);
 
   // Header: two decimal places for FM, with compact status indicators.
   char freq[20];
@@ -78,10 +78,10 @@ void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady,bool wifiConnect
   centered(device_,"RadioDNS",55,80,DARK_GREEN,&lgfx::fonts::Font0);
 
   const char* station=s.stationName[0]?s.stationName:(radioReady?"Warte auf PS...":"RADIO OFFLINE");
-  device_.fillRect(107,40,w-117,25,BLACK);
+  device_.fillRect(105,39,w-115,27,BLACK);
   text(device_,station,109,44,WHITE,&lgfx::fonts::Font2);
 
-  device_.fillRect(107,68,w-117,49,BLACK);
+  device_.fillRect(105,67,w-115,51,BLACK);
   text(device_,"RT",109,69,YELLOW,&lgfx::fonts::Font0);
   const char* rt=s.radioText[0]?s.radioText:"Warte auf Radiotext...";
   text(device_,rt,109,82,WHITE,&lgfx::fonts::Font2);
@@ -95,6 +95,7 @@ void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady,bool wifiConnect
     "OLDIES","FOLK MUSIC","DOCUMENTARY","ALARM TEST","ALARM"
   };
   device_.drawFastHLine(10,127,w-20,DARK_GREEN);
+  device_.fillRect(10,131,w-20,18,BLACK);
   text(device_,"PTY",11,135,CYAN,&lgfx::fonts::Font0);
   text(device_,ptyNames[s.pty<32?s.pty:0],36,133,GREEN,&lgfx::fonts::Font2);
 
@@ -103,5 +104,6 @@ void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady,bool wifiConnect
   snprintf(status,sizeof(status),"%s  PI:%04X  %s",
     s.stereo?"ST":"MO",static_cast<unsigned>(s.piCode),
     s.rdsAvailable?"RDS":"NO RDS");
+  device_.fillRect(10,h-16,w-20,15,BLACK);
   text(device_,status,11,h-13,0x7BEF,&lgfx::fonts::Font0);
 }
