@@ -426,6 +426,48 @@ void RadioDnsClient::unlockLogo() {
   if (logoMutex_) xSemaphoreGive(logoMutex_);
 }
 
+bool RadioDnsClient::storeLogoInRam(const String& logo, const char* key, const char* source) {
+  const uint8_t* logoBytes = reinterpret_cast<const uint8_t*>(logo.c_str());
+  const char* ext = nullptr;
+  if (logo.length() >= 3 && logoBytes[0] == 0xFF && logoBytes[1] == 0xD8 && logoBytes[2] == 0xFF) {
+    ext = "jpg";
+  } else if (logo.length() >= 8 && logoBytes[0] == 0x89 && logoBytes[1] == 'P' &&
+             logoBytes[2] == 'N' && logoBytes[3] == 'G' && logoBytes[4] == 0x0D &&
+             logoBytes[5] == 0x0A && logoBytes[6] == 0x1A && logoBytes[7] == 0x0A) {
+    ext = "png";
+  } else {
+    logRadioDns(cache_, String("logo download returned unsupported image data; bytes=") +
+      String(logo.length()) + "; source=" + (source ? source : "(unknown)"));
+    return false;
+  }
+  uint8_t* ramCopy = static_cast<uint8_t*>(
+    heap_caps_malloc(logo.length(), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
+  if (!ramCopy) ramCopy = static_cast<uint8_t*>(heap_caps_malloc(logo.length(), MALLOC_CAP_8BIT));
+  if (!ramCopy) {
+    logRadioDns(cache_, String("logo downloaded but RAM allocation failed; bytes=") + String(logo.length()));
+    return false;
+  }
+  memcpy(ramCopy, logo.c_str(), logo.length());
+  if (!logoMutex_ || xSemaphoreTake(logoMutex_, portMAX_DELAY) != pdTRUE) {
+    heap_caps_free(ramCopy);
+    logRadioDns(cache_, "logo downloaded but RAM handoff mutex unavailable");
+    return false;
+  }
+  uint8_t* oldLogo = logoData_;
+  logoData_ = ramCopy;
+  logoLength_ = logo.length();
+  logoIsJpg_ = strcmp(ext, "jpg") == 0;
+  strncpy(logoKey_, key, sizeof(logoKey_) - 1);
+  logoKey_[sizeof(logoKey_) - 1] = 0;
+  xSemaphoreGive(logoMutex_);
+  if (oldLogo) heap_caps_free(oldLogo);
+  logRadioDns(cache_, String("logo ready in RAM for display: key=") + key +
+    "; format=" + ext + "; bytes=" + String(logo.length()) +
+    "; source=" + (source ? source : "(unknown)") +
+    "; persistent saving disabled");
+  return true;
+}
+
 void RadioDnsClient::update(const RadioDnsFmIdentity& identity, bool wifiConnected) {
   static int lastGateCode = -1;
   const int gateCode = (!cache_ || !cache_->ready()) ? 1 : (!wifiConnected ? 2 : (identity.status != RadioDnsIdentityStatus::Ready ? 10 + static_cast<int>(identity.status) : 0));
@@ -476,6 +518,41 @@ void RadioDnsClient::runLookup(const RadioDnsFmIdentity& identity) {
   snprintf(key, sizeof(key), "%s_%s_%s", identity.gcc, identity.pi, identity.frequency);
   // Diagnostic phase: deliberately bypass the persistent asset cache. Existing
   // files are left untouched; each test lookup downloads into RAM only.
+
+  // First try the FM-DX-Webserver community logo collection. Germany uses
+  // the legacy "D" directory and PI-based filenames (for example D399.png).
+  // Keep this diagnostic phase RAM-only; no filesystem writes are performed.
+  String fmDxGcc = identity.gcc;
+  fmDxGcc.toUpperCase();
+  String fmDxPi = identity.pi;
+  fmDxPi.toUpperCase();
+  String fmDxFolder;
+  if (fmDxPi.length() == 4 && fmDxPi[0] == 'D' && fmDxGcc.endsWith("E0")) {
+    fmDxFolder = "D";
+  }
+  if (!fmDxFolder.isEmpty()) {
+    logRadioDns(cache_, String("FM-DX logo lookup started: folder=") + fmDxFolder +
+      "; PI=" + fmDxPi + "; server=tef.noobish.eu");
+    const char* extensions[] = {".png", ".jpg", ".jpeg"};
+    for (const char* extension : extensions) {
+      String logoUrl = String("https://tef.noobish.eu/logos/") + fmDxFolder +
+        "/" + fmDxPi + extension;
+      int fmDxStatus = -1;
+      String fmDxLogo = httpGet(logoUrl, kMaxLogoBytes, fmDxStatus);
+      if (fmDxStatus == HTTP_CODE_OK && !fmDxLogo.isEmpty()) {
+        logRadioDns(cache_, String("FM-DX logo candidate found: HTTP 200; URL=") + logoUrl);
+        if (storeLogoInRam(fmDxLogo, key, logoUrl.c_str())) return;
+      } else {
+        logRadioDns(cache_, String("FM-DX logo candidate unavailable: HTTP/status ") +
+          String(fmDxStatus) + "; URL=" + logoUrl);
+      }
+    }
+    logRadioDns(cache_, String("FM-DX logo lookup found no usable raster logo for PI=") + fmDxPi +
+      "; continuing with RadioDNS");
+  } else {
+    logRadioDns(cache_, String("FM-DX logo lookup skipped: no verified folder mapping for GCC=") +
+      identity.gcc + "; continuing with RadioDNS");
+  }
 
   char authoritativeFqdn[256] = {};
   uint8_t cnameRcode = 0xff;
@@ -552,41 +629,5 @@ void RadioDnsClient::runLookup(const RadioDnsFmIdentity& identity) {
     logRadioDns(cache_, String("logo download failed (HTTP/status ") + String(logoStatus) + "); URL=" + logoUrl);
     return;
   }
-  const uint8_t* logoBytes = reinterpret_cast<const uint8_t*>(logo.c_str());
-  const char* ext = nullptr;
-  if (logo.length() >= 3 && logoBytes[0] == 0xFF && logoBytes[1] == 0xD8 && logoBytes[2] == 0xFF) {
-    ext = "jpg";
-  } else if (logo.length() >= 8 && logoBytes[0] == 0x89 && logoBytes[1] == 'P' &&
-             logoBytes[2] == 'N' && logoBytes[3] == 'G' && logoBytes[4] == 0x0D &&
-             logoBytes[5] == 0x0A && logoBytes[6] == 0x1A && logoBytes[7] == 0x0A) {
-    ext = "png";
-  } else {
-    logRadioDns(cache_, String("logo download returned unsupported image data; bytes=") +
-      String(logo.length()) + "; URL=" + logoUrl);
-    return;
-  }
-  uint8_t* ramCopy = static_cast<uint8_t*>(
-    heap_caps_malloc(logo.length(), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
-  if (!ramCopy) ramCopy = static_cast<uint8_t*>(heap_caps_malloc(logo.length(), MALLOC_CAP_8BIT));
-  if (!ramCopy) {
-    logRadioDns(cache_, String("logo downloaded but RAM allocation failed; bytes=") + String(logo.length()));
-    return;
-  }
-  memcpy(ramCopy, logo.c_str(), logo.length());
-  if (!logoMutex_ || xSemaphoreTake(logoMutex_, portMAX_DELAY) != pdTRUE) {
-    heap_caps_free(ramCopy);
-    logRadioDns(cache_, "logo downloaded but RAM handoff mutex unavailable");
-    return;
-  }
-  uint8_t* oldLogo = logoData_;
-  logoData_ = ramCopy;
-  logoLength_ = logo.length();
-  logoIsJpg_ = strcmp(ext, "jpg") == 0;
-  strncpy(logoKey_, key, sizeof(logoKey_) - 1);
-  logoKey_[sizeof(logoKey_) - 1] = 0;
-  xSemaphoreGive(logoMutex_);
-  if (oldLogo) heap_caps_free(oldLogo);
-  logRadioDns(cache_, String("logo ready in RAM for display: key=") + key +
-    "; format=" + ext + "; bytes=" + String(logo.length()) +
-    "; persistent saving disabled");
+  storeLogoInRam(logo, key, logoUrl.c_str());
 }
