@@ -48,7 +48,19 @@ void setup() {
   });
   diagnosticsServer.on("/radiodns-status", HTTP_GET, []() {
     const RadioSnapshot& state = radio.snapshot();
-    String body = String("ATS Mini OS RadioDNS status\nFrequency kHz: ") + String(state.frequencyKHz) + "\nPI: " + String(state.piCode, HEX) + "\nECC valid: " + (state.eccValid ? "yes" : "no") + "\nGCC: " + String(state.gcc) + "\nWiFi connected: " + (wifi.connected() ? "yes" : "no") + "\nStorage discovery ready: " + (StorageDiscovery::ready() ? "yes" : "no") + "\nStorage partition: " + String(StorageDiscovery::partitionLabel()) + "\nAnchor file: " + String(StorageDiscovery::anchorPath()) + "\n";
+    const RadioDnsFmIdentity identity = radio.radioDnsIdentity();
+    const char* gccSource = identity.countryFallbackUsed ? "DE fallback (test)" :
+                            (state.eccValid ? "RDS ECC" : "unavailable");
+    String body = String("ATS Mini OS RadioDNS status\nFrequency kHz: ") +
+      String(state.frequencyKHz) + "\nPI: " + String(identity.pi) +
+      "\nECC valid: " + (state.eccValid ? "yes" : "no") +
+      "\nGCC: " + String(identity.gcc) + "\nGCC source: " + gccSource +
+      "\nFQDN: " + String(identity.fqdn) +
+      "\nIdentity status: " + String(static_cast<int>(identity.status)) +
+      "\nWiFi connected: " + (wifi.connected() ? "yes" : "no") +
+      "\nStorage discovery ready: " + (StorageDiscovery::ready() ? "yes" : "no") +
+      "\nStorage partition: " + String(StorageDiscovery::partitionLabel()) +
+      "\nAnchor file: " + String(StorageDiscovery::anchorPath()) + "\n";
     diagnosticsServer.send(200, "text/plain; charset=utf-8", body);
   });
   Serial.printf("CPU profile: %s\n",performance.profileName());
