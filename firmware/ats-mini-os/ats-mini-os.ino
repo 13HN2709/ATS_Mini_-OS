@@ -9,6 +9,7 @@
 #include "src/radiodns/RadioDnsCache.h"
 #include "src/radiodns/RadioDnsClient.h"
 #include "src/system/PartitionDiagnostics.h"
+#include "src/storage/StorageDiscovery.h"
 
 namespace {
 constexpr uint32_t SERIAL_BAUD = 115200;
@@ -47,7 +48,7 @@ void setup() {
   });
   diagnosticsServer.on("/radiodns-status", HTTP_GET, []() {
     const RadioSnapshot& state = radio.snapshot();
-    String body = String("ATS Mini OS RadioDNS status\nFrequency kHz: ") + String(state.frequencyKHz) + "\nPI: " + String(state.piCode, HEX) + "\nECC valid: " + (state.eccValid ? "yes" : "no") + "\nGCC: " + String(state.gcc) + "\nWiFi connected: " + (wifi.connected() ? "yes" : "no") + "\nLittleFS ready: " + (radioDnsCache.ready() ? "yes" : "no") + "\n";
+    String body = String("ATS Mini OS RadioDNS status\nFrequency kHz: ") + String(state.frequencyKHz) + "\nPI: " + String(state.piCode, HEX) + "\nECC valid: " + (state.eccValid ? "yes" : "no") + "\nGCC: " + String(state.gcc) + "\nWiFi connected: " + (wifi.connected() ? "yes" : "no") + "\nStorage discovery ready: " + (StorageDiscovery::ready() ? "yes" : "no") + "\nStorage partition: " + String(StorageDiscovery::partitionLabel()) + "\nAnchor file: " + String(StorageDiscovery::anchorPath()) + "\n";
     diagnosticsServer.send(200, "text/plain; charset=utf-8", body);
   });
   Serial.printf("CPU profile: %s\n",performance.profileName());
