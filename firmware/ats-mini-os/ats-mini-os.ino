@@ -49,7 +49,7 @@ void loop() {
   if (wifi.connected() && !diagnosticsServerStarted) {
     diagnosticsServer.begin();
     diagnosticsServerStarted = true;
-    Serial.printf("[DIAG] Web status server: http://%s/ (no RadioDNS endpoints)\\n", WiFi.localIP().toString().c_str());
+    Serial.printf("[DIAG] Web status server: http://%s/ logo status only\\n", WiFi.localIP().toString().c_str());
   }
   if (diagnosticsServerStarted) diagnosticsServer.handleClient();
   encoder.update();
