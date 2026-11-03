@@ -1,6 +1,7 @@
 #include "RadioDnsCache.h"
 
 #include <LittleFS.h>
+#include "../storage/StorageDiscovery.h"
 #include <ctype.h>
 #include <string.h>
 
@@ -23,19 +24,16 @@ bool isSafeExtension(const char* ext) {
 }
 
 bool RadioDnsCache::begin() {
-  // false = never auto-format on mount failure; preserve any existing contents.
-  if (!LittleFS.begin(false)) {
-    Serial.println("[RADIODNS] LittleFS mount failed; filesystem was NOT formatted");
-    ready_ = false;
-    return false;
-  }
-  if (!LittleFS.exists("/RDS") && !LittleFS.mkdir("/RDS")) {
-    Serial.println("[RADIODNS] could not create /RDS cache directory");
+  // StorageDiscovery mounts without formatting, searches for existing anchor
+  // files, and creates /RDS only on the filesystem where an anchor was found.
+  if (!StorageDiscovery::begin()) {
+    Serial.println("[RADIODNS] storage not selected; cache disabled without writes");
     ready_ = false;
     return false;
   }
   ready_ = true;
-  Serial.println("[RADIODNS] LittleFS cache ready at /RDS");
+  Serial.printf("[RADIODNS] cache ready at /RDS on partition '%s' (anchor: %s)\\n",
+                StorageDiscovery::partitionLabel(), StorageDiscovery::anchorPath());
   return true;
 }
 
