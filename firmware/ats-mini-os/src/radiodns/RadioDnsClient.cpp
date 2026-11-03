@@ -214,7 +214,7 @@ DnsSrvResult dnsSrvLookup(const char* fqdn, char* host, size_t hostCap,
   packet[0] = id >> 8; packet[1] = id & 0xff;
   packet[2] = 1; packet[5] = 1; // recursive query, one question
   size_t q = 12;
-  char query[100];
+  char query[256];
   snprintf(query, sizeof(query), "_radioepg._tcp.%s", fqdn);
   if (!encodeDnsName(packet, sizeof(packet), q, query) || q + 4 > sizeof(packet))
     return DnsSrvResult::MalformedResponse;
@@ -528,12 +528,23 @@ void RadioDnsClient::runLookup(const RadioDnsFmIdentity& identity) {
     return;
   }
   logRadioDns(cache_, String("logo URL selected: ") + logoUrl);
-  String lower = logoUrl; lower.toLowerCase();
-  const char* ext = lower.endsWith(".jpg") || lower.endsWith(".jpeg") ? "jpg" : "png";
   int logoStatus = -1;
   String logo = httpGet(logoUrl, kMaxLogoBytes, logoStatus);
   if (logoStatus != HTTP_CODE_OK || logo.isEmpty()) {
     logRadioDns(cache_, String("logo download failed (HTTP/status ") + String(logoStatus) + "); URL=" + logoUrl);
+    return;
+  }
+  const uint8_t* logoBytes = reinterpret_cast<const uint8_t*>(logo.c_str());
+  const char* ext = nullptr;
+  if (logo.length() >= 3 && logoBytes[0] == 0xFF && logoBytes[1] == 0xD8 && logoBytes[2] == 0xFF) {
+    ext = "jpg";
+  } else if (logo.length() >= 8 && logoBytes[0] == 0x89 && logoBytes[1] == 'P' &&
+             logoBytes[2] == 'N' && logoBytes[3] == 'G' && logoBytes[4] == 0x0D &&
+             logoBytes[5] == 0x0A && logoBytes[6] == 0x1A && logoBytes[7] == 0x0A) {
+    ext = "png";
+  } else {
+    logRadioDns(cache_, String("logo download returned unsupported image data; bytes=") +
+      String(logo.length()) + "; URL=" + logoUrl);
     return;
   }
   uint8_t* ramCopy = static_cast<uint8_t*>(
