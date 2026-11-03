@@ -16,7 +16,7 @@ constexpr size_t kMaxSiBytes = 180000;
 constexpr size_t kMaxLogoBytes = 220000;
 struct LookupJob { RadioDnsClient* self; RadioDnsFmIdentity identity; };
 void logRadioDns(RadioDnsCache* cache, const String& message) {
-  String line = String(millis()) + " ms " + message + "\\n";
+  String line = String(millis()) + " ms " + message + "\n";
   Serial.print("[RADIODNS] "); Serial.println(message);
   if (cache) cache->appendLog(line.c_str());
 }
