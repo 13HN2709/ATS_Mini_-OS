@@ -1089,3 +1089,14 @@ Die Header- und Implementierungsdateien der offiziellen PU2CLR-Version 2.1.8 wur
 - Geänderte/angelegte Dateien: `firmware/ats-mini-os/src/storage/StorageDiscovery.h`, `firmware/ats-mini-os/src/storage/StorageDiscovery.cpp`, `firmware/ats-mini-os/src/radiodns/RadioDnsCache.cpp`.
 - Status: Änderungen auf `dev/first-build-preparation` committed; **noch nicht kompiliert und nicht am Gerät getestet**. Keine GitHub Actions gestartet, nichts geflasht; Partitionstabelle, Bootloader und bestehende Slots unverändert.
 - Nächster Schritt: statische Schnittstellen-/Compile-Prüfung, insbesondere ESP32-Arduino-3.3.12-Kompatibilität von `File::path()`, LittleFS-Mount mit Partitionslabel und Iteratorfreigabe; anschließend manueller Compile-Test durch den Nutzer. Bei erfolgreicher Suche sollte der Diagnose-Endpunkt Partitionlabel und gefundene Ankerdatei anzeigen.
+
+
+## Eingrenzung der Storage Discovery auf zwei LittleFS-Adressen (2026-11-03)
+
+- Nutzer präzisierte: ausschließlich die beiden bekannten LittleFS-Startadressen prüfen, nicht andere Partitionen oder beliebige Flashbereiche.
+- Aktuelle ATS Mini V4 Partitionstabelle: LittleFS bei `0xA00000`.
+- Read-only Referenz `13HN2709/ats-mini-dev/partitions.csv`: LittleFS bei `0x610000`, Größe `0x1D0000` (8-MiB-Layout).
+- `StorageDiscovery.cpp` akzeptiert daher nur Partitionen, die die Runtime-Partitionstabelle als DATA-Partition mit Label `littlefs` meldet und deren Startadresse exakt `0xA00000` oder `0x610000` ist.
+- Die Routine mountet niemals blind die rohe Adresse `0x610000`: Im dokumentierten 16-MB-ATS-Mini-V4-Layout liegt diese Adresse innerhalb von `app1`; in diesem Fall ist sie keine LittleFS-Partition und wird ignoriert.
+- Die bekannten Ankerdateien werden weiterhin nur innerhalb des gültig gemounteten LittleFS gesucht. `/RDS` wird nur nach einem Fund angelegt; Mount erfolgt mit `formatOnFail=false`.
+- Noch nicht kompiliert oder auf dem Gerät getestet. Keine GitHub Actions gestartet, nichts geflasht; keine Partitionstabelle, Bootloader- oder bestehenden Daten geändert.
