@@ -238,6 +238,8 @@ public:
   uint32_t detectedPanelId() const { return device_.getDisplayId(); }
 private:
   Device device_;
+  lgfx::LGFX_Sprite sprite_{&device_};
+  bool useSprite_ = false;
   bool ready_ = false;
   uint32_t lastGeneration_ = UINT32_MAX;
   uint32_t lastDrawMs_ = 0;
