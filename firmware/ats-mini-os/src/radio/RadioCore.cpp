@@ -51,12 +51,6 @@ void RadioCore::update() {
         snapshot_.eccCode = rds.eccCode;
         snapshot_.eccValid = true;
       }
-      if (snapshot_.piCode != 0 && snapshot_.eccValid) {
-        // GCC = PI country-code nibble + the received 8-bit ECC.
-        snprintf(snapshot_.gcc, sizeof(snapshot_.gcc), "%1X%02X",
-          static_cast<unsigned>((snapshot_.piCode >> 12) & 0x0F),
-          static_cast<unsigned>(snapshot_.eccCode));
-      }
       if (rds.stationNameUpdated) copyField(snapshot_.stationName, sizeof(snapshot_.stationName), rds.stationName);
       if (rds.radioTextUpdated) copyField(snapshot_.radioText, sizeof(snapshot_.radioText), rds.radioText);
       snapshot_.rdsAvailable = true;
@@ -71,7 +65,6 @@ bool RadioCore::tune(uint32_t frequencyKHz) {
   snapshot_.piCode = 0;
   snapshot_.eccCode = 0;
   snapshot_.eccValid = false;
-  snapshot_.gcc[0] = '\0';
   snapshot_.pty = 0;
   snapshot_.rdsAvailable = false;
   snapshot_.stationName[0] = '\0';
@@ -98,26 +91,3 @@ bool RadioCore::nextChannel(int16_t acceleratedDelta) {
   return tune(target);
 }
 
-RadioDnsFmIdentity RadioCore::radioDnsIdentity() const {
-  // Temporary test fallback: Germany (DE) maps to ECC E0 for the RDS country
-  // code D, producing GCC DE0. A received ECC always takes precedence.
-  if (snapshot_.eccValid && snapshot_.gcc[0] != '\0') {
-    return RadioDnsIdentity::buildFm(snapshot_.frequencyKHz, snapshot_.piCode,
-                                     snapshot_.gcc);
-  }
-
-  // Do not apply the German test fallback to a PI whose country-code nibble
-  // does not identify Germany. Cross-border country resolution can be added
-  // later when the configurable country setting is implemented.
-  if (snapshot_.piCode != 0 &&
-      ((snapshot_.piCode >> 12) & 0x0F) == 0x0D) {
-    RadioDnsFmIdentity identity =
-        RadioDnsIdentity::buildFm(snapshot_.frequencyKHz, snapshot_.piCode, "DE0");
-    if (identity.status == RadioDnsIdentityStatus::Ready) {
-      identity.countryFallbackUsed = true;
-    }
-    return identity;
-  }
-
-  return RadioDnsIdentity::buildFm(snapshot_.frequencyKHz, snapshot_.piCode, "");
-}
