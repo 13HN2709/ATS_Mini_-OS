@@ -4,6 +4,7 @@
 #include <FS.h>
 #include <esp_partition.h>
 #include <string.h>
+#include <strings.h>
 
 namespace StorageDiscovery {
 namespace {
