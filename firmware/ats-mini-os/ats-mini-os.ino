@@ -63,7 +63,7 @@ void loop() {
     }
   }
   radio.update();
-  display.render(radio.snapshot(),radio.isReady(),lastEncoderEvent,encoderEventCount);
+  display.render(radio.snapshot(),radio.isReady(),wifi.connected(),lastEncoderEvent,encoderEventCount);
   const uint32_t now=millis();
   if(now-lastStatusMs>=2000) {
     lastStatusMs=now; const RadioSnapshot& s=radio.snapshot();
