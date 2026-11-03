@@ -1168,3 +1168,25 @@ Die Header- und Implementierungsdateien der offiziellen PU2CLR-Version 2.1.8 wur
 - Noch nicht kompiliert oder am Gerät getestet. Nutzer startet den manuellen Compile-only-Workflow selbst. Keine Actions gestartet, nichts geflasht und keine Bootloader-/Partition-/Datenänderung vorgenommen.
 - Nächster Schritt: manueller Compile-only-Build, danach Gerätetest und Abruf von `/radiodns-log`. Die neue Meldung soll zeigen, ob der Resolver ein echtes NXDOMAIN, einen Timeout oder einen anderen DNS-Fehler liefert. Erst dann die Ursache beheben.
 
+
+
+## RadioDNS: CNAME-Auflösung und Logo-Test nur im RAM (2026-11-03)
+
+- Nutzerfreigabe: Für die Fehlersuche wird das dauerhafte Speichern von SI.xml-Metadaten und heruntergeladenen Senderlogos vorübergehend deaktiviert. Der Ablauf soll erst RadioDNS korrekt auflösen, SI.xml und Logo laden und das Logo direkt anzeigen. Die Ursache für das spätere Speichern wird getrennt untersucht.
+- DNS-Reihenfolge korrigiert: Zuerst wird der RadioDNS-FQDN (z. B. `09540.d399.de0.fm.radiodns.org`) als CNAME abgefragt. Der zurückgegebene authoritative FQDN wird anschließend für `_radioepg._tcp.<authoritative-FQDN>` als SRV-Abfrage verwendet. CNAME-/SRV-Ergebnisse, DNS-Server, RCODE und Antwortanzahl werden im bestehenden RadioDNS-Debug-Log protokolliert. Das entspricht dem RadioDNS-Core-Lookup-Verfahren aus ETSI TS 103 270; ein fehlender CNAME wird nun als fehlender angefragter DNS-Record gemeldet.
+- Die SI.xml-Antwort bleibt nur im temporären Arbeitsspeicher; `saveMetadata()` wird in diesem Diagnosepfad nicht mehr aufgerufen. Heruntergeladene Logo-Bytes werden in PSRAM (mit Heap-Fallback) gehalten und per Mutex an den Display-Renderer übergeben. Das Display decodiert PNG/JPG direkt aus dem RAM-Puffer statt aus LittleFS.
+- Der Diagnose-Log bleibt weiterhin persistent unter `/RDS/radiodns-debug.log`, damit der Nutzer ihn über `/radiodns-log` am Smartphone abrufen kann. Vorhandene Logo-/Metadatendateien werden weder gelesen noch überschrieben oder gelöscht. Die Cache-Schreibmethoden bleiben im Projekt erhalten, sind aber im aktuellen Testablauf nicht aktiv.
+- Geänderte Dateien:
+  - `firmware/ats-mini-os/src/radiodns/RadioDnsClient.h`
+  - `firmware/ats-mini-os/src/radiodns/RadioDnsClient.cpp`
+  - `firmware/ats-mini-os/src/display/DisplayDriver.h`
+  - `firmware/ats-mini-os/src/display/DisplayDriver.cpp`
+  - `firmware/ats-mini-os/ats-mini-os.ino`
+- Änderungskette auf `dev/first-build-preparation`:
+  - [RAM-Logo-Schnittstelle](https://github.com/13HN2709/ATS_Mini_-OS/commit/e782e703202dee463892c828df1e63575cfaa0c9)
+  - [CNAME vor SRV, Logo nur im RAM](https://github.com/13HN2709/ATS_Mini_-OS/commit/3d6dc216cbd771ba4a9f1b5eee36e77cea3bf09e)
+  - [Display rendert Logo aus RAM](https://github.com/13HN2709/ATS_Mini_-OS/commit/aa26a2adc1fe23b7dda9ea87944e89e2f1360470)
+  - [RadioDNS-Client an Display übergeben](https://github.com/13HN2709/ATS_Mini_-OS/commit/26e7cfe0fc3d544874b3d207d99ae235898dfe0a)
+  - [CNAME-Diagnose präzisiert](https://github.com/13HN2709/ATS_Mini_-OS/commit/8645f8e5ffa992673706d6ddef851ccb956d9d31)
+- **Teststatus: noch nicht kompiliert und nicht auf dem Gerät geprüft.** Der Assistent hat keine GitHub Actions gestartet und nichts geflasht. Nutzer soll den manuellen Compile-only-Workflow ausführen; erst nach erfolgreichem Compile folgt der Test auf dem ATS Mini V4. Bootloader, Partitionstabelle und bestehende Dateien wurden nicht verändert.
+- Beim Gerätetest bitte `/radiodns-log` nach einer neuen Suche abrufen. Gesucht werden die Meldungen `CNAME DNS lookup succeeded`, `SRV DNS lookup succeeded`, `SI.xml received` und `logo ready in RAM for display`. Wenn der Ablauf bis zum RAM-Logo reicht, prüfen wir danach, ob es sichtbar ist. Erst danach wird das Speicherproblem separat angegangen.
