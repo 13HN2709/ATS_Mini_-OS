@@ -64,10 +64,16 @@ bool begin() {
                     part->label, static_cast<unsigned>(part->subtype),
                     static_cast<unsigned long>(part->size));
 
-      // Mount only a known LittleFS-labelled partition. Other data partitions
-      // (NVS, OTA metadata, coredump, settings) are not filesystems and are
-      // never opened or modified by this discovery routine.
-      if (strcmp(part->label, "littlefs") == 0) {
+      // Check ONLY the two LittleFS start addresses known for this project:
+      // 0xA00000 = current ATS Mini V4 layout; 0x610000 = ats-mini-dev layout.
+      // An address is accepted only when the runtime partition table itself
+      // declares a DATA partition named "littlefs" at that exact offset.
+      // Never mount raw flash at 0x610000 if it overlaps app1 in another layout.
+      const bool knownLittleFsAddress =
+          part->address == 0x00A00000UL || part->address == 0x00610000UL;
+      if (strcmp(part->label, "littlefs") == 0 && knownLittleFsAddress) {
+        Serial.printf("[STORAGE] approved LittleFS offset: 0x%08lX\\n",
+                      static_cast<unsigned long>(part->address));
         strncpy(g_partitionLabel, part->label, sizeof(g_partitionLabel) - 1);
         g_partitionLabel[sizeof(g_partitionLabel) - 1] = '\0';
         mounted = LittleFS.begin(false, "/littlefs", 10, g_partitionLabel);
