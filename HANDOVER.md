@@ -1074,3 +1074,18 @@ Die Header- und Implementierungsdateien der offiziellen PU2CLR-Version 2.1.8 wur
 - Das Logo-Feld ist aktuell **nur ein Platzhalter**. RadioDNS-Auflösung, Logo-Download, Bilddecoder und lokaler Cache sind noch nicht implementiert. Der Batterie-Indikator zeigt bewusst keinen Prozentwert, da ein belastbarer Akkustand-Pin/-Treiber noch nicht identifiziert ist; BT ist vorerst ein Layout-Indikator, keine bestätigte Bluetooth-Verbindungsanzeige.
 - Die Test-WLAN-Zugangsdaten liegen derzeit in einer privaten Testkonfiguration; vor einem öffentlichen Release müssen sie aus dem Quellcode entfernt und durch eine sichere Einstellungs-/Provisionierungslösung ersetzt werden.
 - Noch nicht kompiliert oder am Gerät getestet. Nutzer startet den manuellen Compile-Workflow selbst. Keine GitHub Actions gestartet, nichts geflasht; keine Bootloader-/Partitionsänderungen.
+
+
+## Storage Discovery für RadioDNS-Cache (2026-11-03)
+
+- Nutzer hat die Umsetzung einer adressunabhängigen Speichererkennung ausdrücklich freigegeben.
+- Neu hinzugefügt: `firmware/ats-mini-os/src/storage/StorageDiscovery.h/.cpp`.
+- Die Routine liest die Laufzeit-Partitionstabelle mit der ESP-IDF-Partitions-API und prüft bekannte Datenpartitionen. In der aktuellen ATS-Mini-OS-Partitionstabelle ist `littlefs` die unterstützte Dateisystempartition; NVS, OTA-Metadaten, Settings und Coredump werden nicht als Dateisystem behandelt.
+- LittleFS wird anhand des Partitionslabels `littlefs` eingebunden, nicht über eine fest codierte Flash-Adresse. Der Mount verwendet `formatOnFail=false`.
+- Die Suche läuft lesend und erkennt `Schedules.json`, `schedules.bin`, `memories.json` und `splash.png` auch in Unterordnern (begrenzt auf vier Ebenen).
+- Erst nach Fund einer Ankerdatei wird `/RDS` angelegt bzw. ein vorhandener Ordner wiederverwendet. Wenn kein Anker gefunden wird, bleibt der RadioDNS-Cache deaktiviert und es wird kein Ordner angelegt.
+- `RadioDnsCache::begin()` nutzt jetzt `StorageDiscovery`; die übrigen Cache-Zugriffe verwenden weiterhin LittleFS auf dem ausgewählten Dateisystem.
+- Wichtig: Die Implementierung scannt die Laufzeit-Partitionstabelle, mountet in dieser Version aber nur die im aktuellen Layout vorhandene LittleFS-Partition. FAT/FFat-Unterstützung ist noch nicht implementiert. Die Routine durchsucht keine App-Slots oder rohen Flashbereiche nach Dateien.
+- Geänderte/angelegte Dateien: `firmware/ats-mini-os/src/storage/StorageDiscovery.h`, `firmware/ats-mini-os/src/storage/StorageDiscovery.cpp`, `firmware/ats-mini-os/src/radiodns/RadioDnsCache.cpp`.
+- Status: Änderungen auf `dev/first-build-preparation` committed; **noch nicht kompiliert und nicht am Gerät getestet**. Keine GitHub Actions gestartet, nichts geflasht; Partitionstabelle, Bootloader und bestehende Slots unverändert.
+- Nächster Schritt: statische Schnittstellen-/Compile-Prüfung, insbesondere ESP32-Arduino-3.3.12-Kompatibilität von `File::path()`, LittleFS-Mount mit Partitionslabel und Iteratorfreigabe; anschließend manueller Compile-Test durch den Nutzer. Bei erfolgreicher Suche sollte der Diagnose-Endpunkt Partitionlabel und gefundene Ankerdatei anzeigen.
