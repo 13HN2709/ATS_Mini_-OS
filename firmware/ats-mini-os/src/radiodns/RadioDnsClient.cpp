@@ -140,6 +140,7 @@ DnsSrvResult dnsSrvLookup(const char* fqdn, char* host, size_t hostCap,
     return DnsSrvResult::InvalidResponse;
 
   responseCode = packet[3] & 0x0f;
+  answerCount = read16(packet + 6);
   if (responseCode == 3) return DnsSrvResult::NameError;
   if (responseCode == 2) return DnsSrvResult::ServerFailure;
   if (responseCode == 5) return DnsSrvResult::Refused;
@@ -147,7 +148,6 @@ DnsSrvResult dnsSrvLookup(const char* fqdn, char* host, size_t hostCap,
   if (packet[2] & 0x02) return DnsSrvResult::MalformedResponse; // truncated UDP response
 
   const uint16_t questions = read16(packet + 4);
-  answerCount = read16(packet + 6);
   size_t pos = 12;
   for (uint16_t i = 0; i < questions; ++i) {
     if (!skipDnsName(packet, got, pos) || pos + 4 > size_t(got))
