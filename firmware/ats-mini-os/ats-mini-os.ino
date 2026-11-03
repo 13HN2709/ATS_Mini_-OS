@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <WebServer.h>
 #include <LovyanGFX.hpp>
 #include "src/radio/RadioCore.h"
 #include "src/system/PerformanceManager.h"
@@ -19,6 +20,8 @@ EncoderInput encoder;
 WifiClient wifi;
 RadioDnsCache radioDnsCache;
 RadioDnsClient radioDnsClient;
+WebServer diagnosticsServer(80);
+bool diagnosticsServerStarted = false;
 uint32_t lastStatusMs = 0;
 uint32_t encoderEventCount = 0;
 const char* lastEncoderEvent = "WAIT";
@@ -37,11 +40,28 @@ void setup() {
     Serial.printf("Radio ready: %.1f MHz\n",radio.snapshot().frequencyKHz/1000.0f);
   else Serial.println("[TUNER] init failed; check I2C, radio power and GPIO configuration.");
   wifi.begin();
+  diagnosticsServer.on("/radiodns-log", HTTP_GET, []() {
+    const String log = radioDnsCache.readLog();
+    diagnosticsServer.sendHeader("Content-Disposition", "attachment; filename=ATS-Mini-OS-RadioDNS-log.txt");
+    diagnosticsServer.send(200, "text/plain; charset=utf-8", log.length() ? log : "RadioDNS log is empty or LittleFS is unavailable.\n");
+  });
+  diagnosticsServer.on("/radiodns-status", HTTP_GET, []() {
+    const RadioSnapshot& state = radio.snapshot();
+    String body = String("ATS Mini OS RadioDNS status\nFrequency kHz: ") + String(state.frequencyKHz) + "\nPI: " + String(state.piCode, HEX) + "\nECC valid: " + (state.eccValid ? "yes" : "no") + "\nGCC: " + String(state.gcc) + "\nWiFi connected: " + (wifi.connected() ? "yes" : "no") + "\nLittleFS ready: " + (radioDnsCache.ready() ? "yes" : "no") + "\n";
+    diagnosticsServer.send(200, "text/plain; charset=utf-8", body);
+  });
   Serial.printf("CPU profile: %s\n",performance.profileName());
 }
 void loop() {
   performance.update();
   wifi.update();
+  if (wifi.connected() && !diagnosticsServerStarted) {
+    diagnosticsServer.begin();
+    diagnosticsServerStarted = true;
+    Serial.printf("[DIAG] RadioDNS log download: http://%s/radiodns-log\\n", WiFi.localIP().toString().c_str());
+    Serial.printf("[DIAG] RadioDNS status: http://%s/radiodns-status\\n", WiFi.localIP().toString().c_str());
+  }
+  if (diagnosticsServerStarted) diagnosticsServer.handleClient();
   encoder.update();
   EncoderEvent inputEvent;
   while (encoder.poll(inputEvent)) {
