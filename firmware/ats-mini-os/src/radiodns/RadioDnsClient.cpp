@@ -168,8 +168,7 @@ bool dnsResolveAuthoritativeFqdn(const char* radioDnsFqdn,
     pos += 10;
     if (pos + rdlen > static_cast<size_t>(got)) return false;
     if (type == 5 && klass == 1) { // CNAME
-      size_t nameBytes = 0;
-      if (decodeDnsName(packet, got, pos, authoritativeFqdn, hostCapacity, &nameBytes) &&
+      if (decodeDnsName(packet, got, pos, authoritativeFqdn, hostCapacity) &&
           authoritativeFqdn[0]) {
         while (authoritativeFqdn[0] &&
                authoritativeFqdn[strlen(authoritativeFqdn) - 1] == '.') {
