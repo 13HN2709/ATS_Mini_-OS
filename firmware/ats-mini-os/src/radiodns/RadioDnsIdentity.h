@@ -19,6 +19,8 @@ struct RadioDnsFmIdentity {
   char fqdn[64] = {};
   char serviceIdentifier[32] = {};
   char bearer[32] = {};
+  // True when the temporary DE test fallback supplied GCC instead of RDS ECC.
+  bool countryFallbackUsed = false;
 };
 
 class RadioDnsIdentity {
