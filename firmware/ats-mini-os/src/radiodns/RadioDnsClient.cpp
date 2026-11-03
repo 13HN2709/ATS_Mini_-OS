@@ -56,83 +56,125 @@ bool encodeDnsName(uint8_t* packet, size_t capacity, size_t& pos, const char* na
   return true;
 }
 
-bool dnsSrvLookup(const char* fqdn, char* host, size_t hostCap, uint16_t& port) {
-  host[0] = 0; port = 0;
+bool dnsQuery(const char* name, uint16_t type, uint8_t* packet,
+              size_t capacity, int& responseLength) {
+  responseLength = 0;
   IPAddress dns = WiFi.dnsIP(0);
-  if (dns == IPAddress(0,0,0,0)) return false;
-  uint8_t packet[kDnsPacketSize] = {};
+  if (dns == IPAddress(0, 0, 0, 0) || capacity < 64) return false;
+
+  memset(packet, 0, capacity);
   const uint16_t id = static_cast<uint16_t>(esp_random());
-  packet[0] = id >> 8; packet[1] = id & 0xff;
-  packet[2] = 1; packet[5] = 1; // recursive query, one question
+  packet[0] = id >> 8;
+  packet[1] = id & 0xff;
+  packet[2] = 1; // recursion desired
+  packet[5] = 1; // one question
+
   size_t q = 12;
-  char query[100];
-  snprintf(query, sizeof(query), "_radioepg._tcp.%s", fqdn);
-  if (!encodeDnsName(packet, sizeof(packet), q, query) || q + 4 > sizeof(packet)) return false;
-  packet[q++] = 0; packet[q++] = 33; // SRV
-  packet[q++] = 0; packet[q++] = 1;  // IN
+  if (!encodeDnsName(packet, capacity, q, name) || q + 4 > capacity) return false;
+  packet[q++] = static_cast<uint8_t>(type >> 8);
+  packet[q++] = static_cast<uint8_t>(type & 0xff);
+  packet[q++] = 0;
+  packet[q++] = 1; // IN
+
   WiFiUDP udp;
   if (!udp.begin(0)) return false;
-  if (!udp.beginPacket(dns, 53) || udp.write(packet, q) != q || !udp.endPacket()) { udp.stop(); return false; }
-  const uint32_t start = millis();
+  if (!udp.beginPacket(dns, 53) || udp.write(packet, q) != q || !udp.endPacket()) {
+    udp.stop();
+    return false;
+  }
+
+  const uint32_t started = millis();
   int packetSize = 0;
-  while (millis() - start < 1800) {
+  while (millis() - started < 2200) {
     packetSize = udp.parsePacket();
     if (packetSize > 0) break;
     vTaskDelay(pdMS_TO_TICKS(20));
   }
-  if (packetSize <= 0 || packetSize > int(sizeof(packet))) { udp.stop(); return false; }
-  const int got = udp.read(packet, sizeof(packet));
+  if (packetSize <= 0 || packetSize > static_cast<int>(capacity)) {
+    udp.stop();
+    return false;
+  }
+  responseLength = udp.read(packet, capacity);
   udp.stop();
-  if (got < 12 || read16(packet) != id || !(packet[2] & 0x80) || (packet[3] & 0x0f) != 0) return false;
+  if (responseLength < 12 || read16(packet) != id ||
+      !(packet[2] & 0x80) || (packet[3] & 0x0f) != 0) {
+    responseLength = 0;
+    return false;
+  }
+  return true;
+}
+
+// Decodes a DNS name and follows compression pointers. consumed reports the
+// number of bytes occupied at the original offset, not the expanded name.
+bool decodeDnsName(const uint8_t* packet, size_t length, size_t offset,
+                   char* output, size_t outputCapacity, size_t* consumed = nullptr) {
+  if (!packet || !output || outputCapacity < 2 || offset >= length) return false;
+  size_t pos = offset;
+  size_t used = 0;
+  size_t out = 0;
+  bool jumped = false;
+  size_t steps = 0;
+  output[0] = '\0';
+
+  while (pos < length && steps++ < 128) {
+    const uint8_t label = packet[pos++];
+    if (label == 0) {
+      if (!jumped) used = pos - offset;
+      output[out] = '\0';
+      if (consumed) *consumed = used;
+      return true;
+    }
+    if ((label & 0xC0) == 0xC0) {
+      if (pos >= length) return false;
+      const size_t pointer = (size_t(label & 0x3F) << 8) | packet[pos++];
+      if (pointer >= length) return false;
+      if (!jumped) used = pos - offset;
+      jumped = true;
+      pos = pointer;
+      continue;
+    }
+    if ((label & 0xC0) != 0 || pos + label > length) return false;
+    if (out && out + 1 >= outputCapacity) return false;
+    if (out) output[out++] = '.';
+    if (out + label >= outputCapacity) return false;
+    for (uint8_t i = 0; i < label; ++i) {
+      output[out++] = static_cast<char>(packet[pos++]);
+    }
+  }
+  return false;
+}
+
+bool dnsResolveAuthoritativeFqdn(const char* radioDnsFqdn,
+                                 char* authoritativeFqdn, size_t hostCapacity) {
+  if (!radioDnsFqdn || !*radioDnsFqdn || !authoritativeFqdn || hostCapacity < 8) return false;
+  authoritativeFqdn[0] = '\0';
+  uint8_t packet[kDnsPacketSize] = {};
+  int got = 0;
+  // RadioDNS Core Lookup: the broadcast-derived RadioDNS FQDN must resolve
+  // through a CNAME to the service provider's authoritative FQDN.
+  if (!dnsQuery(radioDnsFqdn, 5, packet, sizeof(packet), got)) return false; // CNAME
   const uint16_t questions = read16(packet + 4);
   const uint16_t answers = read16(packet + 6);
   size_t pos = 12;
   for (uint16_t i = 0; i < questions; ++i) {
-    if (!skipDnsName(packet, got, pos) || pos + 4 > size_t(got)) return false;
+    if (!skipDnsName(packet, got, pos) || pos + 4 > static_cast<size_t>(got)) return false;
     pos += 4;
   }
   for (uint16_t i = 0; i < answers; ++i) {
-    if (!skipDnsName(packet, got, pos) || pos + 10 > size_t(got)) return false;
+    if (!skipDnsName(packet, got, pos) || pos + 10 > static_cast<size_t>(got)) return false;
     const uint16_t type = read16(packet + pos);
     const uint16_t klass = read16(packet + pos + 2);
     const uint16_t rdlen = read16(packet + pos + 8);
     pos += 10;
-    if (pos + rdlen > size_t(got)) return false;
-    if (type == 33 && klass == 1 && rdlen >= 7) {
-      port = read16(packet + pos + 4);
-      size_t np = pos + 6;
-      size_t end = pos + rdlen;
-      String target;
-      while (np < end) {
-        uint8_t n = packet[np++];
-        if (!n) break;
-        if ((n & 0xC0) == 0xC0) {
-          if (np >= end) break;
-          size_t ptr = ((n & 0x3f) << 8) | packet[np];
-          ++np;
-          size_t guard = 0;
-          while (ptr < size_t(got) && guard++ < 32) {
-            uint8_t label = packet[ptr++];
-            if (!label) break;
-            if ((label & 0xC0) == 0xC0) {
-              if (ptr >= size_t(got)) break;
-              size_t next = ((label & 0x3f) << 8) | packet[ptr];
-              ++ptr; ptr = next; continue;
-            }
-            if (ptr + label > size_t(got)) break;
-            if (target.length()) target += '.';
-            for (uint8_t j=0;j<label;++j) target += char(packet[ptr++]);
-          }
-          break;
+    if (pos + rdlen > static_cast<size_t>(got)) return false;
+    if (type == 5 && klass == 1) { // CNAME
+      if (decodeDnsName(packet, got, pos, authoritativeFqdn, hostCapacity) &&
+          authoritativeFqdn[0]) {
+        while (authoritativeFqdn[0] &&
+               authoritativeFqdn[strlen(authoritativeFqdn) - 1] == '.') {
+          authoritativeFqdn[strlen(authoritativeFqdn) - 1] = '\0';
         }
-        if ((n & 0xC0) || np + n > end) break;
-        if (target.length()) target += '.';
-        for (uint8_t j=0;j<n;++j) target += char(packet[np++]);
-      }
-      if (target.length() && target != "." && target.length() < hostCap && port) {
-        target.toCharArray(host, hostCap);
-        while (host[0] && host[strlen(host)-1] == '.') host[strlen(host)-1] = 0;
-        if (host[0]) return true;
+        return authoritativeFqdn[0] != '\0';
       }
     }
     pos += rdlen;
@@ -140,6 +182,55 @@ bool dnsSrvLookup(const char* fqdn, char* host, size_t hostCap, uint16_t& port) 
   return false;
 }
 
+bool dnsSrvLookup(const char* authoritativeFqdn, const char* serviceName,
+                  char* host, size_t hostCapacity, uint16_t& port) {
+  host[0] = '\0';
+  port = 0;
+  if (!authoritativeFqdn || !*authoritativeFqdn || !serviceName || !*serviceName) return false;
+
+  char query[320];
+  const int queryLength = snprintf(query, sizeof(query), "_%s._tcp.%s",
+                                   serviceName, authoritativeFqdn);
+  if (queryLength <= 0 || static_cast<size_t>(queryLength) >= sizeof(query)) return false;
+
+  uint8_t packet[kDnsPacketSize] = {};
+  int got = 0;
+  if (!dnsQuery(query, 33, packet, sizeof(packet), got)) return false; // SRV
+  const uint16_t questions = read16(packet + 4);
+  const uint16_t answers = read16(packet + 6);
+  size_t pos = 12;
+  for (uint16_t i = 0; i < questions; ++i) {
+    if (!skipDnsName(packet, got, pos) || pos + 4 > static_cast<size_t>(got)) return false;
+    pos += 4;
+  }
+  for (uint16_t i = 0; i < answers; ++i) {
+    if (!skipDnsName(packet, got, pos) || pos + 10 > static_cast<size_t>(got)) return false;
+    const uint16_t type = read16(packet + pos);
+    const uint16_t klass = read16(packet + pos + 2);
+    const uint16_t rdlen = read16(packet + pos + 8);
+    pos += 10;
+    if (pos + rdlen > static_cast<size_t>(got)) return false;
+    if (type == 33 && klass == 1 && rdlen >= 7) {
+      const uint16_t candidatePort = read16(packet + pos + 4);
+      char target[256] = {};
+      if (decodeDnsName(packet, got, pos + 6, target, sizeof(target)) &&
+          target[0] && candidatePort && strcmp(target, ".") != 0 &&
+          strlen(target) < hostCapacity) {
+        strncpy(host, target, hostCapacity - 1);
+        host[hostCapacity - 1] = '\0';
+        while (host[0] && host[strlen(host) - 1] == '.') {
+          host[strlen(host) - 1] = '\0';
+        }
+        if (host[0]) {
+          port = candidatePort;
+          return true;
+        }
+      }
+    }
+    pos += rdlen;
+  }
+  return false;
+}
 String httpGet(const String& url, size_t maxBytes, int& status) {
   status = -1;
   HTTPClient http;
@@ -186,39 +277,93 @@ String attrValue(const String& tag, const char* attr) {
   return end < 0 ? String() : tag.substring(p, end);
 }
 
-String findLogoUrl(const String& xml, const char* bearer) {
+String findLogoUrl(const String& xml, const char* bearer, String& extension) {
+  extension = "png";
   int pos = 0;
   while ((pos = xml.indexOf("<service", pos)) >= 0) {
-    if (pos + 8 < xml.length() && isalnum(static_cast<unsigned char>(xml[pos + 8]))) { pos += 8; continue; }
-    int end = xml.indexOf("</service>", pos);
+    if (pos + 8 < xml.length() && isalnum(static_cast<unsigned char>(xml[pos + 8]))) {
+      pos += 8;
+      continue;
+    }
+    const int end = xml.indexOf("</service>", pos);
     if (end < 0) break;
-    String service = xml.substring(pos, end);
-    String expected = String("id=\"") + bearer + "\"";
-    String expectedSingle = String("id='") + bearer + "'";
-    if (service.indexOf(expected) < 0 && service.indexOf(expectedSingle) < 0) { pos = end + 10; continue; }
+    const String service = xml.substring(pos, end);
+    bool bearerMatches = false;
+
+    // In SPI SI.xml the service element normally has no id attribute. The FM
+    // bearer is a child element: <bearer id="fm:de0.d394.10000" ... />.
+    int b = 0;
+    while ((b = service.indexOf("<bearer", b)) >= 0) {
+      if (b + 7 < service.length() && isalnum(static_cast<unsigned char>(service[b + 7]))) {
+        b += 7;
+        continue;
+      }
+      const int close = service.indexOf('>', b);
+      if (close < 0) break;
+      const String tag = service.substring(b, close + 1);
+      const String id = attrValue(tag, "id");
+      if (id.equalsIgnoreCase(String(bearer))) {
+        bearerMatches = true;
+        break;
+      }
+      b = close + 1;
+    }
+
+    if (!bearerMatches) {
+      pos = end + 10;
+      continue;
+    }
+
     String best;
+    String bestExtension = "png";
     int m = 0;
     while ((m = service.indexOf("<multimedia", m)) >= 0) {
-      int close = service.indexOf('>', m);
+      if (m + 11 < service.length() &&
+          isalnum(static_cast<unsigned char>(service[m + 11]))) {
+        m += 11;
+        continue;
+      }
+      const int close = service.indexOf('>', m);
       if (close < 0) break;
-      String tag = service.substring(m, close + 1);
-      String url = attrValue(tag, "url");
-      String type = attrValue(tag, "type");
-      String mime = attrValue(tag, "mimeValue");
-      if (url.startsWith("http://") || url.startsWith("https://")) {
-        // Prefer square 128px logos, then the largest common square fallback.
-        String width = attrValue(tag, "width"), height = attrValue(tag, "height");
-        if (type.indexOf("logo") >= 0 || mime.startsWith("image/")) {
-          if (width == "128" && height == "128") return url;
-          if (best.isEmpty() || (width == "600" && height == "600")) best = url;
+      const String tag = service.substring(m, close + 1);
+      const String url = attrValue(tag, "url");
+      const String type = attrValue(tag, "type");
+      const String mime = attrValue(tag, "mimeValue");
+      const String width = attrValue(tag, "width");
+      const String height = attrValue(tag, "height");
+      if ((url.startsWith("http://") || url.startsWith("https://")) &&
+          (type.indexOf("logo") >= 0 || mime.startsWith("image/"))) {
+        String candidateExtension = "png";
+        if (mime.equalsIgnoreCase("image/jpeg") || mime.equalsIgnoreCase("image/jpg")) {
+          candidateExtension = "jpg";
+        } else if (mime.equalsIgnoreCase("image/png")) {
+          candidateExtension = "png";
+        } else {
+          String lowerUrl = url;
+          lowerUrl.toLowerCase();
+          const int queryAt = lowerUrl.indexOf('?');
+          if (queryAt >= 0) lowerUrl = lowerUrl.substring(0, queryAt);
+          if (lowerUrl.endsWith(".jpg") || lowerUrl.endsWith(".jpeg")) candidateExtension = "jpg";
+        }
+
+        if (width == "128" && height == "128") {
+          extension = candidateExtension;
+          return url;
+        }
+        if (best.isEmpty() || (width == "600" && height == "600")) {
+          best = url;
+          bestExtension = candidateExtension;
         }
       }
       m = close + 1;
     }
-    return best;
+    if (!best.isEmpty()) {
+      extension = bestExtension;
+      return best;
+    }
+    return String();
   }
   return String();
-}
 }
 
 bool RadioDnsClient::begin(RadioDnsCache* cache) {
@@ -270,47 +415,97 @@ void RadioDnsClient::taskEntry(void* arg) {
 }
 
 void RadioDnsClient::runLookup(const RadioDnsFmIdentity& identity) {
-  logRadioDns(cache_, String("lookup started: fqdn=") + identity.fqdn + " bearer=" + identity.bearer);
-  if (!WiFi.isConnected()) { logRadioDns(cache_, "WiFi dropped before lookup task ran"); return; }
+  logRadioDns(cache_, String("lookup started: fqdn=") + identity.fqdn +
+                      " bearer=" + identity.bearer);
+  if (!WiFi.isConnected()) {
+    logRadioDns(cache_, "lookup aborted: WiFi disconnected before DNS discovery");
+    return;
+  }
+
   char key[32];
   snprintf(key, sizeof(key), "%s_%s_%s", identity.gcc, identity.pi, identity.frequency);
   if (cache_->assetExists(key, "png") || cache_->assetExists(key, "jpg")) {
-    Serial.printf("[RADIODNS] cache hit: /RDS/%s.*\n", key);
+    logRadioDns(cache_, String("cache hit: /RDS/") + key + " (logo already stored)");
     return;
   }
+
+  char authoritativeFqdn[256] = {};
+  if (!dnsResolveAuthoritativeFqdn(identity.fqdn, authoritativeFqdn,
+                                   sizeof(authoritativeFqdn))) {
+    logRadioDns(cache_, String("CNAME lookup failed for RadioDNS FQDN: ") + identity.fqdn +
+                        " (station may be unregistered or DNS unavailable)");
+    return;
+  }
+  logRadioDns(cache_, String("authoritative FQDN: ") + authoritativeFqdn);
 
   char host[256] = {};
   uint16_t port = 0;
-  if (!dnsSrvLookup(identity.fqdn, host, sizeof(host), port)) {
-    Serial.printf("[RADIODNS] no _radioepg._tcp SRV record for %s\n", identity.fqdn);
-    return;
-  }
-  Serial.printf("[RADIODNS] metadata server %s:%u\n", host, unsigned(port));
-  String base = String("http://") + host + ":" + String(port) + "/radiodns/spi/3.1/SI.xml";
   int status = -1;
-  String xml = httpGet(base, kMaxSiBytes, status);
-  if (status != HTTP_CODE_OK || xml.isEmpty()) {
-    Serial.printf("[RADIODNS] SI.xml request failed (HTTP %d)\n", status);
-    return;
-  }
-  logRadioDns(cache_, String("SI.xml received bytes=") + xml.length() + " saved=" + (cache_->saveMetadata(key, xml.c_str()) ? "yes" : "no"));
+  String xml;
+  String base;
 
-  String logoUrl = findLogoUrl(xml, identity.bearer);
-  if (logoUrl.isEmpty()) {
-    logRadioDns(cache_, String("no matching service/logo; bearer=") + identity.bearer + " XML preview=" + xml.substring(0, 900));
+  if (dnsSrvLookup(authoritativeFqdn, "radioepg", host, sizeof(host), port)) {
+    base = String("http://") + host + ":" + String(port) +
+           "/radiodns/spi/3.1/SI.xml";
+    logRadioDns(cache_, String("metadata server: ") + base);
+    xml = httpGet(base, kMaxSiBytes, status);
+    if (status != HTTP_CODE_OK || xml.isEmpty()) {
+      logRadioDns(cache_, String("HTTP SI.xml request failed: HTTP=") +
+                          String(status) + " bytes=" + String(xml.length()) +
+                          "; trying TLS _radiospi");
+      host[0] = '\0';
+      port = 0;
+    }
+  } else {
+    logRadioDns(cache_, String("no _radioepg._tcp SRV record for ") +
+                        authoritativeFqdn + "; trying TLS _radiospi");
+  }
+
+  // Current SPI deployments may publish the TLS-only _radiospi service.
+  // Try it both when HTTP discovery is absent and when the HTTP endpoint fails.
+  if (xml.isEmpty() || status != HTTP_CODE_OK) {
+    if (!dnsSrvLookup(authoritativeFqdn, "radiospi", host, sizeof(host), port)) {
+      logRadioDns(cache_, String("no usable _radiospi._tcp SRV record for ") +
+                          authoritativeFqdn);
+      return;
+    }
+    base = String("https://") + host + ":" + String(port) +
+           "/radiodns/spi/3.1/SI.xml";
+    logRadioDns(cache_, String("TLS metadata server: ") + base);
+    xml = httpGet(base, kMaxSiBytes, status);
+  }
+
+  if (status != HTTP_CODE_OK || xml.isEmpty()) {
+    logRadioDns(cache_, String("SI.xml request failed: url=") + base +
+                        " HTTP=" + String(status) + " bytes=" + String(xml.length()));
     return;
   }
-  logRadioDns(cache_, String("logo URL selected: ") + logoUrl);
-  String lower = logoUrl; lower.toLowerCase();
-  const char* ext = lower.endsWith(".jpg") || lower.endsWith(".jpeg") ? "jpg" : "png";
+  const bool metadataSaved = cache_->saveMetadata(key, xml.c_str());
+  logRadioDns(cache_, String("SI.xml received: bytes=") + xml.length() +
+                      " saved=" + (metadataSaved ? "yes" : "no"));
+
+  String extension;
+  String logoUrl = findLogoUrl(xml, identity.bearer, extension);
+  if (logoUrl.isEmpty()) {
+    logRadioDns(cache_, String("no service bearer/logo match in SI.xml; bearer=") +
+                        identity.bearer + " XML preview=" + xml.substring(0, 700));
+    return;
+  }
+  logRadioDns(cache_, String("logo URL selected: ") + logoUrl +
+                      " extension=" + extension);
+
   int logoStatus = -1;
   String logo = httpGet(logoUrl, kMaxLogoBytes, logoStatus);
   if (logoStatus != HTTP_CODE_OK || logo.isEmpty()) {
-    Serial.printf("[RADIODNS] logo download failed (HTTP %d)\n", logoStatus);
+    logRadioDns(cache_, String("logo download failed: HTTP=") + String(logoStatus) +
+                        " bytes=" + String(logo.length()) + " url=" + logoUrl);
     return;
   }
-  if (cache_->saveAsset(key, ext, reinterpret_cast<const uint8_t*>(logo.c_str()), logo.length()))
-    Serial.printf("[RADIODNS] logo cached at /RDS/%s.%s\n", key, ext);
-  else
-    Serial.println("[RADIODNS] logo cache write failed");
+  if (cache_->saveAsset(key, extension.c_str(),
+                       reinterpret_cast<const uint8_t*>(logo.c_str()), logo.length())) {
+    logRadioDns(cache_, String("logo cached: /RDS/") + key + "." + extension +
+                        " bytes=" + String(logo.length()));
+  } else {
+    logRadioDns(cache_, String("logo cache write failed: /RDS/") + key + "." + extension);
+  }
 }
