@@ -26,6 +26,9 @@ bool diagnosticsServerStarted = false;
 uint32_t lastStatusMs = 0;
 uint32_t encoderEventCount = 0;
 const char* lastEncoderEvent = "WAIT";
+bool menuOpen = false;
+uint8_t menuPage = 0;
+uint8_t menuSelection = 0;
 }
 void setup() {
   Serial.begin(SERIAL_BAUD); delay(250); performance.begin();
@@ -83,18 +86,59 @@ void loop() {
       case EncoderEventType::RotateClockwise:
       case EncoderEventType::RotateCounterClockwise:
         lastEncoderEvent = inputEvent.type == EncoderEventType::RotateClockwise ? "CW" : "CCW";
-        if (radio.nextChannel(inputEvent.delta))
+        if (menuOpen) {
+          if (menuPage == 1 && menuSelection == 1) {
+            const int16_t requested = static_cast<int16_t>(radio.volume()) + inputEvent.delta;
+            const uint8_t nextVolume = static_cast<uint8_t>(constrain(requested, 0, 63));
+            if (radio.setVolume(nextVolume))
+              Serial.printf("[MENU] volume=%u/63\n", static_cast<unsigned>(radio.volume()));
+          } else {
+            const uint8_t itemCount = menuPage == 0 ? 6 : 3;
+            int16_t next = static_cast<int16_t>(menuSelection) + (inputEvent.delta > 0 ? 1 : -1);
+            if (next < 0) next = itemCount - 1;
+            if (next >= itemCount) next = 0;
+            menuSelection = static_cast<uint8_t>(next);
+          }
+        } else if (radio.nextChannel(inputEvent.delta)) {
           Serial.printf("[INPUT] tune step %s -> %.1f MHz\n",
             inputEvent.delta > 0 ? "CW" : "CCW",
             radio.snapshot().frequencyKHz / 1000.0f);
+        }
         break;
       case EncoderEventType::ShortPress:
         lastEncoderEvent = "SHORT";
-        Serial.println("[INPUT] short press");
+        if (!menuOpen) {
+          menuOpen = true;
+          menuPage = 0;
+          menuSelection = 0;
+          Serial.println("[MENU] opened");
+        } else if (menuPage == 0) {
+          if (menuSelection == 0) {
+            menuOpen = false;
+            Serial.println("[MENU] closed via Back");
+          } else {
+            menuPage = menuSelection;
+            menuSelection = 0;
+            Serial.printf("[MENU] opened submenu %u\n", static_cast<unsigned>(menuPage));
+          }
+        } else if (menuSelection == 0) {
+          menuPage = 0;
+          menuSelection = 0;
+        } else if (menuPage == 1 && menuSelection == 1) {
+          menuPage = 0;
+          menuSelection = 1;
+        }
         break;
       case EncoderEventType::LongPress:
         lastEncoderEvent = "LONG";
-        Serial.println("[INPUT] long press");
+        if (menuOpen) {
+          menuOpen = false;
+          menuPage = 0;
+          menuSelection = 0;
+          Serial.println("[MENU] closed via long press");
+        } else {
+          Serial.println("[INPUT] long press (no action)");
+        }
         break;
       case EncoderEventType::None:
       default:
@@ -103,7 +147,7 @@ void loop() {
   }
   radio.update();
   radioDnsClient.update(radio.radioDnsIdentity(), wifi.connected());
-  display.render(radio.snapshot(),radio.isReady(),wifi.connected(),lastEncoderEvent,encoderEventCount,radio.radioDnsIdentity(),&radioDnsClient);
+  display.render(radio.snapshot(),radio.isReady(),wifi.connected(),lastEncoderEvent,encoderEventCount,radio.radioDnsIdentity(),&radioDnsClient,menuOpen,menuPage,menuSelection,radio.volume());
   const uint32_t now=millis();
   if(now-lastStatusMs>=2000) {
     lastStatusMs=now; const RadioSnapshot& s=radio.snapshot();
