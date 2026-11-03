@@ -103,3 +103,28 @@ String RadioDnsCache::readMetadata(const char* cacheKey) const {
   file.close();
   return result;
 }
+
+
+bool RadioDnsCache::appendLog(const char* line) {
+  if (!ready_ || !line) return false;
+  File file = LittleFS.open("/RDS/radiodns-debug.log", "a");
+  if (!file) return false;
+  const size_t length = strlen(line);
+  const size_t written = file.write(reinterpret_cast<const uint8_t*>(line), length);
+  file.close();
+  return written == length;
+}
+
+String RadioDnsCache::readLog() const {
+  if (!ready_) return String();
+  File file = LittleFS.open("/RDS/radiodns-debug.log", "r");
+  if (!file) return String();
+  String result = file.readString();
+  file.close();
+  return result;
+}
+
+void RadioDnsCache::clearLog() {
+  if (ready_ && LittleFS.exists("/RDS/radiodns-debug.log"))
+    LittleFS.remove("/RDS/radiodns-debug.log");
+}
