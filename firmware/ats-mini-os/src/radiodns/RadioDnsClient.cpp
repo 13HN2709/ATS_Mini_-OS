@@ -56,10 +56,49 @@ bool encodeDnsName(uint8_t* packet, size_t capacity, size_t& pos, const char* na
   return true;
 }
 
-bool dnsSrvLookup(const char* fqdn, char* host, size_t hostCap, uint16_t& port) {
-  host[0] = 0; port = 0;
+enum class DnsSrvResult {
+  Success,
+  NoDnsServer,
+  UdpBeginFailed,
+  SendFailed,
+  Timeout,
+  InvalidResponse,
+  NameError,
+  ServerFailure,
+  Refused,
+  OtherDnsError,
+  NoSrvRecord,
+  MalformedResponse
+};
+
+const char* dnsSrvResultText(DnsSrvResult result) {
+  switch (result) {
+    case DnsSrvResult::Success: return "success";
+    case DnsSrvResult::NoDnsServer: return "no DNS server configured";
+    case DnsSrvResult::UdpBeginFailed: return "UDP socket could not start";
+    case DnsSrvResult::SendFailed: return "DNS query could not be sent";
+    case DnsSrvResult::Timeout: return "DNS response timeout";
+    case DnsSrvResult::InvalidResponse: return "invalid or mismatched DNS response";
+    case DnsSrvResult::NameError: return "DNS NXDOMAIN (name does not exist)";
+    case DnsSrvResult::ServerFailure: return "DNS SERVFAIL";
+    case DnsSrvResult::Refused: return "DNS query refused";
+    case DnsSrvResult::OtherDnsError: return "DNS error response";
+    case DnsSrvResult::NoSrvRecord: return "DNS response has no SRV answer";
+    case DnsSrvResult::MalformedResponse: return "malformed DNS response";
+  }
+  return "unknown DNS result";
+}
+
+DnsSrvResult dnsSrvLookup(const char* fqdn, char* host, size_t hostCap,
+                          uint16_t& port, uint8_t& responseCode,
+                          uint16_t& answerCount) {
+  host[0] = 0;
+  port = 0;
+  responseCode = 0xff;
+  answerCount = 0;
   IPAddress dns = WiFi.dnsIP(0);
-  if (dns == IPAddress(0,0,0,0)) return false;
+  if (dns == IPAddress(0,0,0,0)) return DnsSrvResult::NoDnsServer;
+
   uint8_t packet[kDnsPacketSize] = {};
   const uint16_t id = static_cast<uint16_t>(esp_random());
   packet[0] = id >> 8; packet[1] = id & 0xff;
@@ -67,77 +106,106 @@ bool dnsSrvLookup(const char* fqdn, char* host, size_t hostCap, uint16_t& port) 
   size_t q = 12;
   char query[100];
   snprintf(query, sizeof(query), "_radioepg._tcp.%s", fqdn);
-  if (!encodeDnsName(packet, sizeof(packet), q, query) || q + 4 > sizeof(packet)) return false;
+  if (!encodeDnsName(packet, sizeof(packet), q, query) || q + 4 > sizeof(packet))
+    return DnsSrvResult::MalformedResponse;
   packet[q++] = 0; packet[q++] = 33; // SRV
   packet[q++] = 0; packet[q++] = 1;  // IN
+
   WiFiUDP udp;
-  if (!udp.begin(0)) return false;
-  if (!udp.beginPacket(dns, 53) || udp.write(packet, q) != q || !udp.endPacket()) { udp.stop(); return false; }
-  const uint32_t start = millis();
+  if (!udp.begin(0)) return DnsSrvResult::UdpBeginFailed;
+  if (!udp.beginPacket(dns, 53) || udp.write(packet, q) != q || !udp.endPacket()) {
+    udp.stop();
+    return DnsSrvResult::SendFailed;
+  }
+
+  const uint32_t started = millis();
   int packetSize = 0;
-  while (millis() - start < 1800) {
+  while (millis() - started < 1800) {
     packetSize = udp.parsePacket();
     if (packetSize > 0) break;
     vTaskDelay(pdMS_TO_TICKS(20));
   }
-  if (packetSize <= 0 || packetSize > int(sizeof(packet))) { udp.stop(); return false; }
+  if (packetSize <= 0) {
+    udp.stop();
+    return DnsSrvResult::Timeout;
+  }
+  if (packetSize > int(sizeof(packet))) {
+    while (udp.available()) udp.read();
+    udp.stop();
+    return DnsSrvResult::MalformedResponse;
+  }
   const int got = udp.read(packet, sizeof(packet));
   udp.stop();
-  if (got < 12 || read16(packet) != id || !(packet[2] & 0x80) || (packet[3] & 0x0f) != 0) return false;
+  if (got < 12 || read16(packet) != id || !(packet[2] & 0x80))
+    return DnsSrvResult::InvalidResponse;
+
+  responseCode = packet[3] & 0x0f;
+  if (responseCode == 3) return DnsSrvResult::NameError;
+  if (responseCode == 2) return DnsSrvResult::ServerFailure;
+  if (responseCode == 5) return DnsSrvResult::Refused;
+  if (responseCode != 0) return DnsSrvResult::OtherDnsError;
+  if (packet[2] & 0x02) return DnsSrvResult::MalformedResponse; // truncated UDP response
+
   const uint16_t questions = read16(packet + 4);
-  const uint16_t answers = read16(packet + 6);
+  answerCount = read16(packet + 6);
   size_t pos = 12;
   for (uint16_t i = 0; i < questions; ++i) {
-    if (!skipDnsName(packet, got, pos) || pos + 4 > size_t(got)) return false;
+    if (!skipDnsName(packet, got, pos) || pos + 4 > size_t(got))
+      return DnsSrvResult::MalformedResponse;
     pos += 4;
   }
-  for (uint16_t i = 0; i < answers; ++i) {
-    if (!skipDnsName(packet, got, pos) || pos + 10 > size_t(got)) return false;
+  for (uint16_t i = 0; i < answerCount; ++i) {
+    if (!skipDnsName(packet, got, pos) || pos + 10 > size_t(got))
+      return DnsSrvResult::MalformedResponse;
     const uint16_t type = read16(packet + pos);
     const uint16_t klass = read16(packet + pos + 2);
     const uint16_t rdlen = read16(packet + pos + 8);
     pos += 10;
-    if (pos + rdlen > size_t(got)) return false;
+    if (pos + rdlen > size_t(got)) return DnsSrvResult::MalformedResponse;
     if (type == 33 && klass == 1 && rdlen >= 7) {
-      port = read16(packet + pos + 4);
+      const uint16_t candidatePort = read16(packet + pos + 4);
       size_t np = pos + 6;
-      size_t end = pos + rdlen;
+      const size_t recordEnd = pos + rdlen;
       String target;
-      while (np < end) {
+      while (np < recordEnd) {
         uint8_t n = packet[np++];
         if (!n) break;
         if ((n & 0xC0) == 0xC0) {
-          if (np >= end) break;
-          size_t ptr = ((n & 0x3f) << 8) | packet[np];
-          ++np;
+          if (np >= recordEnd) break;
+          size_t ptr = ((n & 0x3f) << 8) | packet[np++];
           size_t guard = 0;
           while (ptr < size_t(got) && guard++ < 32) {
             uint8_t label = packet[ptr++];
             if (!label) break;
             if ((label & 0xC0) == 0xC0) {
               if (ptr >= size_t(got)) break;
-              size_t next = ((label & 0x3f) << 8) | packet[ptr];
-              ++ptr; ptr = next; continue;
+              size_t next = ((label & 0x3f) << 8) | packet[ptr++];
+              ptr = next;
+              continue;
             }
-            if (ptr + label > size_t(got)) break;
+            if ((label & 0xC0) || ptr + label > size_t(got)) break;
             if (target.length()) target += '.';
-            for (uint8_t j=0;j<label;++j) target += char(packet[ptr++]);
+            for (uint8_t j = 0; j < label; ++j) target += char(packet[ptr++]);
           }
           break;
         }
-        if ((n & 0xC0) || np + n > end) break;
+        if ((n & 0xC0) || np + n > recordEnd) break;
         if (target.length()) target += '.';
-        for (uint8_t j=0;j<n;++j) target += char(packet[np++]);
+        for (uint8_t j = 0; j < n; ++j) target += char(packet[np++]);
       }
-      if (target.length() && target != "." && target.length() < hostCap && port) {
+      if (target.length() && target != "." && target.length() < hostCap && candidatePort) {
         target.toCharArray(host, hostCap);
-        while (host[0] && host[strlen(host)-1] == '.') host[strlen(host)-1] = 0;
-        if (host[0]) return true;
+        while (host[0] && host[strlen(host) - 1] == '.')
+          host[strlen(host) - 1] = 0;
+        if (host[0]) {
+          port = candidatePort;
+          return DnsSrvResult::Success;
+        }
       }
     }
     pos += rdlen;
   }
-  return false;
+  return DnsSrvResult::NoSrvRecord;
 }
 
 String httpGet(const String& url, size_t maxBytes, int& status) {
@@ -281,11 +349,21 @@ void RadioDnsClient::runLookup(const RadioDnsFmIdentity& identity) {
 
   char host[256] = {};
   uint16_t port = 0;
-  if (!dnsSrvLookup(identity.fqdn, host, sizeof(host), port)) {
-    logRadioDns(cache_, String("SRV lookup failed: no _radioepg._tcp SRV record for ") + identity.fqdn + "; DNS server=" + WiFi.dnsIP(0).toString());
+  uint8_t dnsRcode = 0xff;
+  uint16_t dnsAnswers = 0;
+  const DnsSrvResult dnsResult =
+      dnsSrvLookup(identity.fqdn, host, sizeof(host), port, dnsRcode, dnsAnswers);
+  if (dnsResult != DnsSrvResult::Success) {
+    logRadioDns(cache_, String("SRV DNS lookup failed: result=") + dnsSrvResultText(dnsResult) +
+      "; fqdn=" + identity.fqdn +
+      "; query=_radioepg._tcp." + identity.fqdn +
+      "; DNS-server=" + WiFi.dnsIP(0).toString() +
+      "; rcode=" + (dnsRcode == 0xff ? String("n/a") : String(unsigned(dnsRcode))) +
+      "; answers=" + String(unsigned(dnsAnswers)));
     return;
   }
-  logRadioDns(cache_, String("metadata server ") + host + ":" + String(unsigned(port)));
+  logRadioDns(cache_, String("SRV DNS lookup succeeded: answers=") + String(unsigned(dnsAnswers)) +
+    "; metadata-server=" + host + ":" + String(unsigned(port)));
   String base = String("http://") + host + ":" + String(port) + "/radiodns/spi/3.1/SI.xml";
   int status = -1;
   String xml = httpGet(base, kMaxSiBytes, status);
