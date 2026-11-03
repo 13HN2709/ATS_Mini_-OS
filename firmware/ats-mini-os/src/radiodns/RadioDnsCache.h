@@ -15,6 +15,9 @@ public:
   bool assetExists(const char* cacheKey, const char* extension) const;
   String assetPath(const char* cacheKey, const char* extension) const;
   bool saveMetadata(const char* cacheKey, const char* text);
+  bool appendLog(const char* line);
+  String readLog() const;
+  void clearLog();
   String readMetadata(const char* cacheKey) const;
 private:
   bool ready_ = false;
