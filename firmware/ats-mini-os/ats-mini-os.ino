@@ -5,6 +5,7 @@
 #include "src/display/DisplayDriver.h"
 #include "src/input/EncoderInput.h"
 #include "src/network/WifiClient.h"
+#include "src/radiodns/RadioDnsCache.h"
 #include "src/system/PartitionDiagnostics.h"
 
 namespace {
@@ -15,6 +16,7 @@ RadioCore radio;
 DisplayDriver display;
 EncoderInput encoder;
 WifiClient wifi;
+RadioDnsCache radioDnsCache;
 uint32_t lastStatusMs = 0;
 uint32_t encoderEventCount = 0;
 const char* lastEncoderEvent = "WAIT";
@@ -24,6 +26,7 @@ void setup() {
   Serial.println(); Serial.println("ATS Mini OS - UKW/RDS hardware test");
   Serial.println("First milestone: display, SI4735 audio, RDS. No memories/EiBi storage.");
   PartitionDiagnostics::printToSerial();
+  radioDnsCache.begin();
 
   encoder.begin();
   if (display.begin()) Serial.println("[DISPLAY] first UI initialized.");
