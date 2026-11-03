@@ -195,6 +195,9 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
     return;
   }
 
+  const uint8_t* logoData = nullptr;
+  size_t logoLength = 0;
+  bool logoIsJpg = false;
   char logoKey[40] = {};
   if (s.piCode != 0 && s.frequencyKHz != 0) {
     snprintf(logoKey, sizeof(logoKey), "%04X_%lu",
