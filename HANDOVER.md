@@ -1260,3 +1260,15 @@ Auf Branch `dev/first-build-preparation` wurde ein erstes scrollbares Vollbild-M
 - Rahmen, Layout und Logo-Downloadpfad bleiben unverändert. Wenn die Bilddimensionen nicht erkannt werden, wird das Logo nicht gezeichnet und die bestehende Fehleranzeige greift.
 - Änderung committed: `a21f219d9a65465fe5818215cfc59f1cadb81ae6` (DisplayDriver.cpp).
 - **Noch nicht kompiliert und nicht auf dem ATS Mini V4 getestet.** Kein GitHub-Actions-Workflow gestartet und kein Flash durchgeführt.
+
+
+## 2026-11-03 – Logo-Fallback-Umbau (noch nicht kompiliert)
+
+- Die aktive RadioDNS-Implementierung wurde aus dem Firmwarepfad entfernt: keine CNAME-/SRV-Abfragen, kein Radioplayer-/SI.xml-Zugriff, keine ECC/GCC-basierte RadioDNS-Identität und keine RadioDNS-Status-/Log-Endpunkte mehr.
+- Neue Klasse: `firmware/ats-mini-os/src/logo/StationLogoClient.h/.cpp`.
+- Logoquelle 1 bleibt FM-DX Webserver, PI-basierte PNG/JPEG-Kandidaten; Logoquelle 2 ist Radio Browser mit Sendername und `countrycode=DE`.
+- Radio-Browser-Treffer werden nur bei exaktem normalisiertem Sendernamen und Deutschland angenommen; die heruntergeladenen Bytes müssen als PNG oder JPEG erkannt werden.
+- Logos bleiben ausschließlich im RAM. Es wurden keine LittleFS-Schreibvorgänge, Formatierungen, Partitionen, Memories oder Schedules geändert.
+- Display-Logo-Rahmen und die bereits bestätigte Skalierungslogik wurden nicht geändert.
+- WDR 3, WDR 4 und WDR COSMO müssen am Gerät/API noch verifiziert werden; Verfügbarkeit korrekter Community-Favicons ist nicht garantiert. Die PI-Zuordnung für COSMO muss anhand tatsächlicher RDS-Daten bestätigt werden.
+- **Buildstatus:** nicht kompiliert; keine GitHub Actions gestartet. **Flashstatus:** nicht geflasht.
