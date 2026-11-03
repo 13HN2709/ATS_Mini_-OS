@@ -105,8 +105,20 @@ bool TunerDriver::pollRds(TunerRdsData& out) {
   const uint8_t group = radio_.getRdsGroupType();
 
   if (radio_.getRdsNewBlockA()) {
-    const uint16_t pi = radio_.getRdsPI();
+    const uint16_t pi = radio_.currentPiCode();
     if (pi != 0) { out.piValid = true; out.piCode = pi; }
+  }
+
+  // ECC is transmitted in block C of group 1A, variant 0.
+  // Accept corrected blocks, but never use an uncorrectable block as identity data.
+  if (group == 1 && radio_.getRdsVersionCode() == 0 &&
+      radio_.getRdsNewBlockB() && radio_.currentBlockCError() < 3) {
+    const uint16_t blockC = radio_.currentBlockC();
+    const uint8_t ecc = static_cast<uint8_t>((blockC >> 8) & 0xFF);
+    if (ecc != 0) {
+      out.eccValid = true;
+      out.eccCode = ecc;
+    }
   }
   if (radio_.getRdsNewBlockB()) {
     out.ptyValid = true;
