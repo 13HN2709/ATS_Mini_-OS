@@ -1,4 +1,5 @@
 #include "RadioCore.h"
+#include <stdio.h>
 
 namespace {
 void copyField(char* dst, size_t capacity, const char* src) {
@@ -46,6 +47,16 @@ void RadioCore::update() {
     if (tuner_.pollRds(rds)) {
       if (rds.piValid) snapshot_.piCode = rds.piCode;
       if (rds.ptyValid) snapshot_.pty = rds.pty;
+      if (rds.eccValid) {
+        snapshot_.eccCode = rds.eccCode;
+        snapshot_.eccValid = true;
+      }
+      if (snapshot_.piCode != 0 && snapshot_.eccValid) {
+        // GCC = PI country-code nibble + the received 8-bit ECC.
+        snprintf(snapshot_.gcc, sizeof(snapshot_.gcc), "%1X%02X",
+          static_cast<unsigned>((snapshot_.piCode >> 12) & 0x0F),
+          static_cast<unsigned>(snapshot_.eccCode));
+      }
       if (rds.stationNameUpdated) copyField(snapshot_.stationName, sizeof(snapshot_.stationName), rds.stationName);
       if (rds.radioTextUpdated) copyField(snapshot_.radioText, sizeof(snapshot_.radioText), rds.radioText);
       snapshot_.rdsAvailable = true;
@@ -57,6 +68,14 @@ bool RadioCore::tune(uint32_t frequencyKHz) {
   if (!ready_ || frequencyKHz < kMinFrequencyKHz || frequencyKHz > kMaxFrequencyKHz ||
       !tuner_.tune(frequencyKHz)) return false;
   snapshot_.frequencyKHz = tuner_.frequencyKHz();
+  snapshot_.piCode = 0;
+  snapshot_.eccCode = 0;
+  snapshot_.eccValid = false;
+  snapshot_.gcc[0] = '\0';
+  snapshot_.pty = 0;
+  snapshot_.rdsAvailable = false;
+  snapshot_.stationName[0] = '\0';
+  snapshot_.radioText[0] = '\0';
   snapshot_.generation = ++generation_;
   return true;
 }
