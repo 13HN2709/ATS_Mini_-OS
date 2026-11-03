@@ -1235,3 +1235,18 @@ Auf Branch `dev/first-build-preparation` wurde ein erstes scrollbares Vollbild-M
 - Langer Klick schließt das Menü von jeder Menüebene.
 - Noch nicht implementiert sind die Platzhalterfunktionen Helligkeit, Schrittweite, WLAN-Modus, Web Control und CPU-Profil.
 - Keine GitHub Actions/Builds gestartet, kein Flashen. Erst manuell Compile-only ausführen und Ergebnisse prüfen.
+
+
+## FM-DX-Logosuche: Kandidaten der Reihe nach prüfen (2026-11-03)
+
+- Nutzerfreigabe: alle sinnvollen, vom bestehenden Renderer unterstützten Dateivarianten nacheinander abfragen und beim ersten verwendbaren Logo stoppen.
+- In firmware/ats-mini-os/src/radiodns/RadioDnsClient.cpp probiert der deutsche Testpfad zuerst die bisherigen PI-only-Dateinamen mit .png, .jpg, .jpeg; anschließend bekannte PI-/Programmnamenvarianten:
+  - D392_WDR3 (WDR 3)
+  - D394_WDR4 (WDR 4)
+  - D399_ANTENNEMUNSTER und die normalisierte Umlaut-Schreibvariante D399_ANTENNEMUENSTER (Antenne Münster)
+- Für jede URL werden HTTP-Status und Ergebnis protokolliert. HTTP 200 führt nur dann zum Stopp, wenn die Antwort anhand der Signatur als PNG oder JPEG erkannt und erfolgreich in RAM übernommen wurde. Bei nicht unterstützten Bilddaten oder Fehlern wird der nächste Kandidat versucht; erst nach Ausschöpfen der Rasterkandidaten geht es mit RadioDNS weiter.
+- SVG wird bewusst nicht als Erfolg gewertet, da der aktuelle Firmwarepfad nur PNG/JPEG decodiert. Die öffentliche Plugin-Dokumentation bestätigt PI_PROGRAMNAME-Dateinamen und PNG/SVG-Unterstützung auf Plugin-Seite; das bestätigt nicht, dass jede konkrete Kandidatendatei auf dem Server vorhanden ist.
+- Änderungen auf dev/first-build-preparation, Commits:
+  - Kandidatenfolge erweitert: eea42b2aa80b616d5a122f442f6f67329ddfbcce
+  - Doppelte Kandidaten entfernt: 60223fbc70a0c8027f163b006c1bd0b349f08660
+- Noch nicht kompiliert und nicht am Gerät geprüft. Der Assistent hat keine GitHub Actions gestartet und nichts geflasht. Nächster Schritt: Nutzer startet wie vereinbart manuell Compile-only, danach Gerätetest und /radiodns-log senden. Der Log soll für D392/D394 zeigen, welche Varianten 404/200 liefern und welche tatsächlich als Rasterbild übernommen werden.
