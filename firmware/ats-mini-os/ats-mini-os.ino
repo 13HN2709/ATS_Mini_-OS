@@ -61,7 +61,7 @@ void setup() {
       "\nWiFi connected: " + (wifi.connected() ? "yes" : "no") +
       "\nStorage discovery ready: " + (StorageDiscovery::ready() ? "yes" : "no") +
       "\nRadioDNS cache ready: " + (radioDnsCache.ready() ? "yes" : "no") +
-      "\nRDS directory exists: " + (LittleFS.exists("/RDS") ? "yes" : "no") +
+      "\nRDS directory exists: " + (StorageDiscovery::ready() && LittleFS.exists("/RDS") ? "yes" : "no") +
       "\nStorage partition: " + String(StorageDiscovery::partitionLabel()) +
       "\nAnchor file: " + String(StorageDiscovery::anchorPath()) + "\n";
     diagnosticsServer.send(200, "text/plain; charset=utf-8", body);
