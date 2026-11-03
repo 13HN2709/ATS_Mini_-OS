@@ -1124,3 +1124,14 @@ Die Header- und Implementierungsdateien der offiziellen PU2CLR-Version 2.1.8 wur
 - Für die ATS-Mini-OS Storage Discovery bleibt `0xA00000` die erste Kandidatenadresse für das DBFM-Layout. `0x610000` bleibt ausschließlich der alternative Kandidat für das Stock-/ATS-Mini-Dev-Layout. Es sind alternative Layouts.
 - Sicherheitsregel bleibt unverändert: Nur verwenden, wenn die aktive Laufzeit-Partitionstabelle tatsächlich eine DATA-Partition mit Label `littlefs` an genau der Kandidatenadresse meldet und eine bekannte Ankerdatei gefunden wird. Niemals rohe Flash-Adressen mounten; nicht formatieren, löschen oder Partitionen/Bootloader ändern.
 - Diese Links bei späteren DBFM-Updates erneut prüfen, insbesondere die versionsgebundene README/Partitionstabelle. Eine bestätigte Adresse in der Dokumentation ersetzt nicht den späteren Gerätetest.
+
+
+## RadioDNS-Test: fester Deutschland-Fallback (2026-11-03)
+
+- Nutzerfreigabe: Für den aktuellen Logo-Test vorübergehend Deutschland fest einstellen; noch kein Settings-Menü.
+- Wenn ein gültiger RDS-ECC empfangen wurde, bleibt der daraus gebildete GCC vorrangig.
+- Wenn ECC fehlt, wird für den Test nur bei PI-Country-Nibble `D` (Deutschland) der GCC `DE0` verwendet. `DE0` folgt der GCC-Konstruktion aus PI-Ländercode `D` und deutschem ECC `E0`; die Fallback-Nutzung wird in Diagnose und RadioDNS-Log separat angezeigt.
+- Bei PI-Ländercode ungleich `D` wird der feste DE-Test-Fallback nicht angewendet, damit grenzüberschreitende Sender nicht blind falsch identifiziert werden. Eine vollständige CountryCodeResolver-Tabelle und das spätere Settings-Menü bleiben separate Aufgaben.
+- Status-Endpunkt `/radiodns-status` zeigt nun PI, ECC-Status, GCC, GCC-Quelle, FQDN und Identity-Status. RadioDNS-Log nennt ebenfalls die GCC-Quelle.
+- Sobald die Identität gültig ist, läuft der vorhandene Ablauf unverändert weiter: SRV-Abfrage, Abruf von `SI.xml`, Logo-URL-Suche und Logo-Download in den bestehenden `/RDS`-Cache.
+- Änderungen auf `dev/first-build-preparation`; noch nicht kompiliert oder am Gerät getestet. Nutzer startet den Compile-only-Workflow selbst. Keine GitHub Actions gestartet und nichts geflasht; keine Änderungen an Bootloader, Partitionen oder vorhandenen Daten.
