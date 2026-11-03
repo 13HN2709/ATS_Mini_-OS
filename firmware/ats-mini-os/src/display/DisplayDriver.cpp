@@ -55,6 +55,7 @@ bool DisplayDriver::begin() {
 
 void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConnected,
                            const char* lastInputEvent,uint32_t inputEventCount,
+                           const RadioDnsFmIdentity& logoIdentity,
                            RadioDnsClient* logoClient) {
   if(!ready_)return;
   const uint32_t now=millis();
@@ -63,11 +64,12 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
   lastDrawMs_=now;
 
   char logoKey[32] = {};
-  const RadioDnsFmIdentity identity = RadioDnsIdentity::buildFm(
-    s.frequencyKHz, s.piCode, s.eccValid ? s.gcc : "");
-  if (identity.status == RadioDnsIdentityStatus::Ready) {
+  // Use the exact same identity (including the validated temporary GCC fallback)
+  // as RadioDnsClient. Rebuilding from ECC-only snapshot fields made the logo
+  // key empty whenever ECC was absent, even after a successful RAM download.
+  if (logoIdentity.status == RadioDnsIdentityStatus::Ready) {
     snprintf(logoKey, sizeof(logoKey), "%s_%s_%s",
-      identity.gcc, identity.pi, identity.frequency);
+      logoIdentity.gcc, logoIdentity.pi, logoIdentity.frequency);
   }
 
   const uint8_t* logoData = nullptr;
