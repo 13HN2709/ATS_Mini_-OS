@@ -536,9 +536,6 @@ void RadioDnsClient::runLookup(const RadioDnsFmIdentity& identity) {
     // Try all supported raster filename variants in order. The server plugin
     // documents both PI-only names and PI_PROGRAMNAME names. SVG is deliberately
     // omitted because this firmware path currently decodes PNG/JPEG only.
-    const char* programAliases[] = {
-      "WDR3", "WDR4", "ANTENNEMUNSTER", "ANTENNEMUENSTER"
-    };
     const char* extensions[] = {".png", ".jpg", ".jpeg"};
     char knownProgram[24] = {};
     if (fmDxPi == "D392") strncpy(knownProgram, "WDR3", sizeof(knownProgram) - 1);
@@ -548,17 +545,13 @@ void RadioDnsClient::runLookup(const RadioDnsFmIdentity& identity) {
     // PI-only candidates first preserve the currently working D399.png path.
     // Then test the station-specific program filename, followed by additional
     // documented/likely aliases for the three known German test stations.
-    String baseNames[6];
+    String baseNames[3];
     size_t baseNameCount = 0;
     baseNames[baseNameCount++] = fmDxPi;
     if (knownProgram[0]) baseNames[baseNameCount++] = String(fmDxPi) + "_" + knownProgram;
-    if (fmDxPi == "D399") {
-      baseNames[baseNameCount++] = "D399_ANTENNEMUENSTER";
-    } else if (fmDxPi == "D392") {
-      baseNames[baseNameCount++] = "D392_WDR3";
-    } else if (fmDxPi == "D394") {
-      baseNames[baseNameCount++] = "D394_WDR4";
-    }
+    // Additional spelling variant for the accented station name after
+    // normalizing umlauts and other special characters for a filename.
+    if (fmDxPi == "D399") baseNames[baseNameCount++] = "D399_ANTENNEMUENSTER";
 
     for (size_t nameIndex = 0; nameIndex < baseNameCount; ++nameIndex) {
       for (const char* extension : extensions) {
