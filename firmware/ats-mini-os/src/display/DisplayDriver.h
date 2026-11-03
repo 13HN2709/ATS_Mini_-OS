@@ -4,6 +4,7 @@
 #include <LovyanGFX.hpp>
 #include <Arduino.h>
 #include "../radio/RadioSnapshot.h"
+#include "../radiodns/RadioDnsIdentity.h"
 
 #if !defined(LILYGO_SI473X)
 #include <esp_rom_gpio.h>
@@ -247,7 +248,7 @@ private:
   char lastRadioTextRow_[65] = {};
   bool haveStationRow_ = false;
   bool haveRadioTextRow_ = false;
-  void draw(const RadioSnapshot& state, bool radioReady, bool wifiConnected, const char* lastInputEvent, uint32_t inputEventCount);
+  void draw(const RadioSnapshot& state, bool radioReady, bool wifiConnected, const char* lastInputEvent, uint32_t inputEventCount, const char* logoPath, bool logoIsJpg);
 };
 
 #endif // ATS_MINI_OS_DISPLAY_DRIVER_H
