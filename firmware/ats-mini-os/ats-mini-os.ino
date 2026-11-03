@@ -120,7 +120,6 @@ void loop() {
     }
   }
   radio.update();
-  radioDnsClient.update(radio.radioDnsIdentity(), wifi.connected());
   display.render(radio.snapshot(),radio.isReady(),wifi.connected(),lastEncoderEvent,encoderEventCount,radio.radioDnsIdentity(),&radioDnsClient,menuOpen,menuPage,menuSelection,radio.volume());
   const uint32_t now=millis();
   if(now-lastStatusMs>=2000) {
