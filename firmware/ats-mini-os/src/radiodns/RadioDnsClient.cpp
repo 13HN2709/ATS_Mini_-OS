@@ -533,21 +533,54 @@ void RadioDnsClient::runLookup(const RadioDnsFmIdentity& identity) {
   if (!fmDxFolder.isEmpty()) {
     logRadioDns(cache_, String("FM-DX logo lookup started: folder=") + fmDxFolder +
       "; PI=" + fmDxPi + "; server=tef.noobish.eu");
+    // Try all supported raster filename variants in order. The server plugin
+    // documents both PI-only names and PI_PROGRAMNAME names. SVG is deliberately
+    // omitted because this firmware path currently decodes PNG/JPEG only.
+    const char* programAliases[] = {
+      "WDR3", "WDR4", "ANTENNEMUNSTER", "ANTENNEMUENSTER"
+    };
     const char* extensions[] = {".png", ".jpg", ".jpeg"};
-    for (const char* extension : extensions) {
-      String logoUrl = String("https://tef.noobish.eu/logos/") + fmDxFolder +
-        "/" + fmDxPi + extension;
-      int fmDxStatus = -1;
-      String fmDxLogo = httpGet(logoUrl, kMaxLogoBytes, fmDxStatus);
-      if (fmDxStatus == HTTP_CODE_OK && !fmDxLogo.isEmpty()) {
-        logRadioDns(cache_, String("FM-DX logo candidate found: HTTP 200; URL=") + logoUrl);
-        if (storeLogoInRam(fmDxLogo, key, logoUrl.c_str())) return;
-      } else {
-        logRadioDns(cache_, String("FM-DX logo candidate unavailable: HTTP/status ") +
-          String(fmDxStatus) + "; URL=" + logoUrl);
+    char knownProgram[24] = {};
+    if (fmDxPi == "D392") strncpy(knownProgram, "WDR3", sizeof(knownProgram) - 1);
+    else if (fmDxPi == "D394") strncpy(knownProgram, "WDR4", sizeof(knownProgram) - 1);
+    else if (fmDxPi == "D399") strncpy(knownProgram, "ANTENNEMUNSTER", sizeof(knownProgram) - 1);
+
+    // PI-only candidates first preserve the currently working D399.png path.
+    // Then test the station-specific program filename, followed by additional
+    // documented/likely aliases for the three known German test stations.
+    String baseNames[6];
+    size_t baseNameCount = 0;
+    baseNames[baseNameCount++] = fmDxPi;
+    if (knownProgram[0]) baseNames[baseNameCount++] = String(fmDxPi) + "_" + knownProgram;
+    if (fmDxPi == "D399") {
+      baseNames[baseNameCount++] = "D399_ANTENNEMUENSTER";
+    } else if (fmDxPi == "D392") {
+      baseNames[baseNameCount++] = "D392_WDR3";
+    } else if (fmDxPi == "D394") {
+      baseNames[baseNameCount++] = "D394_WDR4";
+    }
+
+    for (size_t nameIndex = 0; nameIndex < baseNameCount; ++nameIndex) {
+      for (const char* extension : extensions) {
+        String logoUrl = String("https://tef.noobish.eu/logos/") + fmDxFolder +
+          "/" + baseNames[nameIndex] + extension;
+        int fmDxStatus = -1;
+        String fmDxLogo = httpGet(logoUrl, kMaxLogoBytes, fmDxStatus);
+        if (fmDxStatus == HTTP_CODE_OK && !fmDxLogo.isEmpty()) {
+          logRadioDns(cache_, String("FM-DX logo candidate returned HTTP 200: URL=") + logoUrl +
+            "; bytes=" + String(fmDxLogo.length()));
+          if (storeLogoInRam(fmDxLogo, key, logoUrl.c_str())) {
+            logRadioDns(cache_, String("FM-DX logo selected; stopping candidate search: ") + logoUrl);
+            return;
+          }
+          logRadioDns(cache_, String("FM-DX candidate was not a usable PNG/JPEG; trying next candidate: ") + logoUrl);
+        } else {
+          logRadioDns(cache_, String("FM-DX logo candidate unavailable: HTTP/status ") +
+            String(fmDxStatus) + "; URL=" + logoUrl);
+        }
       }
     }
-    logRadioDns(cache_, String("FM-DX logo lookup found no usable raster logo for PI=") + fmDxPi +
+    logRadioDns(cache_, String("FM-DX logo lookup exhausted all supported raster filename candidates for PI=") + fmDxPi +
       "; continuing with RadioDNS");
   } else {
     logRadioDns(cache_, String("FM-DX logo lookup skipped: no verified folder mapping for GCC=") +
