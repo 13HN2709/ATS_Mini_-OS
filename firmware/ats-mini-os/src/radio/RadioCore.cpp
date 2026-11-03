@@ -95,6 +95,25 @@ bool RadioCore::nextChannel(int16_t acceleratedDelta) {
 }
 
 RadioDnsFmIdentity RadioCore::radioDnsIdentity() const {
-  return RadioDnsIdentity::buildFm(snapshot_.frequencyKHz, snapshot_.piCode,
-                                   snapshot_.eccValid ? snapshot_.gcc : "");
+  // Temporary test fallback: Germany (DE) maps to ECC E0 for the RDS country
+  // code D, producing GCC DE0. A received ECC always takes precedence.
+  if (snapshot_.eccValid && snapshot_.gcc[0] != '\0') {
+    return RadioDnsIdentity::buildFm(snapshot_.frequencyKHz, snapshot_.piCode,
+                                     snapshot_.gcc);
+  }
+
+  // Do not apply the German test fallback to a PI whose country-code nibble
+  // does not identify Germany. Cross-border country resolution can be added
+  // later when the configurable country setting is implemented.
+  if (snapshot_.piCode != 0 &&
+      ((snapshot_.piCode >> 12) & 0x0F) == 0x0D) {
+    RadioDnsFmIdentity identity =
+        RadioDnsIdentity::buildFm(snapshot_.frequencyKHz, snapshot_.piCode, "DE0");
+    if (identity.status == RadioDnsIdentityStatus::Ready) {
+      identity.countryFallbackUsed = true;
+    }
+    return identity;
+  }
+
+  return RadioDnsIdentity::buildFm(snapshot_.frequencyKHz, snapshot_.piCode, "");
 }
