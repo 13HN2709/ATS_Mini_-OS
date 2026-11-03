@@ -1221,3 +1221,17 @@ Die Header- und Implementierungsdateien der offiziellen PU2CLR-Version 2.1.8 wur
 - Korrektur: Die bereits gebildete RadioDnsFmIdentity wird jetzt aus ats-mini-os.ino an DisplayDriver::render() übergeben. Das Display verwendet damit exakt dieselbe Identität und denselben Schlüssel wie der Downloader; es gibt keine doppelte, abweichende Identitätsbildung mehr.
 - Geänderte Dateien: firmware/ats-mini-os/src/display/DisplayDriver.h, firmware/ats-mini-os/src/display/DisplayDriver.cpp, firmware/ats-mini-os/ats-mini-os.ino.
 - Noch nicht kompiliert oder am Gerät getestet. Keine GitHub Actions gestartet, nichts geflasht. Der Nutzer führt wie vereinbart zuerst den manuellen Compile-only-Workflow aus. Bootloader, Partitionstabelle und vorhandene Dateien bleiben unverändert.
+
+
+## Vollbild-Encoder-Menü – Vorabimplementierung (2026-11-03)
+
+Auf Branch `dev/first-build-preparation` wurde ein erstes scrollbares Vollbild-Menü im TEF6686-inspirierten dunklen Stil ergänzt. Es verwendet die vorhandene Encoder-Eingabe und den vorhandenen LovyanGFX-Renderer; kein neuer Font- oder UI-Unterbau wurde hinzugefügt.
+
+- Kurzer Encoder-Klick öffnet das Hauptmenü.
+- Erste Zeile ist **Zurueck**; ausgewählt und angeklickt beendet sie das Menü.
+- Darunter folgt **Lautstaerke**; Audio-Lautstärke ist mit dem SI4735 verbunden (0–63, Startwert 25).
+- Weitere Hauptpunkte: Anzeige, Radio, WLAN und System. Sie öffnen jeweils einfache Listen-Untermenüs als vorbereitete Platzhalter, keine separaten Bildschirmdialoge.
+- Drehen bewegt die Auswahl. In Audio > Lautstaerke wird durch Drehen der Wert verändert; kurzer Klick kehrt ins Hauptmenü zurück.
+- Langer Klick schließt das Menü von jeder Menüebene.
+- Noch nicht implementiert sind die Platzhalterfunktionen Helligkeit, Schrittweite, WLAN-Modus, Web Control und CPU-Profil.
+- Keine GitHub Actions/Builds gestartet, kein Flashen. Erst manuell Compile-only ausführen und Ergebnisse prüfen.
