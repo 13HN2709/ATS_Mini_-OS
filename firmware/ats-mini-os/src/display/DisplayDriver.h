@@ -236,7 +236,7 @@ public:
 class DisplayDriver {
 public:
   bool begin();
-  void render(const RadioSnapshot& state, bool radioReady, bool wifiConnected, const char* lastInputEvent, uint32_t inputEventCount, const RadioDnsFmIdentity& logoIdentity, RadioDnsClient* logoClient = nullptr);
+  void render(const RadioSnapshot& state, bool radioReady, bool wifiConnected, const char* lastInputEvent, uint32_t inputEventCount, const RadioDnsFmIdentity& logoIdentity, RadioDnsClient* logoClient = nullptr, bool menuOpen = false, uint8_t menuPage = 0, uint8_t menuSelection = 0, uint8_t volume = 25);
   bool isReady() const { return ready_; }
   uint32_t detectedPanelId() const { return device_.getDisplayId(); }
 private:
@@ -246,6 +246,10 @@ private:
   bool ready_ = false;
   uint32_t lastGeneration_ = UINT32_MAX;
   uint32_t lastDrawMs_ = 0;
+  bool lastMenuOpen_ = false;
+  uint8_t lastMenuPage_ = 0xFF;
+  uint8_t lastMenuSelection_ = 0xFF;
+  uint8_t lastMenuVolume_ = 0xFF;
   char lastStationRow_[32] = {};
   char lastRadioTextRow_[65] = {};
   bool haveStationRow_ = false;
