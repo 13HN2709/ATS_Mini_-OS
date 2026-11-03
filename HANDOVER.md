@@ -1135,3 +1135,16 @@ Die Header- und Implementierungsdateien der offiziellen PU2CLR-Version 2.1.8 wur
 - Status-Endpunkt `/radiodns-status` zeigt nun PI, ECC-Status, GCC, GCC-Quelle, FQDN und Identity-Status. RadioDNS-Log nennt ebenfalls die GCC-Quelle.
 - Sobald die Identität gültig ist, läuft der vorhandene Ablauf unverändert weiter: SRV-Abfrage, Abruf von `SI.xml`, Logo-URL-Suche und Logo-Download in den bestehenden `/RDS`-Cache.
 - Änderungen auf `dev/first-build-preparation`; noch nicht kompiliert oder am Gerät getestet. Nutzer startet den Compile-only-Workflow selbst. Keine GitHub Actions gestartet und nichts geflasht; keine Änderungen an Bootloader, Partitionen oder vorhandenen Daten.
+
+## Wetter-Referenz: PV2KSM ATS-Mini r28 (2026-11-03)
+
+- Vom Nutzer als Referenz für die spätere Wetterfunktion vorgemerkt:
+  - Repository: https://github.com/PV2KSM/ats-mini-pv2ksm
+  - Release: https://github.com/PV2KSM/ats-mini-pv2ksm/releases/tag/v2.45-PV2KSM-r28
+  - Tag/Branch: `v2.45-PV2KSM-r28` / `pv2ksm-r28`
+- Das Release beschreibt eine inoffizielle Community-Modifikation auf Basis von ATS-Mini v2.45. Die Release-Notizen nennen Wetteransichten für aktuelle Bedingungen, kommende Tage, kommende Stunden, METAR und Regenradar.
+- Genannte Wetterdatenquellen: Open-Meteo (Wetter), aviationweather.gov (METAR) und RainViewer (Regenradar). Laut Release werden Wetterdaten nur abgerufen, während die Wetteransicht geöffnet ist.
+- Laut Release wurde diese Wetterfunktion auf realer ATS-Mini-OSPI-Hardware getestet; QSPI und LilyGO T-Embed wurden dort nur kompiliert, nicht auf Hardware getestet.
+- Verwendung für ATS Mini OS: **nur als lesende technische Referenz** untersuchen. Vor Übernahme einzelner Ideen/Codepfade Schnittstellen, Netzwerkverhalten, Speicherbedarf, Lizenz/Attribution und Nutzungsbedingungen der Datenanbieter prüfen. Das Release weist insbesondere auf Einschränkungen bei nicht-kommerzieller Nutzung von Open-Meteo und auf eigene Bedingungen von RainViewer hin.
+- Noch keine Übernahme von Code, keine Änderung am Referenz-Repository und keine Änderung an der ATS Mini OS-Wetterimplementierung allein durch das Vormerken dieser Quelle. Die bereits dokumentierte Wetterplanung und die bestehenden Sicherheitsregeln bleiben bestehen.
+
