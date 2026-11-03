@@ -2,9 +2,9 @@
 
 > **Zweck:** Dieses Dokument ist die zentrale Übergabe für neue Chat-Sitzungen. Vor jeder Fortsetzung zuerst diese Datei lesen und anschließend den tatsächlichen Repository-Stand prüfen.
 >
-> **Stand:** 2026-11-02  
+> **Stand:** 2026-11-03  
 > **Repository:** https://github.com/13HN2709/ATS_Mini_-OS  
-> **Status:** ATS Mini V4-Hardwaretest vom Nutzer bestätigt: Radio startet mit Audio auf 95,400 MHz, RDS/PS/RT bleiben stabil ohne Flackern, Encoder reagiert jetzt korrekt. Workflow-Dateinamen enthalten nun Buildnummer und Run-Versuch (Commit `399b6d21dfd47a09acdd422599b53b9cc3cd8924`). Neue Layout- und RadioDNS-Arbeit ist als nächster Schritt vorgesehen. Kein Build durch den Assistenten gestartet; kein Flash-/Bootloader-/Partitionsschritt durchgeführt.
+> **Status:** ATS Mini V4-Hardwaretest vom Nutzer bestätigt: Radio startet mit Audio auf 95,400 MHz, RDS/PS/RT bleiben stabil ohne Flackern, Encoder reagiert korrekt. RadioDNS-Logoabruf trifft bei Radioplayer auf HTTP 401; deshalb wurde auf `dev/first-build-preparation` ein zusätzlicher RAM-only-Testpfad über den FM-DX-Webserver-Logoserver für den deutschen Testfall PI D399 ergänzt. Noch nicht kompiliert und nicht auf dem Gerät geprüft. Kein Build durch den Assistenten gestartet; kein Flash-/Bootloader-/Partitionsschritt durchgeführt.
 
 ## 1. Aktueller Auftrag
 
