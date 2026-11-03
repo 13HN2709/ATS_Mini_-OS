@@ -16,4 +16,5 @@ private:
   volatile bool busy_ = false;
   bool haveRequested_ = false;
   char lastRequestedFqdn_[64] = {};
+  uint32_t lastAttemptMs_ = 0;
 };
