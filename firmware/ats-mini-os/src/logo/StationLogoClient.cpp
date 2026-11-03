@@ -74,6 +74,7 @@ String normalizeName(String s) {
 }
 String expectedName(const RadioSnapshot& s) {
   String pi = String(s.piCode, HEX); pi.toUpperCase();
+  if (pi == "D391") return "1LIVE";
   if (pi == "D392") return "WDR 3";
   if (pi == "D394") return "WDR 4";
   if (pi == "D3A0" || pi == "D3A1" || pi == "D3A2") return "WDR COSMO";
@@ -151,12 +152,28 @@ void StationLogoClient::runLookup(const RadioSnapshot& state) {
   char key[40];
   snprintf(key,sizeof(key),"%04X_%lu",static_cast<unsigned>(state.piCode),static_cast<unsigned long>(state.frequencyKHz));
   const String pi=String(state.piCode,HEX); String piUpper=pi; piUpper.toUpperCase();
-  // FM-DX community logo repository remains the primary source for German PI codes.
+  // FM-DX Station Logo plugin lookup order: PI_PROGRAM first, then PI.
+  // Program suffixes are uppercase and stripped of spaces/punctuation exactly
+  // as in the upstream plugin. The directory's SVG logos are intentionally
+  // skipped here because the ESP32 display decoder accepts PNG/JPEG only.
   if (piUpper.length()==4 && piUpper[0]=='D') {
-    const String bases[] = {piUpper};
+    String programs[3] = { expectedName(state), String(state.stationName), String() };
+    programs[2] = String(state.radioText);
+    for (String program : programs) {
+      program.toUpperCase();
+      String clean;
+      for (size_t i=0; i<program.length(); ++i) {
+        const char ch=program[i];
+        if ((ch>='A'&&ch<='Z')||(ch>='0'&&ch<='9')) clean+=ch;
+      }
+      if (clean.length()<2) continue;
+      const String url=String("https://tef.noobish.eu/logos/D/")+piUpper+"_"+clean+".png";
+      int status=-1; String image=httpGet(url,kMaxLogoBytes,status);
+      if (status==HTTP_CODE_OK && storeLogoInRam(image,key,url.c_str())) return;
+    }
     const char* exts[]={".png",".jpg",".jpeg"};
-    for (const String& base : bases) for (const char* ext : exts) {
-      const String url=String("https://tef.noobish.eu/logos/D/")+base+ext;
+    for (const char* ext : exts) {
+      const String url=String("https://tef.noobish.eu/logos/D/")+piUpper+ext;
       int status=-1; String image=httpGet(url,kMaxLogoBytes,status);
       if (status==HTTP_CODE_OK && storeLogoInRam(image,key,url.c_str())) return;
     }
