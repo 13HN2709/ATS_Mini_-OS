@@ -9,9 +9,6 @@ struct RadioSnapshot {
   int16_t snr = -1;
   uint16_t piCode = 0;
   uint8_t pty = 0;
-  uint8_t eccCode = 0;
-  bool eccValid = false;
-  char gcc[4] = {};
   bool stereo = false;
   bool rdsAvailable = false;
   char stationName[9] = {};
