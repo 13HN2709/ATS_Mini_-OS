@@ -114,7 +114,7 @@ bool TunerDriver::pollRds(TunerRdsData& out) {
   if (group == 1 && radio_.getRdsVersionCode() == 0 &&
       radio_.getRdsNewBlockB() && radio_.currentBlockCError() < 3) {
     const uint16_t blockC = radio_.currentBlockC();
-    const uint8_t ecc = static_cast<uint8_t>((blockC >> 8) & 0xFF);
+    const uint8_t ecc = static_cast<uint8_t>(blockC & 0xFF);
     if (ecc != 0) {
       out.eccValid = true;
       out.eccCode = ecc;
