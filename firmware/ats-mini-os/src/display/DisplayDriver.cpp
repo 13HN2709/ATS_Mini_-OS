@@ -17,6 +17,75 @@ void centered(Canvas& d,const char* s,int x,int y,uint16_t c,const lgfx::IFont* 
   d.setFont(f);
   d.drawCenterString(s ? s : "",x,y);
 }
+
+template <typename Canvas>
+void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume) {
+  const int w = canvas.width();
+  const int h = canvas.height();
+  static const char* const mainItems[] = {
+    "Zurueck", "Lautstaerke", "Anzeige", "Radio", "WLAN", "System"
+  };
+  static const char* const volumeItems[] = {
+    "Zurueck", "Lautstaerke", "Stumm (spaeter)"
+  };
+  static const char* const displayItems[] = {
+    "Zurueck", "Helligkeit (spaeter)", "Layout (spaeter)"
+  };
+  static const char* const radioItems[] = {
+    "Zurueck", "Schrittweite (spaeter)", "Bandplan (spaeter)"
+  };
+  static const char* const wifiItems[] = {
+    "Zurueck", "WLAN-Modus (spaeter)", "Web Control (spaeter)"
+  };
+  static const char* const systemItems[] = {
+    "Zurueck", "CPU-Profil (spaeter)", "Systeminfo (spaeter)"
+  };
+  const char* const* items = mainItems;
+  uint8_t count = sizeof(mainItems) / sizeof(mainItems[0]);
+  const char* title = "HAUPTMENUE";
+  switch (page) {
+    case 1: items=volumeItems; count=sizeof(volumeItems)/sizeof(volumeItems[0]); title="AUDIO"; break;
+    case 2: items=displayItems; count=sizeof(displayItems)/sizeof(displayItems[0]); title="ANZEIGE"; break;
+    case 3: items=radioItems; count=sizeof(radioItems)/sizeof(radioItems[0]); title="RADIO"; break;
+    case 4: items=wifiItems; count=sizeof(wifiItems)/sizeof(wifiItems[0]); title="WLAN"; break;
+    case 5: items=systemItems; count=sizeof(systemItems)/sizeof(systemItems[0]); title="SYSTEM"; break;
+    default: break;
+  }
+  canvas.fillScreen(BLACK);
+  text(canvas,"ATS MINI OS",10,3,CYAN,&lgfx::fonts::Font2);
+  text(canvas,title,w-88,7,GREEN,&lgfx::fonts::Font0);
+  canvas.drawFastHLine(8,30,w-16,DARK_GREEN);
+
+  const int rowTop=37;
+  const int rowHeight=36;
+  const int visibleRows=(h-58)/rowHeight;
+  int first = 0;
+  if (selection >= visibleRows) first = selection-visibleRows+1;
+  for (int row=0; row<visibleRows && first+row<count; ++row) {
+    const uint8_t index=static_cast<uint8_t>(first+row);
+    const int y=rowTop+row*rowHeight;
+    const bool selected=index==selection;
+    if (selected) {
+      canvas.fillRoundRect(7,y,w-14,31,4,0x0320);
+      canvas.drawRoundRect(7,y,w-14,31,4,GREEN);
+    }
+    text(canvas,items[index],15,y+8,selected?GREEN:WHITE,&lgfx::fonts::Font2);
+    if (page==1 && index==1) {
+      char value[12];
+      snprintf(value,sizeof(value),"%u/63",static_cast<unsigned>(volume));
+      canvas.setTextColor(YELLOW,BLACK);
+      canvas.setFont(&lgfx::fonts::Font2);
+      canvas.drawRightString(value,w-18,y+8);
+      const int barX=15, barY=y+25, barW=w-32;
+      canvas.drawRect(barX,barY,barW,4,0x7BEF);
+      const int fillW=(barW-2)*volume/63;
+      if(fillW>0) canvas.fillRect(barX+1,barY+1,fillW,2,GREEN);
+    }
+  }
+  canvas.drawFastHLine(8,h-20,w-16,DARK_GREEN);
+  text(canvas,page==1?"Drehen: Lautstaerke":"Drehen: Auswahl",10,h-15,0x7BEF,&lgfx::fonts::Font0);
+}
+
 }
 
 bool DisplayDriver::begin() {
@@ -56,12 +125,30 @@ bool DisplayDriver::begin() {
 void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConnected,
                            const char* lastInputEvent,uint32_t inputEventCount,
                            const RadioDnsFmIdentity& logoIdentity,
-                           RadioDnsClient* logoClient) {
+                           RadioDnsClient* logoClient, bool menuOpen,
+                           uint8_t menuPage, uint8_t menuSelection, uint8_t volume) {
   if(!ready_)return;
   const uint32_t now=millis();
-  if(s.generation==lastGeneration_ && now-lastDrawMs_<500)return;
+  const bool menuStateChanged = menuOpen != lastMenuOpen_ || menuPage != lastMenuPage_ ||
+      menuSelection != lastMenuSelection_ || volume != lastMenuVolume_;
+  if(s.generation==lastGeneration_ && now-lastDrawMs_<500 && !menuStateChanged)return;
   lastGeneration_=s.generation;
   lastDrawMs_=now;
+  lastMenuOpen_=menuOpen;
+  lastMenuPage_=menuPage;
+  lastMenuSelection_=menuSelection;
+  lastMenuVolume_=volume;
+  if (menuOpen) {
+    if (useSprite_) {
+      sprite_.fillSprite(BLACK);
+      drawMenu(sprite_, menuPage, menuSelection, volume);
+      sprite_.pushSprite(0,0);
+    } else {
+      device_.fillScreen(BLACK);
+      drawMenu(device_, menuPage, menuSelection, volume);
+    }
+    return;
+  }
 
   char logoKey[32] = {};
   // Use the exact same identity (including the validated temporary GCC fallback)
