@@ -231,7 +231,15 @@ void RadioDnsClient::update(const RadioDnsFmIdentity& identity, bool wifiConnect
   const int gateCode = (!cache_ || !cache_->ready()) ? 1 : (!wifiConnected ? 2 : (identity.status != RadioDnsIdentityStatus::Ready ? 10 + static_cast<int>(identity.status) : 0));
   if (gateCode != lastGateCode) {
     lastGateCode = gateCode;
-    if (cache_ && cache_->ready()) logRadioDns(cache_, String("gate state=") + gateCode + " wifi=" + (wifiConnected ? "connected" : "disconnected") + " identityStatus=" + String(static_cast<int>(identity.status)) + " PI=" + identity.pi + " GCC=" + identity.gcc + " FQDN=" + identity.fqdn);
+    if (cache_ && cache_->ready()) {
+      const char* gccSource = identity.countryFallbackUsed ? "DE-fallback" :
+                              (identity.status == RadioDnsIdentityStatus::Ready ? "RDS-ECC" : "unavailable");
+      logRadioDns(cache_, String("gate state=") + gateCode +
+        " wifi=" + (wifiConnected ? "connected" : "disconnected") +
+        " identityStatus=" + String(static_cast<int>(identity.status)) +
+        " PI=" + identity.pi + " GCC=" + identity.gcc +
+        " GCC-source=" + gccSource + " FQDN=" + identity.fqdn);
+    }
   }
   if (!cache_ || !cache_->ready() || !wifiConnected || busy_ || identity.status != RadioDnsIdentityStatus::Ready) return;
   const uint32_t now = millis();
