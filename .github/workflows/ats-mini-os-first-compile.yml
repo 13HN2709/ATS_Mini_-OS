@@ -110,7 +110,7 @@ jobs:
           arduino-cli compile \
             --clean \
             --output-dir "$BUILD_OUT" \
-            --fqbn "esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=8M,PSRAM=${{ matrix.psram }},CPUFreq=80,USBMode=hwcdc,FlashMode=qio,PartitionScheme=custom,DebugLevel=none" \
+            --fqbn "esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=16M,PSRAM=${{ matrix.psram }},CPUFreq=80,USBMode=hwcdc,FlashMode=qio,PartitionScheme=custom,DebugLevel=none" \
             --build-property "build.flash_mode=qio" \
             --build-property "build.flash_freq=80m" \
             --warnings all \
@@ -130,8 +130,8 @@ jobs:
             echo "ERROR: generated flash_args does not declare qio; refusing to package this profile as valid." >&2
             exit 1
           }
-          grep -Eq -- '--flash-size[[:space:]]+8MB([[:space:]]|$)' "$FLASH_ARGS" || {
-            echo "ERROR: generated flash_args does not declare 8MB; refusing to package this profile as valid." >&2
+          grep -Eq -- '--flash-size[[:space:]]+16MB([[:space:]]|$)' "$FLASH_ARGS" || {
+            echo "ERROR: generated flash_args does not declare 16MB; refusing to package this profile as valid." >&2
             exit 1
           }
 
@@ -212,7 +212,7 @@ jobs:
             echo "Profile: $PROFILE"
             echo "Label: $LABEL"
             echo "Application binary: ATS-Mini-OS-$LABEL-Build-${{ github.run_number }}-${{ github.run_attempt }}.ino.bin (only present if compilation produced it)"
-            echo "FlashSize: 8M"
+            echo "FlashSize: 16M"
             echo "ESP32 Arduino core: 3.3.12"
             echo "PSRAM mode: ${{ matrix.psram }}"
             echo "Third-party implementation sources are staged into the source artifact from the installed libraries used by this build."
@@ -312,7 +312,7 @@ jobs:
           {
             echo "FLASH ADDRESS REVIEW - REFERENCE ONLY"
             echo "Profile: $LABEL"
-            echo "Flash size profile: 8M"
+            echo "Flash size profile: 16M"
             echo
             echo "Known-good ATS-Mini-Dev reference addresses:"
             echo "0x0000  ats-mini-os.ino.bootloader.bin"
@@ -336,7 +336,7 @@ jobs:
           cat > "$FLASH_REVIEW/README-FIRST-FLASH-REVIEW.txt" <<EOF
           ATS Mini OS - FIRST FLASH REVIEW ONLY
           Profile: $LABEL
-          FlashSize: 8M
+          FlashSize: 16M
           ESP32 Arduino core: 3.3.12
           PSRAM mode: ${{ matrix.psram }}
 
