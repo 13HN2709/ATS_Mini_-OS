@@ -236,7 +236,7 @@ public:
 class DisplayDriver {
 public:
   bool begin();
-  void render(const RadioSnapshot& state, bool radioReady, bool wifiConnected, const char* lastInputEvent, uint32_t inputEventCount, RadioDnsClient* logoClient = nullptr);
+  void render(const RadioSnapshot& state, bool radioReady, bool wifiConnected, const char* lastInputEvent, uint32_t inputEventCount, const RadioDnsFmIdentity& logoIdentity, RadioDnsClient* logoClient = nullptr);
   bool isReady() const { return ready_; }
   uint32_t detectedPanelId() const { return device_.getDisplayId(); }
 private:
