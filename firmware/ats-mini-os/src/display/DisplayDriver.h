@@ -233,7 +233,7 @@ public:
 class DisplayDriver {
 public:
   bool begin();
-  void render(const RadioSnapshot& state, bool radioReady, const char* lastInputEvent, uint32_t inputEventCount);
+  void render(const RadioSnapshot& state, bool radioReady, bool wifiConnected, const char* lastInputEvent, uint32_t inputEventCount);
   bool isReady() const { return ready_; }
   uint32_t detectedPanelId() const { return device_.getDisplayId(); }
 private:
@@ -245,7 +245,7 @@ private:
   char lastRadioTextRow_[65] = {};
   bool haveStationRow_ = false;
   bool haveRadioTextRow_ = false;
-  void draw(const RadioSnapshot& state, bool radioReady, const char* lastInputEvent, uint32_t inputEventCount);
+  void draw(const RadioSnapshot& state, bool radioReady, bool wifiConnected, const char* lastInputEvent, uint32_t inputEventCount);
 };
 
 #endif // ATS_MINI_OS_DISPLAY_DRIVER_H
