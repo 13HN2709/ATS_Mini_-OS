@@ -1202,3 +1202,13 @@ Die Header- und Implementierungsdateien der offiziellen PU2CLR-Version 2.1.8 wur
 - Änderung: zuerst `_radiospi._tcp.<authoritative-FQDN>` abfragen und bei Erfolg HTTPS für `/radiodns/spi/3.1/SI.xml` verwenden. Wenn der moderne Dienst nicht existiert, wird weiterhin `_radioepg._tcp` als Legacy-Fallback versucht. Beide Pfade protokollieren Dienstname, RCODE, Antwortanzahl und Zielserver. HTTP 401 wird als tatsächliches Authentifizierungsresultat protokolliert; es kann ClientID-Zugang durch Radioplayer erfordern.
 - Geänderte Datei: `firmware/ats-mini-os/src/radiodns/RadioDnsClient.cpp`.
 - Noch nicht kompiliert oder am Gerät getestet. Keine GitHub Actions gestartet, nichts geflasht; Bootloader, Partitionstabelle und bestehende Daten bleiben unverändert.
+
+
+## FM-DX-Webserver Logoquelle als erster Testpfad (2026-11-03)
+
+- Nutzerentscheidung: zunächst die Logoquelle des FM-DX-Webserver-Plugins verwenden, da sie bereits in der Android-App des Nutzers für den TEF6686 hilfreich ist.
+- Plugin-Repository geprüft: `Highpoint2000/webserver-station-logos`. Das Plugin lädt Logos vom öffentlichen Verzeichnis `https://tef.noobish.eu/logos/`, verwendet Länderordner und PI-basierte Dateinamen; PNG/SVG sind die üblichen Formate. Für den ATS Mini OS wird SVG vorerst nicht verwendet, da der bestehende Anzeigeweg JPEG/PNG decodiert.
+- Diagnoseimplementierung auf `dev/first-build-preparation`: bei deutscher Identität mit PI beginnend `D` und GCC-Endung `E0` wird zuerst im Länderordner `D` nach `<PI>.png`, `.jpg` und `.jpeg` gesucht. Bei Erfolg wird das Bild über dieselbe RAM-only Logoübergabe angezeigt. Bei Misserfolg läuft der bisherige RadioDNS-Pfad weiter.
+- Es werden weiterhin keine Senderlogos oder SI.xml-Daten dauerhaft gespeichert. Das bestehende RadioDNS-Debug-Log bleibt für die Fehlersuche persistent.
+- Die Länderordnerzuordnung ist absichtlich zunächst nur für den bestätigten deutschen Testfall umgesetzt; weitere Länder werden erst nach Prüfung der FM-DX-Ländercodeliste ergänzt.
+- **Status: Code geändert, noch nicht kompiliert und nicht auf dem Gerät geprüft.** Keine GitHub Actions gestartet und nichts geflasht. Nutzer führt den manuellen Compile-only-Workflow aus; Bootloader, Partitionstabelle und vorhandene Dateien bleiben unangetastet.
