@@ -5,8 +5,7 @@
 #include <LovyanGFX.hpp>
 #include <Arduino.h>
 #include "../radio/RadioSnapshot.h"
-#include "../radiodns/RadioDnsIdentity.h"
-#include "../radiodns/RadioDnsClient.h"
+#include "../logo/StationLogoClient.h"
 
 #if !defined(LILYGO_SI473X)
 #include <esp_rom_gpio.h>
@@ -236,7 +235,7 @@ public:
 class DisplayDriver {
 public:
   bool begin();
-  void render(const RadioSnapshot& state, bool radioReady, bool wifiConnected, const char* lastInputEvent, uint32_t inputEventCount, const RadioDnsFmIdentity& logoIdentity, RadioDnsClient* logoClient = nullptr, bool menuOpen = false, uint8_t menuPage = 0, uint8_t menuSelection = 0, uint8_t volume = 25);
+  void render(const RadioSnapshot& state, bool radioReady, bool wifiConnected, const char* lastInputEvent, uint32_t inputEventCount, StationLogoClient* logoClient = nullptr, bool menuOpen = false, uint8_t menuPage = 0, uint8_t menuSelection = 0, uint8_t volume = 25);
   bool isReady() const { return ready_; }
   uint32_t detectedPanelId() const { return device_.getDisplayId(); }
 private:
