@@ -1100,3 +1100,14 @@ Die Header- und Implementierungsdateien der offiziellen PU2CLR-Version 2.1.8 wur
 - Die Routine mountet niemals blind die rohe Adresse `0x610000`: Im dokumentierten 16-MB-ATS-Mini-V4-Layout liegt diese Adresse innerhalb von `app1`; in diesem Fall ist sie keine LittleFS-Partition und wird ignoriert.
 - Die bekannten Ankerdateien werden weiterhin nur innerhalb des gültig gemounteten LittleFS gesucht. `/RDS` wird nur nach einem Fund angelegt; Mount erfolgt mit `formatOnFail=false`.
 - Noch nicht kompiliert oder auf dem Gerät getestet. Keine GitHub Actions gestartet, nichts geflasht; keine Partitionstabelle, Bootloader- oder bestehenden Daten geändert.
+
+
+## Storage Discovery: Reihenfolge der beiden Layouts präzisiert (2026-11-03)
+
+- Nutzer hat die beiden Adressen erklärt: `0xA00000` ist LittleFS im Dual-Boot-Manager 4.2.2; `0x610000` ist LittleFS im Stock-/ATS-Mini-Dev-Layout ohne Dual Boot. Es handelt sich um alternative Layouts, nicht um zwei gleichzeitig zu verwendende Dateisysteme.
+- `StorageDiscovery.cpp` prüft jetzt ausdrücklich zuerst `0xA00000`, danach als Fallback `0x610000`.
+- Eine Adresse wird nur verwendet, wenn die Laufzeit-Partitionstabelle dort tatsächlich eine DATA-Partition mit Label `littlefs` ausweist. Kein Mount auf rohe Flash-Adressen; wichtig, weil `0x610000` beim Dual-Boot-Layout in einen App-Bereich fallen kann.
+- Innerhalb des gemounteten Dateisystems wird nach `Schedules.json`, `schedules.bin`, `memories.json` oder `splash.png` gesucht. Erst wenn mindestens eine davon existiert, wird `/RDS` angelegt bzw. wiederverwendet und der Cache aktiviert. Wenn keine Ankerdatei gefunden wird, bleibt der persistente Logo-Cache deaktiviert.
+- LittleFS wird mit `formatOnFail=false` eingebunden. Keine Formatierung, kein Löschen, keine Änderung an Partitionsgrößen oder Bootloader.
+- Commit: `7ed519f5492a81ce711aa1bc1ca629ce1213f5ab`.
+- Status: Codeänderung committed, noch nicht neu kompiliert oder am Gerät getestet. Nutzer startet den manuellen Compile-only-Workflow selbst; keine GitHub Actions durch den Assistenten gestartet und nichts geflasht.
