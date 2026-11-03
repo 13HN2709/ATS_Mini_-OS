@@ -47,6 +47,8 @@ class TunerDriver {
 public:
   bool begin(uint32_t initialFrequencyKHz);
   bool tune(uint32_t frequencyKHz);
+  bool setVolume(uint8_t volume);
+  uint8_t volume() const { return volume_; }
   uint32_t frequencyKHz() const;
   void refreshSignalQuality();
   bool pollRds(TunerRdsData& out);
@@ -61,6 +63,7 @@ private:
   static constexpr uint32_t kMaxFrequencyKHz = 108000;
   TunerSI4735 radio_;
   bool ready_ = false;
+  uint8_t volume_ = 25;
   bool haveTextFlag_ = false;
   uint8_t lastTextFlag_ = 0;
 };
