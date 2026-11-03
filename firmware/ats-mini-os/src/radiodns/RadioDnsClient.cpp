@@ -442,22 +442,42 @@ void RadioDnsClient::runLookup(const RadioDnsFmIdentity& identity) {
   char host[256] = {};
   uint16_t port = 0;
   bool useTls = false;
-  if (!dnsSrvLookup(authoritativeFqdn, "radioepg", host, sizeof(host), port)) {
-    logRadioDns(cache_, String("no _radioepg._tcp SRV record for ") + authoritativeFqdn +
-                        "; trying TLS _radiospi");
+  int status = -1;
+  String xml;
+  String base;
+
+  if (dnsSrvLookup(authoritativeFqdn, "radioepg", host, sizeof(host), port)) {
+    base = String("http://") + host + ":" + String(port) +
+           "/radiodns/spi/3.1/SI.xml";
+    logRadioDns(cache_, String("metadata server: ") + base);
+    xml = httpGet(base, kMaxSiBytes, status);
+    if (status != HTTP_CODE_OK || xml.isEmpty()) {
+      logRadioDns(cache_, String("HTTP SI.xml request failed: HTTP=") +
+                          String(status) + " bytes=" + String(xml.length()) +
+                          "; trying TLS _radiospi");
+      host[0] = '\0';
+      port = 0;
+    }
+  } else {
+    logRadioDns(cache_, String("no _radioepg._tcp SRV record for ") +
+                        authoritativeFqdn + "; trying TLS _radiospi");
+  }
+
+  // Current SPI deployments may publish the TLS-only _radiospi service.
+  // Try it both when HTTP discovery is absent and when the HTTP endpoint fails.
+  if (xml.isEmpty() || status != HTTP_CODE_OK) {
     if (!dnsSrvLookup(authoritativeFqdn, "radiospi", host, sizeof(host), port)) {
-      logRadioDns(cache_, String("no _radiospi._tcp SRV record for ") + authoritativeFqdn);
+      logRadioDns(cache_, String("no usable _radiospi._tcp SRV record for ") +
+                          authoritativeFqdn);
       return;
     }
     useTls = true;
+    base = String("https://") + host + ":" + String(port) +
+           "/radiodns/spi/3.1/SI.xml";
+    logRadioDns(cache_, String("TLS metadata server: ") + base);
+    xml = httpGet(base, kMaxSiBytes, status);
   }
-  logRadioDns(cache_, String("metadata server: ") + (useTls ? "https://" : "http://") +
-                      host + ":" + String(port));
 
-  String base = String(useTls ? "https://" : "http://") + host + ":" +
-                String(port) + "/radiodns/spi/3.1/SI.xml";
-  int status = -1;
-  String xml = httpGet(base, kMaxSiBytes, status);
   if (status != HTTP_CODE_OK || xml.isEmpty()) {
     logRadioDns(cache_, String("SI.xml request failed: url=") + base +
                         " HTTP=" + String(status) + " bytes=" + String(xml.length()));
