@@ -3,18 +3,8 @@
 #include "WifiTestConfig.h"
 
 void WifiClient::begin() {
-  if (WifiTestConfig::SSID[0] == '\0') {
-    Serial.println("[WIFI] not configured; no credentials are embedded in this build");
-    return;
-  }
-
-  WiFi.mode(WIFI_STA);
-  WiFi.setAutoReconnect(true);
   WiFi.persistent(false);
-  WiFi.begin(WifiTestConfig::SSID, WifiTestConfig::PASSWORD);
-  lastStatus_ = WiFi.status();
-  Serial.printf("[WIFI] STA connecting to configured test network: %s\n",
-                WifiTestConfig::SSID);
+  Serial.println("[WIFI] standby; Wi-Fi is enabled only when a remote logo lookup is needed");
 }
 
 void WifiClient::update() {
