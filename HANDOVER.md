@@ -1366,3 +1366,13 @@ Auf Branch `dev/first-build-preparation` wurde ein erstes scrollbares Vollbild-M
 - Commits: `0ac2e66ed58c71829053855941c85b45d80576cb` (Header), `100592495d9783c845444f19efa10d47801161dc` (Implementierung), `a0969909a2b50fee88892b51146bfa65fd1454cb` (Initialisierung).
 - **Status: Modulgrundlage integriert; Encoder-Menüoberfläche und interaktive Dateiauswahl/Aktionsbestätigung sind noch nicht fertig. Nicht kompiliert und nicht am Gerät getestet.** Keine Actions gestartet, nichts geflasht, keine Formatierung und keine Partitionsänderung.
 - Nächster Schritt: Dateimanager als eigene Ansicht im vorhandenen Vollbild-Menü einhängen; Navigation und sichere Aktionsdialoge implementieren, danach Compile-only.
+
+
+## 2026-11-04 – Dateimanager als Encoder-Ansicht integriert (Build ausstehend)
+
+- Der Einstieg liegt unter **Hauptmenue → System → Dateimanager**. Die Ansicht nutzt den vorhandenen Encoder und Display-Renderer; die normale Radioansicht und der Senderlogo-Rahmen wurden nicht verändert.
+- Implementiert: Verzeichnisnavigation, Datei-/Ordneranzeige, Dateigröße, LittleFS-Belegung, Kopieren und Verschieben in einen ausgewählten Unterordner, Umbenennen regulärer Dateien, Löschen regulärer Dateien mit Ja/Nein-Bestätigung sowie Ordner anlegen.
+- Kopieren/Verschieben kopiert zuerst in eine temporäre Datei, prüft Bytezahl und Größe und entfernt beim Verschieben erst danach die Quelle. Vorhandene Ziele werden nicht überschrieben. Rekursives Löschen ist nicht implementiert; Verzeichnisse können nicht gelöscht werden.
+- `splash.png`, `Schedules.json`, `schedules.bin` und `memories.json` sind vor Dateioperationen geschützt. Die Verwaltung greift ausschließlich auf das von StorageDiscovery bereits gemountete LittleFS zu. Kein Formatieren, keine Änderung an Partitionen oder Bootloader.
+- Geänderte Dateien: `ats-mini-os.ino`, `DisplayDriver.h/.cpp`, `FileManager.cpp`. Die System-Menüliste wurde um Dateimanager ergänzt.
+- **Wichtiger Status:** Die Integration ist noch nicht kompiliert und nicht auf dem Gerät getestet. Keine GitHub Actions gestartet und nichts geflasht. Nutzer startet jetzt manuell Compile-only. Bei Compilerfehlern bitte zuerst die genaue Fehlermeldung prüfen; diese Änderung ist ausdrücklich noch nicht als build-verifiziert markiert.
