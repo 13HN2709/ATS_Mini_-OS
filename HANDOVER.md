@@ -1382,7 +1382,7 @@ Auf Branch `dev/first-build-preparation` wurde ein erstes scrollbares Vollbild-M
 
 - Rückmeldung vom ATS Mini V4: Schrift zu klein, Encoder-Auswahl fühlte sich träge an, Beenden war nicht erkennbar und die Klickbedienung war nicht selbsterklärend.
 - Dateimanager-Anzeige überarbeitet: größere Font2-Zeilen, fünf sichtbare Einträge, klarere Navigations-/Auswahlhinweise.
-- Am Listenende gibt es jetzt einen sichtbaren Eintrag **DATEIMANAGER BEENDEN**; langer Druck im normalen Dateimanager-Browser beendet ebenfalls direkt und kehrt zur Radioansicht zurück. Der bisherige lange Druck auf der ersten Zeile erzeugt keinen Ordner mehr.
+- Am Listenende gibt es jetzt sichtbare Einträge **NEUER ORDNER** und **DATEIMANAGER BEENDEN**; langer Druck im normalen Dateimanager-Browser beendet ebenfalls direkt und kehrt zur Radioansicht zurück. Der bisherige lange Druck auf der ersten Zeile erzeugt keinen Ordner mehr. Ein neuer Ordner kann unabhängig vom Inhalt des aktuellen Verzeichnisses über den sichtbaren Listenpunkt angelegt werden.
 - Encoder-Beschleunigungsdelta wird jetzt vollständig auf die Auswahl angewendet statt unabhängig von der Drehgeschwindigkeit nur einen Eintrag weiterzuschalten.
 - Dateimanager-Ansicht wird mindestens alle 45 ms aktualisiert statt durch die allgemeine 500-ms-Menübegrenzung ausgebremst.
 - Ordner öffnen: Eintrag mit dem Encoder auswählen und **kurz klicken**. Dateien: auswählen und kurz klicken, um das Aktionsmenü zu öffnen. In der Dateiansicht wird langer Druck als Beenden beschriftet.
