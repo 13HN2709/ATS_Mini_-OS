@@ -9,6 +9,7 @@
 #include "src/logo/StationLogoClient.h"
 #include "src/system/PartitionDiagnostics.h"
 #include "src/storage/StorageDiscovery.h"
+#include "src/storage/FileManager.h"
 
 namespace {
 constexpr uint32_t SERIAL_BAUD = 115200;
@@ -34,6 +35,7 @@ void setup() {
   Serial.println("First milestone: display, SI4735 audio, RDS. No memories/EiBi storage.");
   PartitionDiagnostics::printToSerial();
   StorageDiscovery::begin();
+  FileManager::begin();
   stationLogoClient.begin();
 
   encoder.begin();
