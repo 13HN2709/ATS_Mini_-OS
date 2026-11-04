@@ -20,6 +20,9 @@ bool isProtectedPath(const char* path) {
   if (!path) return true;
   return strcmp(path, "/") == 0 ||
          strcmp(path, "/splash.png") == 0 ||
+         strcmp(path, "/Schedules.json") == 0 ||
+         strcmp(path, "/schedules.bin") == 0 ||
+         strcmp(path, "/memories.json") == 0 ||
          strncmp(path, "/.replace_", 10) == 0 ||
          strncmp(path, "/.backup_", 9) == 0;
 }
@@ -43,6 +46,7 @@ bool copyVerified(const char* sourcePath, const char* destinationPath) {
   if (!src || src.isDirectory()) { if (src) src.close(); return false; }
   const size_t expected = src.size();
   const String temp = String(destinationPath) + ".fm_tmp";
+  if (temp.length() >= 96) { src.close(); return false; }
   if (LittleFS.exists(temp)) { src.close(); return false; }
   File dst = LittleFS.open(temp, "w");
   if (!dst) { src.close(); return false; }
