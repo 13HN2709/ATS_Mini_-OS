@@ -1327,3 +1327,17 @@ Auf Branch `dev/first-build-preparation` wurde ein erstes scrollbares Vollbild-M
 - Das bestehende Logo-Anzeigefenster, dessen Rahmen, Proportionen und Skalierungslogik bleiben unverändert.
 - **Nächster Arbeitsschritt:** gemeinsam das erste richtige FM-Layout für den ATS Mini OS entwickeln. Das Layout soll als eigenständiger, modularer FM-Bildschirm aufgebaut werden; vor Änderungen zuerst den tatsächlichen Branch-/Quellcode-Stand prüfen und vorhandene Display-/Radio-Schnittstellen berücksichtigen.
 - Noch keine FM-Layout-Implementierung begonnen, kein Build/keine GitHub Actions gestartet und nichts geflasht.
+
+
+## 2026-11-04 – Vorhandenes Senderlogo bei gleichem PI automatisch ersetzen
+
+- Nutzerwunsch: Ein neu hochgeladenes Logo soll ein vorhandenes Logo automatisch ersetzen, wenn bereits eine Datei mit demselben PI-Code existiert. Das gilt auch bei abweichendem Dateinamen; so kann ein schöneres Logo eingespielt werden, ohne alte Varianten manuell zu entfernen.
+- `StorageDiscovery.cpp` wurde angepasst:
+  - PI wird aus den ersten vier Hex-Zeichen des Dateinamens erkannt (z. B. `D394_Antenne_Muenster.png` oder `D394.png`).
+  - Die neue Root-PNG wird zunächst nach `/logos/.replace_<PI>.tmp` kopiert und anhand der Bytezahl/Dateigröße geprüft.
+  - Erst nach erfolgreicher Prüfung wird die bisherige Datei mit exakt gleichem Zielnamen vorübergehend gesichert, die neue Datei installiert und danach werden andere Logo-Dateien mit demselben PI-Präfix entfernt.
+  - Wenn Kopie/Prüfung oder Installation fehlschlägt, bleibt die bisherige Logo-Datei erhalten; bei einem Fehler beim Installieren wird die exakt gleichnamige Sicherung zurückbenannt.
+  - `splash.png` bleibt ausdrücklich ausgeschlossen. Es wird nicht formatiert und es werden keine Partitionen verändert.
+- Commit: [771c3d839249e782cff0fa8420b2b044ed675c3a](https://github.com/13HN2709/ATS_Mini_-OS/commit/771c3d839249e782cff0fa8420b2b044ed675c3a)
+- **Status: Code geändert, noch nicht kompiliert und nicht auf dem ATS Mini V4 getestet.** Keine GitHub Actions gestartet, nichts geflasht.
+- Nächster Schritt: Nutzer führt den manuellen Compile-only-Build aus. Danach testen, indem ein neues Logo mit bereits vorhandenem PI (z. B. D394) in das LittleFS-Stammverzeichnis hochgeladen wird; nach dem Neustart muss die neue Datei unter `/logos` liegen und die alte PI-Variante entfernt sein.
