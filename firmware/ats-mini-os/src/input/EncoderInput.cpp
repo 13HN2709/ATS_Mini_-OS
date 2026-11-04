@@ -117,8 +117,10 @@ void EncoderInput::update() {
 int16_t EncoderInput::acceleratedDelta(int8_t direction, uint32_t now) {
   // Match ATS Mini Dev's persistent acceleration ramp rather than recalculating
   // the factor downward on every detent.
-  constexpr uint32_t speedThresholds[] = {350, 60, 45, 35, 25};
-  constexpr uint8_t accelFactors[] = {1, 2, 4, 8, 16};
+  // Reach useful acceleration earlier during normal hand rotation.
+  // Keep the top factor controlled so a quick turn does not skip whole menus.
+  constexpr uint32_t speedThresholds[] = {350, 120, 80, 50, 30};
+  constexpr uint8_t accelFactors[] = {1, 2, 4, 8, 12};
 
   const uint32_t elapsed = now - lastRotationMs_;
   smoothedRotationMs_ = (elapsed * 7U + smoothedRotationMs_ * 3U) / 10U;
