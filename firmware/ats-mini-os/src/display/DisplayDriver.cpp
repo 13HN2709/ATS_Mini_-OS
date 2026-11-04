@@ -99,7 +99,7 @@ void drawFileMenu(Canvas& c,const char* path,FileManager::Entry* entries,uint8_t
     text(c,"Lang: Speichern",8,173,YELLOW,&lgfx::fonts::Font2);
   } else {
     text(c,mode==3?"ZIELORDNER: Klick waehlt":"Klick: Ordner oeffnen / Datei-Menue",8,44,YELLOW,&lgfx::fonts::Font0);
-    const uint8_t total=static_cast<uint8_t>(count+(mode==0?2:1));
+    const uint8_t total=static_cast<uint8_t>(count+(mode==0?3:1));
     const uint8_t visible=5;
     uint8_t first=selection>=visible?static_cast<uint8_t>(selection-visible+1):0;
     for(uint8_t row=0;row<visible && first+row<total;row++){
@@ -108,7 +108,8 @@ void drawFileMenu(Canvas& c,const char* path,FileManager::Entry* entries,uint8_t
       char line[48];
       const char* label=nullptr;
       if(ix==0) label=mode==3?"[DIESEN ORDNER WAEHLEN]":"[..] Ordner hoch";
-      else if(mode==0 && ix==count+1) label="[X] DATEIMANAGER BEENDEN";
+      else if(mode==0 && ix==count+1) label="[+] NEUER ORDNER";
+      else if(mode==0 && ix==count+2) label="[X] DATEIMANAGER BEENDEN";
       else {
         const uint8_t entryIndex=ix-1;
         if(entryIndex<count){
