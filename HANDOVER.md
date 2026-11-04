@@ -1282,3 +1282,35 @@ Auf Branch `dev/first-build-preparation` wurde ein erstes scrollbares Vollbild-M
 - `StationLogoClient.cpp` versucht jetzt vor dem generischen PI-Logo die FM-DX-Dateinamen `PI_PROGRAMNAME.png) mit erwarteten Programmnamen, RDS-PS und Radiotext. SVG wird nicht an den aktuellen ESP32-Decoder übergeben, da die Anzeige aktuell PNG/JPEG erwartet.
 - PI-Zuordnung `D391 -> 1LIVE` als gezielte Kandidatenzuordnung ergänzt; muss am Gerät mit empfangenem PI bestätigt werden.
 - Änderung noch nicht kompiliert und nicht auf Hardware getestet. Keine Actions gestartet, kein Flash.
+
+
+## 2026-11-04 – Lokale PI-Logos und temporärer Online-Fallback (noch nicht kompiliert)
+
+- Nutzer hat die PNG-Senderlogos über den Dual Boot Firmware Manager einzeln in das LittleFS-Stammverzeichnis hochgeladen. Die Dateien tragen den PI-Code am Anfang, teils mit weiteren Sendernamen im Dateinamen, z. B. `D381_NDR1_Niedersachsen.png`, `D399_Antenne_Muenster.png` und `D496_COSMO.png`.
+- Gewünschte Suchreihenfolge:
+  1. zuerst lokal unter `/logos` nach einem unterstützten Bild suchen; der PI-Code darf irgendwo im Dateinamen vorkommen,
+  2. bei lokalem Fehltreffer WLAN nur für die Online-Suche aktivieren,
+  3. FM-DX zuerst, Radio Browser als Alternative,
+  4. Online-Treffer lokal cachen,
+  5. wenn kein Treffer vorliegt, temporär aktiviertes WLAN wieder beenden; eine bereits vorher aktive Verbindung darf nicht getrennt werden.
+- Änderungen auf `dev/first-build-preparation`:
+  - `StorageDiscovery.cpp`: Root-PNG-Dateien (maximal 64 Kandidaten) außer `splash.png` werden nach `/logos` verschoben. Kopie wird anhand Bytezahl und Zieldateigröße geprüft; erst danach wird die Quelle entfernt. Existierende Zieldateien werden nicht überschrieben. Es wird nicht formatiert und nicht rekursiv in Unterordnern verschoben.
+  - `ats-mini-os.ino`: `StorageDiscovery::begin()` wird beim Start vor dem Logo-Client aufgerufen.
+  - `StationLogoClient.cpp`: lokaler Dateiname wird case-insensitiv nach PI-Teilstring und PNG/JPG/JPEG-Endung durchsucht; lokale Suche erfolgt vor dem Onlinepfad. Online-Logos werden nach erfolgreicher RAM-Übernahme unter `/logos/<PI>_REMOTE.png|jpg` zwischengespeichert.
+  - `WifiClient.cpp`: der bisherige automatische WLAN-Start mit Test-SSID wurde aus `begin()` entfernt; Startmeldung nennt WLAN-Standby.
+  - Online-Fallback: temporäre WLAN-Moduswiederherstellung ist über einen Scope-Guard vorgesehen.
+- Relevante Commits dieser Änderungskette:
+  - Root-PNG-Organisation: `68662cae182ea6d97677311b4e8ace413806dbba`
+  - Storage-Initialisierung beim Boot: `49cad1f314e980d14d3054cd12d2601d721e15a7`
+  - WLAN-Standby: `ad844ca8eaaba84233cf77be6f27800cc10b2252`
+  - Lokale PI-Dateisuche: `813595055e029b6c001f64a910068c9df49c34bf`
+  - Temporärer WLAN-Fallback: `5d84542fa184ab4cc812ff1482a4e64be50f46d9`
+  - Remote-Logo-Cache: `a7d02c0a12ff7b515eaa0b80fe6e51bd792e4349`
+- **Wichtige Prüfhinweise vor bzw. nach dem Compile-only-Build:**
+  - Der Storage-Discovery-Mount setzt weiterhin eine bekannte Ankerdatei voraus (Schedules.json, schedules.bin, memories.json oder splash.png). Wenn auf dem Gerät keine dieser Dateien vorhanden ist, werden die Root-Logos aktuell nicht automatisch organisiert und die lokale Suche bleibt deaktiviert. Vor dem Gerätetest prüfen bzw. gezielt beheben, ohne Formatierung.
+  - Der WLAN-Scope-Guard stellt den Modus wieder her, wenn er zuvor WIFI_OFF oder WIFI_AP war. Falls der ESP32 vorher bereits im WIFI_STA-Modus, aber nicht verbunden war, muss noch geprüft werden, dass die temporär gestartete Verbindung ebenfalls zuverlässig beendet wird und die vorherige Auto-Reconnect-Einstellung wiederhergestellt wird.
+  - Die lokalen Dateien werden beim Lesen als PNG/JPG/JPEG anhand der Bildsignatur in `storeLogoInRam()` validiert; der bestehende Renderer unterstützt weiterhin PNG/JPEG, nicht SVG.
+  - PI-/Sendername-Zuordnungen in `expectedName()` sind nicht vollständig verifiziert; insbesondere D392 ist im aktuellen Code noch als WDR 3 bezeichnet, obwohl die lokale Dateisuche für vorhandene PI-Dateinamen davon unabhängig funktioniert.
+- Display-Logo-Rahmen, Proportionen und Skalierung wurden nicht geändert. Keine Partitions-/Bootloaderänderung, kein Formatieren und keine absichtliche Löschung bestehender Nutzerdaten.
+- **Teststatus: noch nicht kompiliert und nicht auf dem ATS Mini V4 getestet.** Nutzer startet den manuellen Compile-only-Workflow selbst. Assistent hat keine GitHub Actions gestartet und nichts geflasht.
+- Nächster Schritt: Compile-only-Ergebnis abwarten. Bei Fehlern zuerst kompilierbare Schnittstellen/Includes korrigieren; bei Erfolg vor dem Gerätetest die oben genannten Mount- und WLAN-Wiederherstellungsbedingungen prüfen.
