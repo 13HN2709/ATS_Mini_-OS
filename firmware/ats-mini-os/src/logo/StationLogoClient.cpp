@@ -155,6 +155,42 @@ void StationLogoClient::runLookup(const RadioSnapshot& state) {
   char key[40];
   snprintf(key,sizeof(key),"%04X_%lu",static_cast<unsigned>(state.piCode),static_cast<unsigned long>(state.frequencyKHz));
   const String pi=String(state.piCode,HEX); String piUpper=pi; piUpper.toUpperCase();
+
+  // Local LittleFS lookup always has priority. Match the PI anywhere in the filename.
+  if (StorageDiscovery::ready()) {
+    File directory = LittleFS.open("/logos");
+    if (directory && directory.isDirectory()) {
+      File entry = directory.openNextFile();
+      while (entry) {
+        if (!entry.isDirectory()) {
+          String path = entry.path();
+          String filename = path;
+          int slash = filename.lastIndexOf('/');
+          if (slash >= 0) filename = filename.substring(slash + 1);
+          filename.toUpperCase();
+          bool supported = filename.endsWith(".PNG") || filename.endsWith(".JPG") || filename.endsWith(".JPEG");
+          if (supported && filename.indexOf(piUpper) >= 0 && entry.size() <= kMaxLogoBytes) {
+            String image;
+            image.reserve(entry.size());
+            uint8_t chunk[256];
+            while (entry.available()) {
+              size_t n = entry.read(chunk, sizeof(chunk));
+              for (size_t i = 0; i < n; ++i) image += static_cast<char>(chunk[i]);
+            }
+            entry.close();
+            directory.close();
+            if (storeLogoInRam(image, key, path.c_str()))
+              Serial.printf("[LOGO] local PI match: %s\\n", path.c_str());
+            return;
+          }
+        }
+        entry.close();
+        entry = directory.openNextFile();
+      }
+      directory.close();
+    }
+  }
+
   // FM-DX Station Logo plugin lookup order: PI_PROGRAM first, then PI.
   // Program suffixes are uppercase and stripped of spaces/punctuation exactly
   // as in the upstream plugin. The directory's SVG logos are intentionally
