@@ -67,8 +67,14 @@ bool getPiPrefix(const String& path, String& pi) {
 }
 
 bool samePiLogo(const String& candidatePath, const String& pi) {
+  String lower = candidatePath;
+  lower.toLowerCase();
+  const bool supportedImage = lower.endsWith(".png") ||
+                              lower.endsWith(".jpg") ||
+                              lower.endsWith(".jpeg");
   String candidatePi;
-  return getPiPrefix(candidatePath, candidatePi) && candidatePi == pi;
+  return supportedImage && getPiPrefix(candidatePath, candidatePi) &&
+         candidatePi == pi;
 }
 
 // Move root-level PNGs into /logos. splash.png is deliberately preserved.
@@ -126,7 +132,12 @@ void organizeRootLogos() {
       continue;
     }
     const size_t expected = source.size();
-    LittleFS.remove(tempPath);
+    if (LittleFS.exists(tempPath) || LittleFS.exists(backupPath)) {
+      source.close();
+      Serial.printf("[LOGO] stale staging/backup file exists; preserving files for PI %s\\n",
+                    pi.c_str());
+      continue;
+    }
     File destination = LittleFS.open(tempPath, "w");
     if (!destination) {
       source.close();
@@ -163,7 +174,6 @@ void organizeRootLogos() {
     // Preserve the exact-name destination until the verified replacement is
     // ready. If installing the new file fails, restore the previous file.
     const bool hadExactDestination = LittleFS.exists(destinationPath);
-    LittleFS.remove(backupPath);
     if (hadExactDestination && !LittleFS.rename(destinationPath, backupPath)) {
       LittleFS.remove(tempPath);
       Serial.printf("[LOGO] could not stage old destination; source preserved: %s\\n",
@@ -198,6 +208,9 @@ void organizeRootLogos() {
     for (const String& oldPath : oldMatches) {
       if (LittleFS.remove(oldPath)) {
         Serial.printf("[LOGO] removed previous PI variant: %s\\n", oldPath.c_str());
+      } else {
+        Serial.printf("[LOGO] WARNING: could not remove old PI variant: %s\\n",
+                      oldPath.c_str());
       }
     }
     if (hadExactDestination) LittleFS.remove(backupPath);
