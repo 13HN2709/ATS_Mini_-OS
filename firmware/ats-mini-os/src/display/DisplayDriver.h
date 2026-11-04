@@ -7,6 +7,7 @@
 #include "../radio/RadioSnapshot.h"
 #include "../logo/StationLogoClient.h"
 #include "../storage/FileManager.h"
+#include "../storage/FileManager.h"
 
 #if !defined(LILYGO_SI473X)
 #include <esp_rom_gpio.h>
