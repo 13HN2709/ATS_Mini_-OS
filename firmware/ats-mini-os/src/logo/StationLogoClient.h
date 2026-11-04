@@ -15,6 +15,7 @@ private:
   static void taskEntry(void* arg);
   void runLookup(const RadioSnapshot& state);
   bool storeLogoInRam(const String& logo, const char* key, const char* source);
+  bool storeLogoBytes(const uint8_t* data, size_t length, const char* key, const char* source);
   volatile bool busy_ = false;
   bool haveRequested_ = false;
   char lastRequestKey_[40] = {};
