@@ -4,7 +4,8 @@ namespace {
 constexpr uint8_t kEncoderPinA = 2;
 constexpr uint8_t kEncoderPinB = 1;
 constexpr uint8_t kEncoderButtonPin = 21;
-constexpr uint32_t kButtonDebounceMs = 30;
+// A short but stable debounce keeps quick encoder-button taps responsive.
+constexpr uint32_t kButtonDebounceMs = 15;
 constexpr uint32_t kLongPressMs = 700;
 
 // Full-step quadrature decoder. Called from the GPIO interrupt on either pin.
