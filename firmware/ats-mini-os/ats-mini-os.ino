@@ -104,7 +104,7 @@ void loop() {
           menuPage = 0;
           menuSelection = 0;
           Serial.println("[MENU] opened");
-        } else if(menuPage==6){ if(fmMode==1){ if(fmActionSelection==0)fmMode=0; else if(fmActionSelection==1||fmActionSelection==2){fmPendingAction=fmActionSelection;fmMode=3;fmSelection=0;} else if(fmActionSelection==4){fmMode=2;fmActionSelection=1;} else {fmPendingAction=fmActionSelection==5?5:3; if(fmPendingAction==5)fmEditName[0]=0;else strncpy(fmEditName,fmSelectedName,sizeof(fmEditName)-1);fmEditName[sizeof(fmEditName)-1]=0;fmEditCursor=0;fmMode=4;} } else if(fmMode==2){if(fmActionSelection==1){bool ok=FileManager::removeFile(fmSelectedPath);fmMessageSet(ok?"Datei geloescht":"Loeschen fehlgeschlagen");fmRefresh();}fmMode=0;} else if(fmMode==4){if(fmEditName[0]){char dest[96];snprintf(dest,sizeof(dest),"%s%s%s",fmPath,strcmp(fmPath,"/")==0?"":"/",fmEditName);bool ok=fmPendingAction==5?FileManager::makeDirectory(dest):FileManager::renamePath(fmSelectedPath,dest);fmMessageSet(ok?"Gespeichert":"Fehler / Ziel vorhanden");fmRefresh();}else fmMessageSet("Name fehlt");fmMode=0;} else if(fmMode==3){if(fmSelection==0){const char* b=strrchr(fmSelectedPath,47);b=b?b+1:fmSelectedPath;char dest[96];snprintf(dest,sizeof(dest),"%s%s%s",fmPath,strcmp(fmPath,"/")==0?"":"/",b);bool ok=fmPendingAction==1?FileManager::copyFile(fmSelectedPath,dest):FileManager::moveFile(fmSelectedPath,dest);fmMessageSet(ok?"Erledigt":"Aktion fehlgeschlagen");fmMode=0;fmRefresh();}else {uint8_t idx=fmSelection-1;if(idx<fmCount&&fmEntries[idx].directory){strncpy(fmPath,fmEntries[idx].path,sizeof(fmPath)-1);fmPath[sizeof(fmPath)-1]=0;fmSelection=0;fmRefresh();}}}else fmChoose(fmSelection);
+        } else if(menuPage==6){ if(fmMode==1){ if(fmActionSelection==0)fmMode=0; else if(fmActionSelection==1||fmActionSelection==2){fmPendingAction=fmActionSelection;fmMode=3;fmSelection=0;} else if(fmActionSelection==4){fmMode=2;fmActionSelection=1;} else {fmPendingAction=fmActionSelection==5?5:3; if(fmPendingAction==5)fmEditName[0]=0;else strncpy(fmEditName,fmSelectedName,sizeof(fmEditName)-1);fmEditName[sizeof(fmEditName)-1]=0;fmEditCursor=0;fmMode=4;} } else if(fmMode==2){if(fmActionSelection==1){bool ok=FileManager::removeFile(fmSelectedPath);fmMessageSet(ok?"Datei geloescht":"Loeschen fehlgeschlagen");fmRefresh();}fmMode=0;} else if(fmMode==4){if(fmEditCursor<sizeof(fmEditName)-2){++fmEditCursor;if(fmEditCursor>=strlen(fmEditName)){fmEditName[fmEditCursor]=65;fmEditName[fmEditCursor+1]=0;}}} else if(fmMode==3){if(fmSelection==0){const char* b=strrchr(fmSelectedPath,47);b=b?b+1:fmSelectedPath;char dest[96];snprintf(dest,sizeof(dest),"%s%s%s",fmPath,strcmp(fmPath,"/")==0?"":"/",b);bool ok=fmPendingAction==1?FileManager::copyFile(fmSelectedPath,dest):FileManager::moveFile(fmSelectedPath,dest);fmMessageSet(ok?"Erledigt":"Aktion fehlgeschlagen");fmMode=0;fmRefresh();}else {uint8_t idx=fmSelection-1;if(idx<fmCount&&fmEntries[idx].directory){strncpy(fmPath,fmEntries[idx].path,sizeof(fmPath)-1);fmPath[sizeof(fmPath)-1]=0;fmSelection=0;fmRefresh();}}}else fmChoose(fmSelection);
         } else if (menuPage==5 && menuSelection==3) {fmOpen();
         } else if (menuPage == 0) {
           if (menuSelection == 0) {
@@ -126,10 +126,29 @@ void loop() {
       case EncoderEventType::LongPress:
         lastEncoderEvent = "LONG";
         if (menuOpen) {
-          menuOpen = false;
-          menuPage = 0;
-          menuSelection = 0;
-          Serial.println("[MENU] closed via long press"); }
+          if (menuPage == 6 && fmMode == 4) {
+            if (fmEditName[0]) {
+              char dest[96];
+              snprintf(dest,sizeof(dest),"%s%s%s",fmPath,strcmp(fmPath,"/")==0?"":"/",fmEditName);
+              bool ok = fmPendingAction == 5 ? FileManager::makeDirectory(dest) : FileManager::renamePath(fmSelectedPath,dest);
+              fmMessageSet(ok ? "Gespeichert" : "Fehler / Ziel vorhanden");
+              fmRefresh();
+            } else fmMessageSet("Name fehlt");
+            fmMode = 0;
+          } else if (menuPage == 6 && fmMode == 0 && fmSelection == 0) {
+            fmSelectedPath[0] = 0;
+            strcpy(fmSelectedName,"Neuer Ordner");
+            fmMode = 1;
+            fmActionSelection = 5;
+          } else if (menuPage == 6 && fmMode != 0) {
+            fmMode = 0;
+            fmMessageSet("Abgebrochen");
+          } else {
+            menuOpen = false;
+            menuPage = 0;
+            menuSelection = 0;
+            Serial.println("[MENU] closed via long press");
+          }
         } else {
           Serial.println("[INPUT] long press (no action)");
         }
