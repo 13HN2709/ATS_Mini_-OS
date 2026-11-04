@@ -158,6 +158,24 @@ bool StationLogoClient::storeLogoInRam(const String& logo, const char* key, cons
   logoData_=copy; logoLength_=logo.length(); logoIsJpg_=jpg;
   strncpy(logoKey_,key,sizeof(logoKey_)-1); logoKey_[sizeof(logoKey_)-1]=0;
   xSemaphoreGive(logoMutex_);
+
+  if (source && strncmp(source, "https://", 8) == 0 && StorageDiscovery::ready() && key) {
+    const String pi = String(key).substring(0, 4);
+    const String cachePath = String("/logos/") + pi + "_REMOTE" + (png ? ".png" : ".jpg");
+    if (!LittleFS.exists(cachePath)) {
+      File cached = LittleFS.open(cachePath, "w");
+      if (cached) {
+        const size_t written = cached.write(reinterpret_cast<const uint8_t*>(logo.c_str()), logo.length());
+        cached.flush();
+        cached.close();
+        File verify = LittleFS.open(cachePath, "r");
+        const bool valid = written == logo.length() && verify && verify.size() == logo.length();
+        if (verify) verify.close();
+        if (!valid) LittleFS.remove(cachePath);
+        else Serial.printf("[LOGO] remote logo cached locally: %s\\n", cachePath.c_str());
+      }
+    }
+  }
   Serial.printf("[LOGO] RAM logo loaded from %s (%u bytes)\n",source?source:"unknown",static_cast<unsigned>(logo.length()));
   return true;
 }
