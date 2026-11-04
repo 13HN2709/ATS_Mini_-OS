@@ -80,8 +80,18 @@ void drawFileMenu(Canvas& c,const char* path,FileManager::Entry* entries,uint8_t
   if(mode==1){
     const char* items[]={"Zurueck","Kopieren","Verschieben","Umbenennen","Loeschen","Neuer Ordner"};
     text(c,selected,8,45,YELLOW,&lgfx::fonts::Font2);
-    for(uint8_t n=0;n<6;n++){
-      const int y=68+n*24;
+    const int actionFirstY = 68;
+    const int actionRowHeight = 25;
+    const int actionFooterTop = h - 25;
+    int actionVisibleRows = (actionFooterTop - actionFirstY - 20) / actionRowHeight + 1;
+    if (actionVisibleRows < 1) actionVisibleRows = 1;
+    if (actionVisibleRows > 6) actionVisibleRows = 6;
+    const uint8_t actionVisible = static_cast<uint8_t>(actionVisibleRows);
+    const uint8_t actionFirst = action >= actionVisible
+      ? static_cast<uint8_t>(action - actionVisible + 1) : 0;
+    for(uint8_t row=0; row<actionVisible && actionFirst+row<6; ++row){
+      const uint8_t n = actionFirst + row;
+      const int y = actionFirstY + row*actionRowHeight;
       if(n==action){c.fillRoundRect(5,y-2,w-10,22,3,0x0320);c.drawRoundRect(5,y-2,w-10,22,3,GREEN);}
       text(c,items[n],13,y,n==action?GREEN:WHITE,&lgfx::fonts::Font2);
     }
@@ -253,7 +263,9 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
   const uint32_t now=millis();
   const bool menuStateChanged = menuOpen != lastMenuOpen_ || menuPage != lastMenuPage_ ||
       menuSelection != lastMenuSelection_ || volume != lastMenuVolume_;
-  const uint32_t redrawInterval = (menuOpen && menuPage==6) ? 45 : 500;
+  // Redraw the file manager promptly while the encoder is moving; this also
+  // keeps the selection frame visually attached to the active row.
+  const uint32_t redrawInterval = (menuOpen && menuPage==6) ? 20 : 500;
   if(s.generation==lastGeneration_ && now-lastDrawMs_<redrawInterval && !menuStateChanged)return;
   lastGeneration_=s.generation;
   lastDrawMs_=now;
