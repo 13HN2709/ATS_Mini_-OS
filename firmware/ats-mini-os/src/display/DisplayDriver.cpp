@@ -66,12 +66,69 @@ bool getLogoDimensions(const uint8_t* data, size_t length, uint16_t& width, uint
 
 template <typename Canvas>
 void drawFileMenu(Canvas& c,const char* path,FileManager::Entry* entries,uint8_t count,uint8_t selection,uint8_t mode,uint8_t action,const char* selected,const char* message){
- const int w=c.width(),h=c.height(); c.fillScreen(BLACK); text(c,"DATEIMANAGER",8,3,CYAN,&lgfx::fonts::Font2); text(c,path,8,24,GREEN,&lgfx::fonts::Font0); char usage[32]; snprintf(usage,sizeof(usage),"%lu/%lu KB",(unsigned long)(LittleFS.usedBytes()/1024),(unsigned long)(LittleFS.totalBytes()/1024)); c.setTextColor(YELLOW,BLACK); c.setFont(&lgfx::fonts::Font0); c.drawRightString(usage,w-8,24); c.drawFastHLine(8,39,w-16,DARK_GREEN);
- if(mode==1){const char* a[]={"Zurueck","Kopieren","Verschieben","Umbenennen","Loeschen","Neuer Ordner"};text(c,selected,8,48,YELLOW,&lgfx::fonts::Font2);for(int n=0;n<6;n++){int y=69+n*17;if(n==action){c.fillRoundRect(5,y-2,w-10,16,3,0x0320);c.drawRoundRect(5,y-2,w-10,16,3,GREEN);}text(c,a[n],12,y,n==action?GREEN:WHITE,&lgfx::fonts::Font0);}}
- else if(mode==2){centered(c,"DATEI LOESCHEN?",w/2,55,YELLOW,&lgfx::fonts::Font2);centered(c,selected,w/2,82,WHITE,&lgfx::fonts::Font0);centered(c,action?"JA":"NEIN",w/2,116,action?YELLOW:GREEN,&lgfx::fonts::Font2);}
- else if(mode==4){centered(c,"NAME / ORDNER",w/2,55,CYAN,&lgfx::fonts::Font2);text(c,selected,8,82,GREEN,&lgfx::fonts::Font2);text(c,"Drehen: Zeichen",8,118,WHITE,&lgfx::fonts::Font0);text(c,"Klick: Cursor weiter",8,134,WHITE,&lgfx::fonts::Font0);text(c,"Lang: Speichern",8,150,YELLOW,&lgfx::fonts::Font0);}
- else {text(c,mode==3?"ZIELORDNER AUSWAEHLEN":"Drehen: Auswahl / Klick: Oeffnen",8,44,YELLOW,&lgfx::fonts::Font0);for(uint8_t row=0;row<6;row++){uint8_t ix=selection+row;char line[58];const char* label=nullptr;if(ix==0)label=mode==3?"[DIESEN ORDNER WAEHLEN]":"[..] Zurueck";else if(ix-1<count){FileManager::Entry& e=entries[ix-1];if(e.directory)snprintf(line,sizeof(line),"[+] %.38s",e.name);else snprintf(line,sizeof(line),"%.25s %luB",e.name,(unsigned long)e.size);label=line;}else break;int y=62+row*16;if(row==0){c.fillRoundRect(4,y-2,w-8,15,3,0x0320);c.drawRoundRect(4,y-2,w-8,15,3,GREEN);}text(c,label,9,y,row==0?GREEN:WHITE,&lgfx::fonts::Font0);}}
- if(message&&message[0])text(c,message,8,h-17,YELLOW,&lgfx::fonts::Font0);
+  const int w=c.width(),h=c.height();
+  c.fillScreen(BLACK);
+  text(c,"DATEIMANAGER",8,2,CYAN,&lgfx::fonts::Font2);
+  text(c,path,8,25,GREEN,&lgfx::fonts::Font0);
+  char usage[32];
+  snprintf(usage,sizeof(usage),"%lu/%lu KB",(unsigned long)(LittleFS.usedBytes()/1024),(unsigned long)(LittleFS.totalBytes()/1024));
+  c.setTextColor(YELLOW,BLACK);
+  c.setFont(&lgfx::fonts::Font0);
+  c.drawRightString(usage,w-8,25);
+  c.drawFastHLine(8,40,w-16,DARK_GREEN);
+
+  if(mode==1){
+    const char* items[]={"Zurueck","Kopieren","Verschieben","Umbenennen","Loeschen","Neuer Ordner"};
+    text(c,selected,8,45,YELLOW,&lgfx::fonts::Font2);
+    for(uint8_t n=0;n<6;n++){
+      const int y=68+n*24;
+      if(n==action){c.fillRoundRect(5,y-2,w-10,22,3,0x0320);c.drawRoundRect(5,y-2,w-10,22,3,GREEN);}
+      text(c,items[n],13,y,n==action?GREEN:WHITE,&lgfx::fonts::Font2);
+    }
+    text(c,"Drehen: Menue  |  Klick: Auswaehlen",8,h-18,YELLOW,&lgfx::fonts::Font0);
+  } else if(mode==2){
+    centered(c,"DATEI LOESCHEN?",w/2,54,YELLOW,&lgfx::fonts::Font2);
+    centered(c,selected,w/2,83,WHITE,&lgfx::fonts::Font2);
+    centered(c,action?"JA":"NEIN",w/2,121,action?YELLOW:GREEN,&lgfx::fonts::Font4);
+    text(c,"Drehen: Ja/Nein  |  Klick: Bestaetigen",8,h-18,YELLOW,&lgfx::fonts::Font0);
+  } else if(mode==4){
+    centered(c,"NAME / ORDNER",w/2,48,CYAN,&lgfx::fonts::Font2);
+    text(c,selected,8,82,GREEN,&lgfx::fonts::Font2);
+    text(c,"Drehen: Zeichen aendern",8,119,WHITE,&lgfx::fonts::Font2);
+    text(c,"Kurz: Naechstes Zeichen",8,146,WHITE,&lgfx::fonts::Font2);
+    text(c,"Lang: Speichern",8,173,YELLOW,&lgfx::fonts::Font2);
+  } else {
+    text(c,mode==3?"ZIELORDNER: Klick waehlt":"Klick: Ordner oeffnen / Datei-Menue",8,44,YELLOW,&lgfx::fonts::Font0);
+    const uint8_t total=static_cast<uint8_t>(count+(mode==0?2:1));
+    const uint8_t visible=5;
+    uint8_t first=selection>=visible?static_cast<uint8_t>(selection-visible+1):0;
+    for(uint8_t row=0;row<visible && first+row<total;row++){
+      const uint8_t ix=first+row;
+      const int y=64+row*27;
+      char line[48];
+      const char* label=nullptr;
+      if(ix==0) label=mode==3?"[DIESEN ORDNER WAEHLEN]":"[..] Ordner hoch";
+      else if(mode==0 && ix==count+1) label="[X] DATEIMANAGER BEENDEN";
+      else {
+        const uint8_t entryIndex=ix-1;
+        if(entryIndex<count){
+          FileManager::Entry& e=entries[entryIndex];
+          if(e.directory) snprintf(line,sizeof(line),"[+] %.27s",e.name);
+          else snprintf(line,sizeof(line),"%.21s  %luB",e.name,(unsigned long)e.size);
+          label=line;
+        }
+      }
+      if(!label) continue;
+      if(ix==selection){c.fillRoundRect(4,y-3,w-8,24,3,0x0320);c.drawRoundRect(4,y-3,w-8,24,3,GREEN);}
+      text(c,label,10,y,ix==selection?GREEN:WHITE,&lgfx::fonts::Font2);
+    }
+    if(mode==3) text(c,"Drehen: Zielordner  |  Lang: Zurueck",8,h-18,YELLOW,&lgfx::fonts::Font0);
+    else {
+      text(c,"Drehen: Blaettern  |  Kurz: Oeffnen",8,h-30,WHITE,&lgfx::fonts::Font0);
+      if(mode==0) text(c,"Lang druecken: Dateimanager beenden",8,h-16,YELLOW,&lgfx::fonts::Font0);
+    }
+  }
+  if(message&&message[0]) text(c,message,8,h-16,YELLOW,&lgfx::fonts::Font0);
 }
 
 template <typename Canvas>
@@ -186,7 +243,8 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
   const uint32_t now=millis();
   const bool menuStateChanged = menuOpen != lastMenuOpen_ || menuPage != lastMenuPage_ ||
       menuSelection != lastMenuSelection_ || volume != lastMenuVolume_;
-  if(s.generation==lastGeneration_ && now-lastDrawMs_<500 && !menuStateChanged)return;
+  const uint32_t redrawInterval = (menuOpen && menuPage==6) ? 45 : 500;
+  if(s.generation==lastGeneration_ && now-lastDrawMs_<redrawInterval && !menuStateChanged)return;
   lastGeneration_=s.generation;
   lastDrawMs_=now;
   lastMenuOpen_=menuOpen;
