@@ -48,8 +48,32 @@ bool findAnchor(File directory, uint8_t depth) {
 }
 
 
-// Move only root-level PNGs into /logos. splash.png is deliberately preserved
-// as the boot image. A source is removed only after a complete verified copy.
+// Extract a four-character PI code from the beginning of a logo filename.
+// Expected examples: D394_Antenne_Muenster.png or D394.png.
+bool getPiPrefix(const String& path, String& pi) {
+  const int slash = path.lastIndexOf('/');
+  String base = slash >= 0 ? path.substring(slash + 1) : path;
+  if (base.length() < 4) return false;
+  pi = base.substring(0, 4);
+  pi.toUpperCase();
+  for (size_t i = 0; i < 4; ++i) {
+    const char c = pi[i];
+    if (!((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F'))) return false;
+  }
+  if (base.length() > 4 && base[4] != '_' && base[4] != '-' && base[4] != '.') {
+    return false;
+  }
+  return true;
+}
+
+bool samePiLogo(const String& candidatePath, const String& pi) {
+  String candidatePi;
+  return getPiPrefix(candidatePath, candidatePi) && candidatePi == pi;
+}
+
+// Move root-level PNGs into /logos. splash.png is deliberately preserved.
+// If a logo with the same PI already exists, replace it only after the new
+// file has been copied to a temporary file and its byte count verified.
 void organizeRootLogos() {
   if (!LittleFS.exists("/logos") && !LittleFS.mkdir("/logos")) {
     Serial.println("[LOGO] could not create /logos; root files left untouched");
@@ -85,13 +109,16 @@ void organizeRootLogos() {
   for (const String& sourcePath : candidates) {
     const int slash = sourcePath.lastIndexOf('/');
     const String base = slash >= 0 ? sourcePath.substring(slash + 1) : sourcePath;
-    const String destinationPath = String("/logos/") + base;
-
-    if (LittleFS.exists(destinationPath)) {
-      Serial.printf("[LOGO] destination exists; preserving both files: %s\n",
-                    destinationPath.c_str());
+    String pi;
+    if (!getPiPrefix(base, pi)) {
+      Serial.printf("[LOGO] no valid PI prefix; leaving root file untouched: %s\\n",
+                    sourcePath.c_str());
       continue;
     }
+
+    const String destinationPath = String("/logos/") + base;
+    const String tempPath = String("/logos/.replace_") + pi + ".tmp";
+    const String backupPath = String("/logos/.backup_") + pi + ".tmp";
 
     File source = LittleFS.open(sourcePath, "r");
     if (!source || source.isDirectory()) {
@@ -99,10 +126,12 @@ void organizeRootLogos() {
       continue;
     }
     const size_t expected = source.size();
-    File destination = LittleFS.open(destinationPath, "w");
+    LittleFS.remove(tempPath);
+    File destination = LittleFS.open(tempPath, "w");
     if (!destination) {
       source.close();
-      Serial.printf("[LOGO] cannot create %s; source preserved\n", destinationPath.c_str());
+      Serial.printf("[LOGO] cannot create temporary file for %s; source preserved\\n",
+                    sourcePath.c_str());
       continue;
     }
 
@@ -121,23 +150,65 @@ void organizeRootLogos() {
     destination.close();
     source.close();
 
-    File verify = LittleFS.open(destinationPath, "r");
+    File verify = LittleFS.open(tempPath, "r");
     const bool verified = verify && copied == expected && verify.size() == expected;
     if (verify) verify.close();
-
-    if (writeOk && verified) {
-      if (LittleFS.remove(sourcePath)) {
-        Serial.printf("[LOGO] moved %s -> %s (%u bytes)\n",
-                      sourcePath.c_str(), destinationPath.c_str(),
-                      static_cast<unsigned>(copied));
-      } else {
-        Serial.printf("[LOGO] copied %s but could not remove original\n",
-                      sourcePath.c_str());
-      }
-    } else {
-      LittleFS.remove(destinationPath);
-      Serial.printf("[LOGO] copy verification failed for %s; source preserved\n",
+    if (!writeOk || !verified) {
+      LittleFS.remove(tempPath);
+      Serial.printf("[LOGO] replacement copy failed; old logo and source preserved: %s\\n",
                     sourcePath.c_str());
+      continue;
+    }
+
+    // Preserve the exact-name destination until the verified replacement is
+    // ready. If installing the new file fails, restore the previous file.
+    const bool hadExactDestination = LittleFS.exists(destinationPath);
+    LittleFS.remove(backupPath);
+    if (hadExactDestination && !LittleFS.rename(destinationPath, backupPath)) {
+      LittleFS.remove(tempPath);
+      Serial.printf("[LOGO] could not stage old destination; source preserved: %s\\n",
+                    destinationPath.c_str());
+      continue;
+    }
+
+    if (!LittleFS.rename(tempPath, destinationPath)) {
+      if (hadExactDestination) LittleFS.rename(backupPath, destinationPath);
+      LittleFS.remove(tempPath);
+      Serial.printf("[LOGO] could not install replacement; source preserved: %s\\n",
+                    destinationPath.c_str());
+      continue;
+    }
+
+    // New file is now installed and verified. Remove any other filename
+    // carrying the same PI so lookup cannot select an older variant.
+    std::vector<String> oldMatches;
+    File logos = LittleFS.open("/logos");
+    if (logos && logos.isDirectory()) {
+      File logo = logos.openNextFile();
+      while (logo) {
+        if (!logo.isDirectory()) {
+          const String path = logo.path();
+          if (path != destinationPath && samePiLogo(path, pi)) oldMatches.push_back(path);
+        }
+        logo.close();
+        logo = logos.openNextFile();
+      }
+    }
+    if (logos) logos.close();
+    for (const String& oldPath : oldMatches) {
+      if (LittleFS.remove(oldPath)) {
+        Serial.printf("[LOGO] removed previous PI variant: %s\\n", oldPath.c_str());
+      }
+    }
+    if (hadExactDestination) LittleFS.remove(backupPath);
+
+    if (LittleFS.remove(sourcePath)) {
+      Serial.printf("[LOGO] moved/replaced PI %s: %s -> %s (%u bytes)\\n",
+                    pi.c_str(), sourcePath.c_str(), destinationPath.c_str(),
+                    static_cast<unsigned>(copied));
+    } else {
+      Serial.printf("[LOGO] new PI %s installed; root source could not be removed: %s\\n",
+                    pi.c_str(), sourcePath.c_str());
     }
   }
 }
