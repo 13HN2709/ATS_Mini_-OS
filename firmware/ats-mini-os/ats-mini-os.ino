@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <WebServer.h>
 #include <LovyanGFX.hpp>
+#include <LittleFS.h>
 #include "src/radio/RadioCore.h"
 #include "src/system/PerformanceManager.h"
 #include "src/display/DisplayDriver.h"
@@ -28,6 +29,18 @@ const char* lastEncoderEvent = "WAIT";
 bool menuOpen = false;
 uint8_t menuPage = 0;
 uint8_t menuSelection = 0;
+FileManager::Entry fmEntries[FileManager::MAX_ENTRIES];
+char fmPath[96] = "/";
+char fmMessage[40] = "LittleFS bereit";
+char fmSelectedPath[96] = "";
+char fmSelectedName[48] = "";
+uint8_t fmCount = 0, fmSelection = 0, fmActionSelection = 0, fmMode = 0;
+uint8_t fmPendingAction = 0;
+void fmRefresh(){ fmCount=0; if(!FileManager::list(fmPath,fmEntries,FileManager::MAX_ENTRIES,fmCount)) snprintf(fmMessage,sizeof(fmMessage),"Ordner nicht lesbar"); }
+void fmMessageSet(const char* m){ strncpy(fmMessage,m,sizeof(fmMessage)-1); fmMessage[sizeof(fmMessage)-1]=0; }
+void fmParent(){ if(strcmp(fmPath,"/")==0)return; char* p=strrchr(fmPath,47); if(p==fmPath)fmPath[1]=0; else if(p)*p=0; fmSelection=0; fmRefresh(); }
+void fmOpen(){ fmMode=0; fmSelection=0; fmActionSelection=0; fmMessageSet(""); fmRefresh(); menuPage=6; menuSelection=0; }
+void fmChoose(uint8_t visual){ if(visual==0){ if(fmMode==3)return; fmParent(); return; } uint8_t i=visual-1; if(i>=fmCount)return; if(fmEntries[i].directory){strncpy(fmPath,fmEntries[i].path,sizeof(fmPath)-1);fmPath[sizeof(fmPath)-1]=0;fmSelection=0;fmRefresh();} else {strncpy(fmSelectedPath,fmEntries[i].path,sizeof(fmSelectedPath)-1);fmSelectedPath[sizeof(fmSelectedPath)-1]=0;strncpy(fmSelectedName,fmEntries[i].name,sizeof(fmSelectedName)-1);fmSelectedName[sizeof(fmSelectedName)-1]=0;fmMode=1;fmActionSelection=0;} }
 }
 void setup() {
   Serial.begin(SERIAL_BAUD); delay(250); performance.begin();
@@ -64,13 +77,14 @@ void loop() {
       case EncoderEventType::RotateCounterClockwise:
         lastEncoderEvent = inputEvent.type == EncoderEventType::RotateClockwise ? "CW" : "CCW";
         if (menuOpen) {
-          if (menuPage == 1 && menuSelection == 1) {
+          if(menuPage==6){ if(fmMode==1)fmActionSelection=(fmActionSelection+(inputEvent.delta>0?1:5))%6; else if(fmMode==2)fmActionSelection=fmActionSelection?0:1; else {uint8_t n=fmCount+1;int v=(int)fmSelection+(inputEvent.delta>0?1:-1);if(v<0)v=n-1;if(v>=n)v=0;fmSelection=v;} }
+          else if (menuPage == 1 && menuSelection == 1) {
             const int16_t requested = static_cast<int16_t>(radio.volume()) + inputEvent.delta;
             const uint8_t nextVolume = static_cast<uint8_t>(constrain(requested, 0, 63));
             if (radio.setVolume(nextVolume))
               Serial.printf("[MENU] volume=%u/63\n", static_cast<unsigned>(radio.volume()));
           } else {
-            const uint8_t itemCount = menuPage == 0 ? 6 : 3;
+            const uint8_t itemCount = menuPage == 0 ? 6 : (menuPage==5 ? 4 : 3);
             int16_t next = static_cast<int16_t>(menuSelection) + (inputEvent.delta > 0 ? 1 : -1);
             if (next < 0) next = itemCount - 1;
             if (next >= itemCount) next = 0;
@@ -89,6 +103,8 @@ void loop() {
           menuPage = 0;
           menuSelection = 0;
           Serial.println("[MENU] opened");
+        } else if(menuPage==6){ if(fmMode==1){ if(fmActionSelection==0)fmMode=0; else if(fmActionSelection==1||fmActionSelection==2){fmPendingAction=fmActionSelection;fmMode=3;fmSelection=0;} else if(fmActionSelection==4){fmMode=2;fmActionSelection=1;} else fmMessageSet("Aktion folgt im naechsten Schritt"); } else if(fmMode==2){if(fmActionSelection==1){bool ok=FileManager::removeFile(fmSelectedPath);fmMessageSet(ok?"Datei geloescht":"Loeschen fehlgeschlagen");fmRefresh();}fmMode=0;} else if(fmMode==3){if(fmSelection==0){const char* b=strrchr(fmSelectedPath,47);b=b?b+1:fmSelectedPath;char dest[96];snprintf(dest,sizeof(dest),"%s%s%s",fmPath,strcmp(fmPath,"/")==0?"":"/",b);bool ok=fmPendingAction==1?FileManager::copyFile(fmSelectedPath,dest):FileManager::moveFile(fmSelectedPath,dest);fmMessageSet(ok?"Erledigt":"Aktion fehlgeschlagen");fmMode=0;fmRefresh();}else fmParent();}else fmChoose(fmSelection);
+        } else if (menuPage==5 && menuSelection==3) {fmOpen();
         } else if (menuPage == 0) {
           if (menuSelection == 0) {
             menuOpen = false;
