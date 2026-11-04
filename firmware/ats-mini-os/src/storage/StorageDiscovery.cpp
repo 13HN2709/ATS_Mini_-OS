@@ -5,6 +5,7 @@
 #include <esp_partition.h>
 #include <string.h>
 #include <strings.h>
+#include <vector>
 
 namespace StorageDiscovery {
 namespace {
@@ -44,6 +45,101 @@ bool findAnchor(File directory, uint8_t depth) {
     entry = directory.openNextFile();
   }
   return false;
+}
+
+
+// Move only root-level PNGs into /logos. splash.png is deliberately preserved
+// as the boot image. A source is removed only after a complete verified copy.
+void organizeRootLogos() {
+  if (!LittleFS.exists("/logos") && !LittleFS.mkdir("/logos")) {
+    Serial.println("[LOGO] could not create /logos; root files left untouched");
+    return;
+  }
+
+  std::vector<String> candidates;
+  File root = LittleFS.open("/");
+  if (!root || !root.isDirectory()) {
+    if (root) root.close();
+    Serial.println("[LOGO] could not enumerate LittleFS root");
+    return;
+  }
+
+  File entry = root.openNextFile();
+  while (entry) {
+    if (!entry.isDirectory()) {
+      String path = entry.path();
+      const int slash = path.lastIndexOf('/');
+      const String base = slash >= 0 ? path.substring(slash + 1) : path;
+      String lower = base;
+      lower.toLowerCase();
+      if (lower != "splash.png" && lower.endsWith(".png") && candidates.size() < 64) {
+        candidates.push_back(path);
+      }
+    }
+    entry.close();
+    entry = root.openNextFile();
+  }
+  root.close();
+
+  uint8_t buffer[512];
+  for (const String& sourcePath : candidates) {
+    const int slash = sourcePath.lastIndexOf('/');
+    const String base = slash >= 0 ? sourcePath.substring(slash + 1) : sourcePath;
+    const String destinationPath = String("/logos/") + base;
+
+    if (LittleFS.exists(destinationPath)) {
+      Serial.printf("[LOGO] destination exists; preserving both files: %s\n",
+                    destinationPath.c_str());
+      continue;
+    }
+
+    File source = LittleFS.open(sourcePath, "r");
+    if (!source || source.isDirectory()) {
+      if (source) source.close();
+      continue;
+    }
+    const size_t expected = source.size();
+    File destination = LittleFS.open(destinationPath, "w");
+    if (!destination) {
+      source.close();
+      Serial.printf("[LOGO] cannot create %s; source preserved\n", destinationPath.c_str());
+      continue;
+    }
+
+    size_t copied = 0;
+    bool writeOk = true;
+    while (source.available()) {
+      const size_t count = source.read(buffer, sizeof(buffer));
+      if (!count) break;
+      if (destination.write(buffer, count) != count) {
+        writeOk = false;
+        break;
+      }
+      copied += count;
+    }
+    destination.flush();
+    destination.close();
+    source.close();
+
+    File verify = LittleFS.open(destinationPath, "r");
+    const bool verified = verify && copied == expected && verify.size() == expected;
+    if (verify) verify.close();
+
+    if (writeOk && verified) {
+      if (LittleFS.remove(sourcePath)) {
+        Serial.printf("[LOGO] moved %s -> %s (%u bytes)\n",
+                      sourcePath.c_str(), destinationPath.c_str(),
+                      static_cast<unsigned>(copied));
+      } else {
+        Serial.printf("[LOGO] copied %s but could not remove original\n",
+                      sourcePath.c_str());
+      }
+    } else {
+      LittleFS.remove(destinationPath);
+      Serial.printf("[LOGO] copy verification failed for %s; source preserved\n",
+                    sourcePath.c_str());
+    }
+  }
 }
 } // namespace
 
@@ -96,6 +192,7 @@ bool begin() {
               } else {
                 g_ready = true;
                 Serial.println("[STORAGE] /RDS ready; filesystem was not formatted");
+                organizeRootLogos();
               }
             } else {
               Serial.println("[STORAGE] no known anchor file found; no directory created");
