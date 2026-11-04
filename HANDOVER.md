@@ -1352,3 +1352,17 @@ Auf Branch `dev/first-build-preparation` wurde ein erstes scrollbares Vollbild-M
 - Änderung: `firmware/ats-mini-os/src/storage/StorageDiscovery.cpp`.
 - Commit: https://github.com/13HN2709/ATS_Mini_-OS/commit/ceb62787fb33853e815a117634f0217259456254
 - **Status: noch nicht kompiliert und nicht erneut auf dem ATS Mini V4 getestet.** Kein Build/keine GitHub Actions gestartet, nichts geflasht. Nutzer startet den manuellen Compile-only-Workflow selbst.
+
+
+## 2026-11-04 – Dateimanager: LittleFS-Verwaltung als Modul begonnen
+
+- Nutzerfreigabe: Dateimanager direkt in ATS Mini OS mit Ordnernavigation und Kopieren, Verschieben, Löschen, Umbenennen, Ordner anlegen sowie Anzeige von Dateigröße/Speicherbelegung.
+- Neue Dateien:
+  - `firmware/ats-mini-os/src/storage/FileManager.h`
+  - `firmware/ats-mini-os/src/storage/FileManager.cpp`
+- Implementierte API: Verzeichnisliste (begrenzt), Ordner anlegen, Datei kopieren, verschieben, umbenennen, löschen und leere Ordner entfernen.
+- Schutzmechanismen: kein Formatieren; nur nutzbares, bereits von `StorageDiscovery` gemountetes LittleFS; Root und `splash.png` geschützt; interne Logo-Transaktionsdateien werden nicht in der normalen Liste angezeigt; Kopieren/Verschieben kopiert und verifiziert zuerst, erst danach wird die Quelle entfernt. Überschreiben vorhandener Ziele ist gesperrt.
+- `ats-mini-os.ino` initialisiert den Dateimanager nach `StorageDiscovery::begin()`.
+- Commits: `0ac2e66ed58c71829053855941c85b45d80576cb` (Header), `100592495d9783c845444f19efa10d47801161dc` (Implementierung), `a0969909a2b50fee88892b51146bfa65fd1454cb` (Initialisierung).
+- **Status: Modulgrundlage integriert; Encoder-Menüoberfläche und interaktive Dateiauswahl/Aktionsbestätigung sind noch nicht fertig. Nicht kompiliert und nicht am Gerät getestet.** Keine Actions gestartet, nichts geflasht, keine Formatierung und keine Partitionsänderung.
+- Nächster Schritt: Dateimanager als eigene Ansicht im vorhandenen Vollbild-Menü einhängen; Navigation und sichere Aktionsdialoge implementieren, danach Compile-only.
