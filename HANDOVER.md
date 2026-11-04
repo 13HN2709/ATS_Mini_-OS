@@ -1314,3 +1314,16 @@ Auf Branch `dev/first-build-preparation` wurde ein erstes scrollbares Vollbild-M
 - Display-Logo-Rahmen, Proportionen und Skalierung wurden nicht geändert. Keine Partitions-/Bootloaderänderung, kein Formatieren und keine absichtliche Löschung bestehender Nutzerdaten.
 - **Teststatus: noch nicht kompiliert und nicht auf dem ATS Mini V4 getestet.** Nutzer startet den manuellen Compile-only-Workflow selbst. Assistent hat keine GitHub Actions gestartet und nichts geflasht.
 - Nächster Schritt: Compile-only-Ergebnis abwarten. Bei Fehlern zuerst kompilierbare Schnittstellen/Includes korrigieren; bei Erfolg vor dem Gerätetest die oben genannten Mount- und WLAN-Wiederherstellungsbedingungen prüfen.
+
+## 2026-11-04 – Antenne-Münster-Logo D394 überarbeitet; nächster Schritt FM-Layout
+
+- Der Nutzer hat den erfolgreichen lokalen Logo-Import auf dem ATS Mini V4 bestätigt. Beim bisherigen Logo von Antenne Münster war der Sendername auf schwarzem Displayhintergrund kaum lesbar, weil die Buchstaben innen schwarz und nur hell umrandet waren.
+- Neues Logo erstellt: `D394_Antenne_Muenster.png`.
+  - PNG, 168 × 148 Pixel, RGBA mit transparentem Hintergrund.
+  - Sendername weiß gefüllt, mit schwarzer Kontur und heller Außenkante für hohen Kontrast auf schwarzem Display.
+  - Frequenz `95.4 MHz` und Signalbalken in Rot mit heller Kontur.
+  - Typografie und Signalbalken optisch geglättet/neu gezeichnet, um den pixeligen Eindruck zu reduzieren.
+  - Die Datei wurde dem Nutzer zum Download bereitgestellt und kann direkt nach `/logos` kopiert werden.
+- Das bestehende Logo-Anzeigefenster, dessen Rahmen, Proportionen und Skalierungslogik bleiben unverändert.
+- **Nächster Arbeitsschritt:** gemeinsam das erste richtige FM-Layout für den ATS Mini OS entwickeln. Das Layout soll als eigenständiger, modularer FM-Bildschirm aufgebaut werden; vor Änderungen zuerst den tatsächlichen Branch-/Quellcode-Stand prüfen und vorhandene Display-/Radio-Schnittstellen berücksichtigen.
+- Noch keine FM-Layout-Implementierung begonnen, kein Build/keine GitHub Actions gestartet und nichts geflasht.
