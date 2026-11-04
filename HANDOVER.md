@@ -1376,3 +1376,15 @@ Auf Branch `dev/first-build-preparation` wurde ein erstes scrollbares Vollbild-M
 - `splash.png`, `Schedules.json`, `schedules.bin` und `memories.json` sind vor Dateioperationen geschützt. Die Verwaltung greift ausschließlich auf das von StorageDiscovery bereits gemountete LittleFS zu. Kein Formatieren, keine Änderung an Partitionen oder Bootloader.
 - Geänderte Dateien: `ats-mini-os.ino`, `DisplayDriver.h/.cpp`, `FileManager.cpp`. Die System-Menüliste wurde um Dateimanager ergänzt.
 - **Wichtiger Status:** Die Integration ist noch nicht kompiliert und nicht auf dem Gerät getestet. Keine GitHub Actions gestartet und nichts geflasht. Nutzer startet jetzt manuell Compile-only. Bei Compilerfehlern bitte zuerst die genaue Fehlermeldung prüfen; diese Änderung ist ausdrücklich noch nicht als build-verifiziert markiert.
+
+
+## 2026-11-04 – Dateimanager-Bedienung nach Gerätetest verbessert
+
+- Rückmeldung vom ATS Mini V4: Schrift zu klein, Encoder-Auswahl fühlte sich träge an, Beenden war nicht erkennbar und die Klickbedienung war nicht selbsterklärend.
+- Dateimanager-Anzeige überarbeitet: größere Font2-Zeilen, fünf sichtbare Einträge, klarere Navigations-/Auswahlhinweise.
+- Am Listenende gibt es jetzt einen sichtbaren Eintrag **DATEIMANAGER BEENDEN**; langer Druck im normalen Dateimanager-Browser beendet ebenfalls direkt und kehrt zur Radioansicht zurück. Der bisherige lange Druck auf der ersten Zeile erzeugt keinen Ordner mehr.
+- Encoder-Beschleunigungsdelta wird jetzt vollständig auf die Auswahl angewendet statt unabhängig von der Drehgeschwindigkeit nur einen Eintrag weiterzuschalten.
+- Dateimanager-Ansicht wird mindestens alle 45 ms aktualisiert statt durch die allgemeine 500-ms-Menübegrenzung ausgebremst.
+- Ordner öffnen: Eintrag mit dem Encoder auswählen und **kurz klicken**. Dateien: auswählen und kurz klicken, um das Aktionsmenü zu öffnen. In der Dateiansicht wird langer Druck als Beenden beschriftet.
+- Keine Änderungen an LittleFS-Dateioperationen, Schutzregeln, Partitionen oder Bootloader. Kein Formatieren.
+- **Status: Codeänderung noch nicht kompiliert und nicht am Gerät geprüft.** Keine Actions gestartet, nichts geflasht. Nutzer führt den manuellen Compile-only-Build aus.
