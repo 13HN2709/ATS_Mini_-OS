@@ -35,7 +35,8 @@ char fmMessage[40] = "LittleFS bereit";
 char fmSelectedPath[96] = "";
 char fmSelectedName[48] = "";
 uint8_t fmCount = 0, fmSelection = 0, fmActionSelection = 0, fmMode = 0;
-uint8_t fmPendingAction = 0;
+uint8_t fmPendingAction = 0, fmEditCursor = 0;
+char fmEditName[48] = "";
 void fmRefresh(){ fmCount=0; if(!FileManager::list(fmPath,fmEntries,FileManager::MAX_ENTRIES,fmCount)) snprintf(fmMessage,sizeof(fmMessage),"Ordner nicht lesbar"); }
 void fmMessageSet(const char* m){ strncpy(fmMessage,m,sizeof(fmMessage)-1); fmMessage[sizeof(fmMessage)-1]=0; }
 void fmParent(){ if(strcmp(fmPath,"/")==0)return; char* p=strrchr(fmPath,47); if(p==fmPath)fmPath[1]=0; else if(p)*p=0; fmSelection=0; fmRefresh(); }
@@ -77,7 +78,7 @@ void loop() {
       case EncoderEventType::RotateCounterClockwise:
         lastEncoderEvent = inputEvent.type == EncoderEventType::RotateClockwise ? "CW" : "CCW";
         if (menuOpen) {
-          if(menuPage==6){ if(fmMode==1)fmActionSelection=(fmActionSelection+(inputEvent.delta>0?1:5))%6; else if(fmMode==2)fmActionSelection=fmActionSelection?0:1; else {uint8_t n=fmCount+1;int v=(int)fmSelection+(inputEvent.delta>0?1:-1);if(v<0)v=n-1;if(v>=n)v=0;fmSelection=v;} }
+          if(menuPage==6){ if(fmMode==1)fmActionSelection=(fmActionSelection+(inputEvent.delta>0?1:5))%6; else if(fmMode==2)fmActionSelection=fmActionSelection?0:1; else if(fmMode==4){const char* chars="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 _-.";size_t n=strlen(chars);char ch=fmEditName[fmEditCursor];const char* q=strchr(chars,ch?ch:65);int pos=q?(int)(q-chars):0;pos=(pos+(inputEvent.delta>0?1:(int)n-1))%(int)n;fmEditName[fmEditCursor]=chars[pos];fmEditName[fmEditCursor+1]=0;} else {uint8_t n=fmCount+1;int v=(int)fmSelection+(inputEvent.delta>0?1:-1);if(v<0)v=n-1;if(v>=n)v=0;fmSelection=v;} }
           else if (menuPage == 1 && menuSelection == 1) {
             const int16_t requested = static_cast<int16_t>(radio.volume()) + inputEvent.delta;
             const uint8_t nextVolume = static_cast<uint8_t>(constrain(requested, 0, 63));
@@ -103,7 +104,7 @@ void loop() {
           menuPage = 0;
           menuSelection = 0;
           Serial.println("[MENU] opened");
-        } else if(menuPage==6){ if(fmMode==1){ if(fmActionSelection==0)fmMode=0; else if(fmActionSelection==1||fmActionSelection==2){fmPendingAction=fmActionSelection;fmMode=3;fmSelection=0;} else if(fmActionSelection==4){fmMode=2;fmActionSelection=1;} else fmMessageSet("Aktion folgt im naechsten Schritt"); } else if(fmMode==2){if(fmActionSelection==1){bool ok=FileManager::removeFile(fmSelectedPath);fmMessageSet(ok?"Datei geloescht":"Loeschen fehlgeschlagen");fmRefresh();}fmMode=0;} else if(fmMode==3){if(fmSelection==0){const char* b=strrchr(fmSelectedPath,47);b=b?b+1:fmSelectedPath;char dest[96];snprintf(dest,sizeof(dest),"%s%s%s",fmPath,strcmp(fmPath,"/")==0?"":"/",b);bool ok=fmPendingAction==1?FileManager::copyFile(fmSelectedPath,dest):FileManager::moveFile(fmSelectedPath,dest);fmMessageSet(ok?"Erledigt":"Aktion fehlgeschlagen");fmMode=0;fmRefresh();}else fmParent();}else fmChoose(fmSelection);
+        } else if(menuPage==6){ if(fmMode==1){ if(fmActionSelection==0)fmMode=0; else if(fmActionSelection==1||fmActionSelection==2){fmPendingAction=fmActionSelection;fmMode=3;fmSelection=0;} else if(fmActionSelection==4){fmMode=2;fmActionSelection=1;} else {fmPendingAction=fmActionSelection==5?5:3; if(fmPendingAction==5)fmEditName[0]=0;else strncpy(fmEditName,fmSelectedName,sizeof(fmEditName)-1);fmEditName[sizeof(fmEditName)-1]=0;fmEditCursor=0;fmMode=4;} } else if(fmMode==2){if(fmActionSelection==1){bool ok=FileManager::removeFile(fmSelectedPath);fmMessageSet(ok?"Datei geloescht":"Loeschen fehlgeschlagen");fmRefresh();}fmMode=0;} else if(fmMode==4){if(fmEditName[0]){char dest[96];snprintf(dest,sizeof(dest),"%s%s%s",fmPath,strcmp(fmPath,"/")==0?"":"/",fmEditName);bool ok=fmPendingAction==5?FileManager::makeDirectory(dest):FileManager::renamePath(fmSelectedPath,dest);fmMessageSet(ok?"Gespeichert":"Fehler / Ziel vorhanden");fmRefresh();}else fmMessageSet("Name fehlt");fmMode=0;} else if(fmMode==3){if(fmSelection==0){const char* b=strrchr(fmSelectedPath,47);b=b?b+1:fmSelectedPath;char dest[96];snprintf(dest,sizeof(dest),"%s%s%s",fmPath,strcmp(fmPath,"/")==0?"":"/",b);bool ok=fmPendingAction==1?FileManager::copyFile(fmSelectedPath,dest):FileManager::moveFile(fmSelectedPath,dest);fmMessageSet(ok?"Erledigt":"Aktion fehlgeschlagen");fmMode=0;fmRefresh();}else {uint8_t idx=fmSelection-1;if(idx<fmCount&&fmEntries[idx].directory){strncpy(fmPath,fmEntries[idx].path,sizeof(fmPath)-1);fmPath[sizeof(fmPath)-1]=0;fmSelection=0;fmRefresh();}}}else fmChoose(fmSelection);
         } else if (menuPage==5 && menuSelection==3) {fmOpen();
         } else if (menuPage == 0) {
           if (menuSelection == 0) {
