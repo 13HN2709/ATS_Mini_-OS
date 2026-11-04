@@ -5,7 +5,7 @@ constexpr uint8_t kEncoderPinA = 2;
 constexpr uint8_t kEncoderPinB = 1;
 constexpr uint8_t kEncoderButtonPin = 21;
 // A short but stable debounce keeps quick encoder-button taps responsive.
-constexpr uint32_t kButtonDebounceMs = 15;
+constexpr uint32_t kButtonDebounceMs = 8;
 constexpr uint32_t kLongPressMs = 700;
 
 // Full-step quadrature decoder. Called from the GPIO interrupt on either pin.
@@ -118,10 +118,11 @@ void EncoderInput::update() {
 int16_t EncoderInput::acceleratedDelta(int8_t direction, uint32_t now) {
   // Match ATS Mini Dev's persistent acceleration ramp rather than recalculating
   // the factor downward on every detent.
-  // Reach useful acceleration earlier during normal hand rotation.
-  // Keep the top factor controlled so a quick turn does not skip whole menus.
-  constexpr uint32_t speedThresholds[] = {350, 120, 80, 50, 30};
-  constexpr uint8_t accelFactors[] = {1, 2, 4, 8, 12};
+  // Faster, smoother acceleration for the small ATS Mini rotary encoder.
+  // The factor ramps up at ordinary hand speed, with a safe cap to avoid
+  // jumping over confirmation choices or entire menu sections.
+  constexpr uint32_t speedThresholds[] = {500, 260, 180, 120, 75};
+  constexpr uint8_t accelFactors[] = {1, 2, 3, 5, 8};
 
   const uint32_t elapsed = now - lastRotationMs_;
   smoothedRotationMs_ = (elapsed * 7U + smoothedRotationMs_ * 3U) / 10U;
