@@ -100,7 +100,16 @@ void drawFileMenu(Canvas& c,const char* path,FileManager::Entry* entries,uint8_t
   } else {
     text(c,mode==3?"ZIELORDNER: Klick waehlt":"Klick: Ordner oeffnen / Datei-Menue",8,44,YELLOW,&lgfx::fonts::Font0);
     const uint8_t total=static_cast<uint8_t>(count+(mode==0?3:1));
-    const uint8_t visible=5;
+    // The ATS Mini V4 panel is only 170 px high. Keep list rows above
+    // the two-line footer and calculate the visible window from real height.
+    // This gives three rows on the 170 px panel and up to five on taller panels.
+    const int footerTop = h - 30;
+    const int firstRowY = 64;
+    const int rowHeight = 27;
+    int visibleRows = (footerTop - firstRowY - 22) / rowHeight + 1;
+    if (visibleRows < 1) visibleRows = 1;
+    if (visibleRows > 5) visibleRows = 5;
+    const uint8_t visible = static_cast<uint8_t>(visibleRows);
     uint8_t first=selection>=visible?static_cast<uint8_t>(selection-visible+1):0;
     for(uint8_t row=0;row<visible && first+row<total;row++){
       const uint8_t ix=first+row;
