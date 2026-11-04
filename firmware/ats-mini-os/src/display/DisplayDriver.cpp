@@ -65,6 +65,15 @@ bool getLogoDimensions(const uint8_t* data, size_t length, uint16_t& width, uint
 }
 
 template <typename Canvas>
+void drawFileMenu(Canvas& c,const char* path,FileManager::Entry* entries,uint8_t count,uint8_t selection,uint8_t mode,uint8_t action,const char* selected,const char* message){
+ const int w=c.width(),h=c.height(); c.fillScreen(BLACK); text(c,"DATEIMANAGER",8,3,CYAN,&lgfx::fonts::Font2); text(c,path,8,24,GREEN,&lgfx::fonts::Font0); c.drawFastHLine(8,39,w-16,DARK_GREEN);
+ if(mode==1){const char* a[]={"Zurueck","Kopieren","Verschieben","Umbenennen","Loeschen","Neuer Ordner"};text(c,selected,8,48,YELLOW,&lgfx::fonts::Font2);for(int n=0;n<6;n++){int y=69+n*17;if(n==action){c.fillRoundRect(5,y-2,w-10,16,3,0x0320);c.drawRoundRect(5,y-2,w-10,16,3,GREEN);}text(c,a[n],12,y,n==action?GREEN:WHITE,&lgfx::fonts::Font0);}}
+ else if(mode==2){centered(c,"DATEI LOESCHEN?",w/2,55,YELLOW,&lgfx::fonts::Font2);centered(c,selected,w/2,82,WHITE,&lgfx::fonts::Font0);centered(c,action?"JA":"NEIN",w/2,116,action?YELLOW:GREEN,&lgfx::fonts::Font2);}
+ else {text(c,mode==3?"ZIELORDNER AUSWAEHLEN":"Drehen: Auswahl / Klick: Oeffnen",8,44,YELLOW,&lgfx::fonts::Font0);for(uint8_t row=0;row<6;row++){uint8_t ix=selection+row;char line[58];const char* label=nullptr;if(ix==0)label=mode==3?"[DIESEN ORDNER WAEHLEN]":"[..] Zurueck";else if(ix-1<count){FileManager::Entry& e=entries[ix-1];if(e.directory)snprintf(line,sizeof(line),"[+] %.38s",e.name);else snprintf(line,sizeof(line),"%.25s %luB",e.name,(unsigned long)e.size);label=line;}else break;int y=62+row*16;if(row==0){c.fillRoundRect(4,y-2,w-8,15,3,0x0320);c.drawRoundRect(4,y-2,w-8,15,3,GREEN);}text(c,label,9,y,row==0?GREEN:WHITE,&lgfx::fonts::Font0);}}
+ if(message&&message[0])text(c,message,8,h-17,YELLOW,&lgfx::fonts::Font0);
+}
+
+template <typename Canvas>
 void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume) {
   const int w = canvas.width();
   const int h = canvas.height();
@@ -84,7 +93,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume) {
     "Zurueck", "WLAN-Modus (spaeter)", "Web Control (spaeter)"
   };
   static const char* const systemItems[] = {
-    "Zurueck", "CPU-Profil (spaeter)", "Systeminfo (spaeter)"
+    "Zurueck", "CPU-Profil (spaeter)", "Systeminfo (spaeter)", "Dateimanager"
   };
   const char* const* items = mainItems;
   uint8_t count = sizeof(mainItems) / sizeof(mainItems[0]);
@@ -171,7 +180,7 @@ bool DisplayDriver::begin() {
 void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConnected,
                            const char* lastInputEvent,uint32_t inputEventCount,
                            StationLogoClient* logoClient, bool menuOpen,
-                           uint8_t menuPage, uint8_t menuSelection, uint8_t volume) {
+                           uint8_t menuPage, uint8_t menuSelection, uint8_t volume, const char* filePath, FileManager::Entry* fileEntries, uint8_t fileCount, uint8_t fileSelection, uint8_t fileMode, uint8_t fileActionSelection, const char* fileSelectedName, const char* fileMessage) {
   if(!ready_)return;
   const uint32_t now=millis();
   const bool menuStateChanged = menuOpen != lastMenuOpen_ || menuPage != lastMenuPage_ ||
@@ -184,6 +193,7 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
   lastMenuSelection_=menuSelection;
   lastMenuVolume_=volume;
   if (menuOpen) {
+    if(menuPage==6){if(useSprite_){sprite_.fillSprite(BLACK);drawFileMenu(sprite_,filePath,fileEntries,fileCount,fileSelection,fileMode,fileActionSelection,fileSelectedName,fileMessage);sprite_.pushSprite(0,0);}else{device_.fillScreen(BLACK);drawFileMenu(device_,filePath,fileEntries,fileCount,fileSelection,fileMode,fileActionSelection,fileSelectedName,fileMessage);}return;}
     if (useSprite_) {
       sprite_.fillSprite(BLACK);
       drawMenu(sprite_, menuPage, menuSelection, volume);
