@@ -140,7 +140,7 @@ void loop() {
   }
   radio.update();
   stationLogoClient.update(radio.snapshot(), wifi.connected());
-  display.render(radio.snapshot(),radio.isReady(),wifi.connected(),lastEncoderEvent,encoderEventCount,&stationLogoClient,menuOpen,menuPage,menuSelection,radio.volume());
+  display.render(radio.snapshot(),radio.isReady(),wifi.connected(),lastEncoderEvent,encoderEventCount,&stationLogoClient,menuOpen,menuPage,menuSelection,radio.volume(),fmPath,fmEntries,fmCount,fmSelection,fmMode,fmActionSelection,fmSelectedName,fmMessage);
   const uint32_t now=millis();
   if(now-lastStatusMs>=2000) {
     lastStatusMs=now; const RadioSnapshot& s=radio.snapshot();
