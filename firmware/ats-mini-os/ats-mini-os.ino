@@ -129,7 +129,7 @@ void loop() {
           menuOpen = false;
           menuPage = 0;
           menuSelection = 0;
-          Serial.println("[MENU] closed via long press");
+          Serial.println("[MENU] closed via long press"); }
         } else {
           Serial.println("[INPUT] long press (no action)");
         }
@@ -141,7 +141,7 @@ void loop() {
   }
   radio.update();
   stationLogoClient.update(radio.snapshot(), wifi.connected());
-  display.render(radio.snapshot(),radio.isReady(),wifi.connected(),lastEncoderEvent,encoderEventCount,&stationLogoClient,menuOpen,menuPage,menuSelection,radio.volume(),fmPath,fmEntries,fmCount,fmSelection,fmMode,fmActionSelection,fmSelectedName,fmMessage);
+  display.render(radio.snapshot(),radio.isReady(),wifi.connected(),lastEncoderEvent,encoderEventCount,&stationLogoClient,menuOpen,menuPage,menuSelection,radio.volume(),fmPath,fmEntries,fmCount,fmSelection,fmMode,fmActionSelection,(fmMode==4?fmEditName:fmSelectedName),fmMessage);
   const uint32_t now=millis();
   if(now-lastStatusMs>=2000) {
     lastStatusMs=now; const RadioSnapshot& s=radio.snapshot();
