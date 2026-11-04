@@ -33,6 +33,7 @@ void setup() {
   Serial.println(); Serial.println("ATS Mini OS - UKW/RDS hardware test");
   Serial.println("First milestone: display, SI4735 audio, RDS. No memories/EiBi storage.");
   PartitionDiagnostics::printToSerial();
+  StorageDiscovery::begin();
   stationLogoClient.begin();
 
   encoder.begin();
