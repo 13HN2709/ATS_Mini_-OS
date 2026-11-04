@@ -1341,3 +1341,14 @@ Auf Branch `dev/first-build-preparation` wurde ein erstes scrollbares Vollbild-M
 - Commit: [771c3d839249e782cff0fa8420b2b044ed675c3a](https://github.com/13HN2709/ATS_Mini_-OS/commit/771c3d839249e782cff0fa8420b2b044ed675c3a)
 - **Status: Code geändert, noch nicht kompiliert und nicht auf dem ATS Mini V4 getestet.** Keine GitHub Actions gestartet, nichts geflasht.
 - Nächster Schritt: Nutzer führt den manuellen Compile-only-Build aus. Danach testen, indem ein neues Logo mit bereits vorhandenem PI (z. B. D394) in das LittleFS-Stammverzeichnis hochgeladen wird; nach dem Neustart muss die neue Datei unter `/logos` liegen und die alte PI-Variante entfernt sein.
+
+
+## 2026-11-04 – Logo-Import ersetzt vorhandenes PI-Logo automatisch
+
+- Nutzerwunsch: Wird ein neues Senderlogo in das LittleFS-Stammverzeichnis hochgeladen und existiert unter `/logos` bereits ein Logo mit demselben PI-Code, soll das neue Bild das alte automatisch ersetzen. Das ist ausdrücklich gewünscht, damit ein schöneres/aktualisiertes Logo ohne manuelles Löschen übernommen wird.
+- `StorageDiscovery.cpp` verwendet beim Boot-Import den vierstelligen PI-Präfix am Dateianfang (z. B. `D394_Antenne_Muenster.png`). Vorhandene unterstützte Bilddateien mit demselben PI (`.png`, `.jpg`, `.jpeg`) werden nach erfolgreicher Installation des neuen Logos entfernt, auch wenn der Dateiname anders lautet.
+- Sicherheitsablauf: neues Root-PNG zunächst nach `/logos/.replace_<PI>.tmp` kopieren und Dateigröße/Bytezahl prüfen; bei identischem Zieldateinamen wird die alte Datei vorübergehend als Backup umbenannt; erst nach erfolgreichem Installieren wird das Backup und werden andere alte Varianten desselben PI entfernt. Bei fehlgeschlagener Installation wird das exakte alte Ziel zurückbenannt und die Root-Quelldatei bleibt erhalten.
+- Vorhandene temporäre/Backup-Dateien führen jetzt zum Abbruch dieses PI-Imports, statt automatisch gelöscht zu werden. Nicht unterstützte Dateitypen werden bei der PI-Bereinigung nicht entfernt. `splash.png` bleibt weiterhin ausgeschlossen.
+- Änderung: `firmware/ats-mini-os/src/storage/StorageDiscovery.cpp`.
+- Commit: https://github.com/13HN2709/ATS_Mini_-OS/commit/ceb62787fb33853e815a117634f0217259456254
+- **Status: noch nicht kompiliert und nicht erneut auf dem ATS Mini V4 getestet.** Kein Build/keine GitHub Actions gestartet, nichts geflasht. Nutzer startet den manuellen Compile-only-Workflow selbst.
