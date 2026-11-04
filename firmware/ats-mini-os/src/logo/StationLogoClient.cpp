@@ -1,6 +1,9 @@
 #include "StationLogoClient.h"
 
 #include <WiFi.h>
+#include <LittleFS.h>
+#include "../storage/StorageDiscovery.h"
+#include "../network/WifiTestConfig.h"
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
 #include <esp_heap_caps.h>
@@ -129,7 +132,8 @@ bool StationLogoClient::storeLogoInRam(const String& logo, const char* key, cons
   return true;
 }
 void StationLogoClient::update(const RadioSnapshot& state, bool wifiConnected) {
-  if (!wifiConnected || !state.piCode || !state.stationName[0] || busy_) return;
+  (void)wifiConnected;
+  if (!state.piCode || busy_) return;
   char key[40];
   snprintf(key,sizeof(key),"%04X_%lu",static_cast<unsigned>(state.piCode),static_cast<unsigned long>(state.frequencyKHz));
   if (haveRequested_ && strcmp(lastRequestKey_,key)==0 && millis()-lastAttemptMs_<60000) return;
@@ -148,7 +152,6 @@ void StationLogoClient::taskEntry(void* arg) {
   self->runLookup(state); self->busy_=false; vTaskDelete(nullptr);
 }
 void StationLogoClient::runLookup(const RadioSnapshot& state) {
-  if (!WiFi.isConnected()) return;
   char key[40];
   snprintf(key,sizeof(key),"%04X_%lu",static_cast<unsigned>(state.piCode),static_cast<unsigned long>(state.frequencyKHz));
   const String pi=String(state.piCode,HEX); String piUpper=pi; piUpper.toUpperCase();
