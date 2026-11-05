@@ -411,6 +411,8 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   const char* rt=s.radioText[0]?s.radioText:"Warte auf Radiotext...";
   canvas.setFont(&lgfx::fonts::Font2);
   canvas.setTextColor(WHITE,BLACK);
+  // Keep the ticker strictly inside its own RT field.
+  canvas.setClipRect(105,67,w-10,51);
   if (scrollRadioText) {
     char tickerText[72];
     snprintf(tickerText, sizeof(tickerText), "%s    ", s.radioText);
@@ -420,6 +422,7 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   } else {
     canvas.drawString(rt,109,82);
   }
+  canvas.clearClipRect();
 
   // Standard RDS PTY labels (0-31), shown at the bottom of the layout.
   static const char* const ptyNames[32]={
