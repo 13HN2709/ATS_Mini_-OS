@@ -265,7 +265,7 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
       menuSelection != lastMenuSelection_ || volume != lastMenuVolume_;
   // Redraw the file manager promptly while the encoder is moving; this also
   // keeps the selection frame visually attached to the active row.
-  const uint32_t redrawInterval = (menuOpen && menuPage==6) ? 20 : 500;
+  const uint32_t redrawInterval = menuOpen ? ((menuPage==6) ? 20 : 500) : 40;
   if(s.generation==lastGeneration_ && now-lastDrawMs_<redrawInterval && !menuStateChanged)return;
   lastGeneration_=s.generation;
   lastDrawMs_=now;
@@ -286,6 +286,36 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
     return;
   }
 
+  // Keep the RDS ticker independent from radio-state polling. The SI4735
+  // delivers text in bursts; the display animation must advance between them.
+  char tickerText[72];
+  snprintf(tickerText, sizeof(tickerText), "%s    ", s.radioText);
+  const char* measuredText = tickerText;
+  int textWidth = 0;
+  if (useSprite_) {
+    sprite_.setFont(&lgfx::fonts::Font2);
+    textWidth = sprite_.textWidth(measuredText);
+  } else {
+    device_.setFont(&lgfx::fonts::Font2);
+    textWidth = device_.textWidth(measuredText);
+  }
+  const int textViewportWidth = device_.width() - 115;
+  if (strcmp(lastRadioTextRow_, s.radioText) != 0) {
+    strncpy(lastRadioTextRow_, s.radioText, sizeof(lastRadioTextRow_) - 1);
+    lastRadioTextRow_[sizeof(lastRadioTextRow_) - 1] = '\0';
+    radioTextOffset_ = 0;
+    radioTextHoldStartMs_ = now;
+    radioTextLastStepMs_ = now;
+  }
+  const bool scrollRadioText = s.radioText[0] && textWidth > textViewportWidth;
+  if (!scrollRadioText) {
+    radioTextOffset_ = 0;
+  } else if (now - radioTextHoldStartMs_ >= 1000 && now - radioTextLastStepMs_ >= 25) {
+    --radioTextOffset_;
+    if (radioTextOffset_ <= -textWidth) radioTextOffset_ = 0;
+    radioTextLastStepMs_ = now;
+  }
+
   const uint8_t* logoData = nullptr;
   size_t logoLength = 0;
   bool logoIsJpg = false;
@@ -297,7 +327,7 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
   const bool logoLocked = logoClient && logoKey[0] &&
     logoClient->lockLogo(logoKey, logoData, logoLength, logoIsJpg);
   draw(s,radioReady,wifiConnected,lastInputEvent,inputEventCount,
-       logoLocked ? logoData : nullptr,logoLocked ? logoLength : 0,logoIsJpg);
+       logoLocked ? logoData : nullptr,logoLocked ? logoLength : 0,logoIsJpg,\n       radioTextOffset_, scrollRadioText);
   if (logoLocked) logoClient->unlockLogo();
 }
 
@@ -306,7 +336,7 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
 template <typename Canvas>
 void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiConnected,
                 const char* lastInputEvent,uint32_t inputEventCount,
-                const uint8_t* logoData,size_t logoLength,bool logoIsJpg) {
+                const uint8_t* logoData,size_t logoLength,bool logoIsJpg,\n                int16_t radioTextOffset,bool scrollRadioText) {
   const int w=canvas.width();
   const int h=canvas.height();
   canvas.fillRect(7,4,116,24,BLACK);
@@ -379,7 +409,17 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   canvas.fillRect(105,67,w-115,51,BLACK);
   text(canvas,"RT",109,69,YELLOW,&lgfx::fonts::Font0);
   const char* rt=s.radioText[0]?s.radioText:"Warte auf Radiotext...";
-  text(canvas,rt,109,82,WHITE,&lgfx::fonts::Font2);
+  canvas.setFont(&lgfx::fonts::Font2);
+  canvas.setTextColor(WHITE,BLACK);
+  if (scrollRadioText) {
+    char tickerText[72];
+    snprintf(tickerText, sizeof(tickerText), "%s    ", s.radioText);
+    const int tickerWidth = canvas.textWidth(tickerText);
+    canvas.drawString(tickerText,109 + radioTextOffset,82);
+    canvas.drawString(tickerText,109 + radioTextOffset + tickerWidth,82);
+  } else {
+    canvas.drawString(rt,109,82);
+  }
 
   // Standard RDS PTY labels (0-31), shown at the bottom of the layout.
   static const char* const ptyNames[32]={
@@ -402,13 +442,13 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   canvas.fillRect(10,h-16,w-20,15,BLACK);
   text(canvas,status,11,h-13,0x7BEF,&lgfx::fonts::Font0);
 }
-void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady,bool wifiConnected,const char* lastInputEvent,uint32_t inputEventCount,const uint8_t* logoData,size_t logoLength,bool logoIsJpg) {
+void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady,bool wifiConnected,const char* lastInputEvent,uint32_t inputEventCount,const uint8_t* logoData,size_t logoLength,bool logoIsJpg,int16_t radioTextOffset,bool scrollRadioText) {
   if (useSprite_) {
     sprite_.fillSprite(BLACK);
-    drawLayout(sprite_,s,radioReady,wifiConnected,lastInputEvent,inputEventCount,logoData,logoLength,logoIsJpg);
+    drawLayout(sprite_,s,radioReady,wifiConnected,lastInputEvent,inputEventCount,logoData,logoLength,logoIsJpg,radioTextOffset,scrollRadioText);
     sprite_.pushSprite(0,0);
   } else {
     device_.fillScreen(BLACK);
-    drawLayout(device_,s,radioReady,wifiConnected,lastInputEvent,inputEventCount,logoData,logoLength,logoIsJpg);
+    drawLayout(device_,s,radioReady,wifiConnected,lastInputEvent,inputEventCount,logoData,logoLength,logoIsJpg,radioTextOffset,scrollRadioText);
   }
 }
