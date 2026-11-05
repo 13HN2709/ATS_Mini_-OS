@@ -1388,3 +1388,35 @@ Auf Branch `dev/first-build-preparation` wurde ein erstes scrollbares Vollbild-M
 - Ordner öffnen: Eintrag mit dem Encoder auswählen und **kurz klicken**. Dateien: auswählen und kurz klicken, um das Aktionsmenü zu öffnen. In der Dateiansicht wird langer Druck als Beenden beschriftet.
 - Keine Änderungen an LittleFS-Dateioperationen, Schutzregeln, Partitionen oder Bootloader. Kein Formatieren.
 - **Status: Codeänderung noch nicht kompiliert und nicht am Gerät geprüft.** Keine Actions gestartet, nichts geflasht. Nutzer führt den manuellen Compile-only-Build aus.
+
+## 2026-11-05 – Neuer Menüpunkt „FM DX Optimizer“ (Planung, Nutzerfreigabe)
+
+Der Nutzer hat ausdrücklich zugestimmt, den **FM DX Optimizer** als zusätzlichen, eigenständigen Menüpunkt in ATS Mini OS aufzunehmen. Ziel ist eine optionale Optimierung des UKW-Empfangs mit dem SI4735, insbesondere bei schwachen Sendern und schwieriger Nachbarkanalbelegung.
+
+### Bedienkonzept
+- **Auto bleibt Standard:** Im normalen Betrieb sollen die automatischen Empfängereinstellungen verwendet werden. Das entspricht dem bewährten Vorgehen des Nutzers mit seinem TEF6686.
+- **Manuelle Eingriffe nur bei Bedarf:** Wenn ein Sender schwach ist oder Störungen/Nachbarkanalprobleme auftreten, kann der Nutzer gezielt manuelle DX-Einstellungen ausprobieren.
+- **Schnelle Rückkehr zu Auto:** Eine klar erkennbare Funktion „Zurück zu Auto“ stellt die Standard-/Automatikwerte wieder her.
+- Der Optimizer ist ein zusätzliches Menümodul und soll das normale Radioverhalten nicht ungefragt verändern.
+
+### Vorgesehene Einstellbereiche – API und Wirkung vor Implementierung prüfen
+- FM-Kanalfilter/Bandbreite: Auto sowie die vom konkreten SI4735 und der verwendeten PU2CLR-Bibliotheksversion tatsächlich unterstützten festen Stufen. Die zuvor diskutierten Werte 110/84/60/40 kHz sind zunächst Prüfkandidaten, keine bereits bestätigte API-/Gerätefreigabe.
+- Soft Mute: Auto/Reduced/Off nur dann anbieten, wenn die konkrete Bibliotheks- und Chip-API dies zuverlässig unterstützt.
+- Seek-Empfindlichkeit: optionales Profil Normal/DX; RSSI-/SNR-Schwellen und Seek-Verhalten müssen getrennt geprüft werden.
+- AGC: nur aufnehmen, falls die unterstützten SI4735-Steuerungsmöglichkeiten und sinnvolle sichere Werte nachgewiesen sind.
+- Nicht alle Regler müssen in die erste Version. Keine Einstellung darf Empfang, RDS oder Audio unbeabsichtigt verschlechtern.
+
+### Qualitätsziel und Test
+- Ziel ist ein sinnvoller Kompromiss aus Nachbarkanaltrennung, Rauschverhalten, Empfindlichkeit und verständlichem Audio. Ein schmalerer Filter kann die Trennung verbessern, aber Klang und Nutzsignal beeinträchtigen; er erzeugt keine zusätzliche Empfindlichkeit.
+- Schwache Sender und RDS müssen bei jeder Einstellung mitbeobachtet werden. Veränderungen sollen einzeln und reproduzierbar getestet werden.
+- DX-Referenz für spätere Vergleichstests: Der Nutzer empfing mit seinem TEF6686 und einer Fensterloop aus Schweißdraht Sky Radio auf **101,00 MHz**, PI **83C6**, PS **SKYRADIO**, RT **Greatest Hits**. Der Empfang wurde dem Senderstandort Hoogersmilde zugeordnet (ungefähr 120 km ab Münster; genaue Ausbreitungsbedingungen/Standortzuordnung beim späteren Test erneut verifizieren). Dieses Beispiel eignet sich als Vergleichsziel für den ATS Mini V4/SI4735, ist aber kein garantierter Empfangstest.
+- Das bestehende TEF6686-Layout bleibt unverändert.
+
+### Architektur- und Arbeitsregeln
+- Strikt modular umsetzen: eigener fachlicher Modulordner mit separaten .h- und .cpp-Dateien; Menüeintrag ruft die definierte Schnittstelle auf. Keine Tuner-Direktzugriffe außerhalb des Tuner-Treibers und keine doppelten Besitzer des SI4735-Objekts.
+- Vor Implementierung die tatsächlich verwendete PU2CLR-SI4735-Version/API und die vorhandene TunerDriver-/RadioCore-Schnittstelle prüfen. Änderungen am Tuner ausschließlich über den zentralen Treiber/Radio-Core koordinieren.
+- Status: **Planung und Nutzerfreigabe für das Feature liegen vor; noch nicht implementiert, nicht kompiliert und nicht am Gerät getestet.**
+- Nutzer startet GitHub Actions selbst. Keine Workflows durch den Assistenten starten. Kein Flashen und keine Änderungen an Bootloader, APP0/APP1, Recovery oder Partitionen.
+
+### Nächster Schritt
+Zuerst die vorhandene Menü-Engine, TunerDriver-/RadioCore-Schnittstellen und die konkrete SI4735-2.1.8-API für FM-Bandbreite, Soft Mute, Seek und AGC gezielt prüfen. Danach die kleinste sichere DX-Auto/Manual/Reset-to-Auto-Version modular entwerfen und dem Nutzer vor dem Compile-only-Test zeigen.
