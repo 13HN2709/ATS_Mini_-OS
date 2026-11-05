@@ -91,6 +91,7 @@ void loop() {
             menuSelection = static_cast<uint8_t>(next);
           }
         } else if (radio.nextChannel(inputEvent.delta)) {
+          display.notifyTuning();
           Serial.printf("[INPUT] tune step %s -> %.1f MHz\n",
             inputEvent.delta > 0 ? "CW" : "CCW",
             radio.snapshot().frequencyKHz / 1000.0f);
