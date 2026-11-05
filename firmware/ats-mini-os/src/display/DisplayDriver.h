@@ -238,6 +238,7 @@ public:
   bool begin();
   void render(const RadioSnapshot& state, bool radioReady, bool wifiConnected, const char* lastInputEvent, uint32_t inputEventCount, StationLogoClient* logoClient = nullptr, bool menuOpen = false, uint8_t menuPage = 0, uint8_t menuSelection = 0, uint8_t volume = 25, const char* filePath = "/", FileManager::Entry* fileEntries = nullptr, uint8_t fileCount = 0, uint8_t fileSelection = 0, uint8_t fileMode = 0, uint8_t fileActionSelection = 0, const char* fileSelectedName = "", const char* fileMessage = "");
   bool isReady() const { return ready_; }
+  void notifyTuning() { tuningUntilMs_ = millis() + 700; }
   uint32_t detectedPanelId() const { return device_.getDisplayId(); }
 private:
   Device device_;
@@ -246,6 +247,7 @@ private:
   bool ready_ = false;
   uint32_t lastGeneration_ = UINT32_MAX;
   uint32_t lastDrawMs_ = 0;
+  uint32_t tuningUntilMs_ = 0;
   bool lastMenuOpen_ = false;
   uint8_t lastMenuPage_ = 0xFF;
   uint8_t lastMenuSelection_ = 0xFF;
@@ -257,7 +259,7 @@ private:
   uint32_t radioTextLastStepMs_ = 0;
   bool haveStationRow_ = false;
   bool haveRadioTextRow_ = false;
-  void draw(const RadioSnapshot& state, bool radioReady, bool wifiConnected, const char* lastInputEvent, uint32_t inputEventCount, const uint8_t* logoData, size_t logoLength, bool logoIsJpg, int16_t radioTextOffset, bool scrollRadioText);
+  void draw(const RadioSnapshot& state, bool radioReady, bool wifiConnected, const char* lastInputEvent, uint32_t inputEventCount, const uint8_t* logoData, size_t logoLength, bool logoIsJpg, int16_t radioTextOffset, bool scrollRadioText, bool frequencyBlue);
 };
 
 #endif // ATS_MINI_OS_DISPLAY_DRIVER_H
