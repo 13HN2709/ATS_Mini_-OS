@@ -252,9 +252,12 @@ private:
   uint8_t lastMenuVolume_ = 0xFF;
   char lastStationRow_[32] = {};
   char lastRadioTextRow_[65] = {};
+  int16_t radioTextOffset_ = 0;
+  uint32_t radioTextHoldStartMs_ = 0;
+  uint32_t radioTextLastStepMs_ = 0;
   bool haveStationRow_ = false;
   bool haveRadioTextRow_ = false;
-  void draw(const RadioSnapshot& state, bool radioReady, bool wifiConnected, const char* lastInputEvent, uint32_t inputEventCount, const uint8_t* logoData, size_t logoLength, bool logoIsJpg);
+  void draw(const RadioSnapshot& state, bool radioReady, bool wifiConnected, const char* lastInputEvent, uint32_t inputEventCount, const uint8_t* logoData, size_t logoLength, bool logoIsJpg, int16_t radioTextOffset, bool scrollRadioText);
 };
 
 #endif // ATS_MINI_OS_DISPLAY_DRIVER_H
