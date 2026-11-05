@@ -327,7 +327,8 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
   const bool logoLocked = logoClient && logoKey[0] &&
     logoClient->lockLogo(logoKey, logoData, logoLength, logoIsJpg);
   draw(s,radioReady,wifiConnected,lastInputEvent,inputEventCount,
-       logoLocked ? logoData : nullptr,logoLocked ? logoLength : 0,logoIsJpg,\n       radioTextOffset_, scrollRadioText);
+       logoLocked ? logoData : nullptr,logoLocked ? logoLength : 0,logoIsJpg,
+       radioTextOffset_, scrollRadioText, millis() < tuningUntilMs_);
   if (logoLocked) logoClient->unlockLogo();
 }
 
@@ -336,7 +337,8 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
 template <typename Canvas>
 void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiConnected,
                 const char* lastInputEvent,uint32_t inputEventCount,
-                const uint8_t* logoData,size_t logoLength,bool logoIsJpg,\n                int16_t radioTextOffset,bool scrollRadioText,bool frequencyBlue) {
+                const uint8_t* logoData,size_t logoLength,bool logoIsJpg,
+                int16_t radioTextOffset,bool scrollRadioText,bool frequencyBlue) {
   const int w=canvas.width();
   const int h=canvas.height();
   canvas.fillRect(7,4,116,24,BLACK);
