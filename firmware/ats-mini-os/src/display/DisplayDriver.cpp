@@ -336,7 +336,7 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
 template <typename Canvas>
 void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiConnected,
                 const char* lastInputEvent,uint32_t inputEventCount,
-                const uint8_t* logoData,size_t logoLength,bool logoIsJpg,\n                int16_t radioTextOffset,bool scrollRadioText) {
+                const uint8_t* logoData,size_t logoLength,bool logoIsJpg,\n                int16_t radioTextOffset,bool scrollRadioText,bool frequencyBlue) {
   const int w=canvas.width();
   const int h=canvas.height();
   canvas.fillRect(7,4,116,24,BLACK);
@@ -347,7 +347,7 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   snprintf(freq,sizeof(freq),"%lu.%02lu MHz",
     static_cast<unsigned long>(s.frequencyKHz/1000),
     static_cast<unsigned long>((s.frequencyKHz%1000)/10));
-  text(canvas,freq,10,7,GREEN,&lgfx::fonts::Font2);
+  text(canvas,freq,10,7,frequencyBlue?0x03FF:GREEN,&lgfx::fonts::Font2);
 
   text(canvas,"BT",204,8,CYAN,&lgfx::fonts::Font0);
   text(canvas,wifiConnected?"WiFi+":"WiFi-",226,8,wifiConnected?CYAN:0x7BEF,&lgfx::fonts::Font0);
@@ -373,11 +373,12 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   canvas.drawFastHLine(10,31,w-20,DARK_GREEN);
 
   // Display a cached station logo when one has been downloaded.
-  canvas.fillRoundRect(12,42,86,76,4,BLACK);
-  canvas.drawRoundRect(11,41,88,78,5,DARK_GREEN);
+  // Give station artwork almost the full left third of the display.
+  constexpr int logoX = 13, logoY = 39, logoW = 92, logoH = 84;
+  canvas.fillRoundRect(11,37,96,88,4,BLACK);
+  canvas.drawRoundRect(10,36,98,90,5,DARK_GREEN);
   bool logoDrawn = false;
   if (logoData && logoLength) {
-    constexpr int logoX = 13, logoY = 43, logoW = 84, logoH = 74;
     uint16_t sourceW = 0, sourceH = 0;
     if (getLogoDimensions(logoData, logoLength, sourceW, sourceH)) {
       // LovyanGFX maxWidth/maxHeight are clipping bounds, not a fit-to-box
@@ -398,29 +399,29 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
     }
   }
   if (!logoDrawn) {
-    centered(canvas,logoData ? "LOGO ERR" : "NO LOGO",55,58,0x7BEF,&lgfx::fonts::Font2);
-    centered(canvas,"FM-DX / Radio Browser",55,80,DARK_GREEN,&lgfx::fonts::Font0);
+    centered(canvas,logoData ? "LOGO ERR" : "NO LOGO",59,57,0x7BEF,&lgfx::fonts::Font2);
+    centered(canvas,"FM-DX / Radio Browser",59,81,DARK_GREEN,&lgfx::fonts::Font0);
   }
 
   const char* station=s.stationName[0]?s.stationName:(radioReady?"Warte auf PS...":"RADIO OFFLINE");
-  canvas.fillRect(105,39,w-115,27,BLACK);
-  text(canvas,station,109,44,WHITE,&lgfx::fonts::Font2);
+  canvas.fillRect(116,39,w-126,27,BLACK);
+  text(canvas,station,120,44,WHITE,&lgfx::fonts::Font2);
 
-  canvas.fillRect(105,67,w-115,51,BLACK);
-  text(canvas,"RT",109,69,YELLOW,&lgfx::fonts::Font0);
+  canvas.fillRect(116,67,w-126,51,BLACK);
+  text(canvas,"RT",120,69,YELLOW,&lgfx::fonts::Font0);
   const char* rt=s.radioText[0]?s.radioText:"Warte auf Radiotext...";
   canvas.setFont(&lgfx::fonts::Font2);
   canvas.setTextColor(WHITE,BLACK);
   // Keep the ticker strictly inside its own RT field.
-  canvas.setClipRect(105,67,w-10,51);
+  canvas.setClipRect(116,67,w-10,51);
   if (scrollRadioText) {
     char tickerText[72];
     snprintf(tickerText, sizeof(tickerText), "%s    ", s.radioText);
     const int tickerWidth = canvas.textWidth(tickerText);
-    canvas.drawString(tickerText,109 + radioTextOffset,82);
-    canvas.drawString(tickerText,109 + radioTextOffset + tickerWidth,82);
+    canvas.drawString(tickerText,120 + radioTextOffset,82);
+    canvas.drawString(tickerText,120 + radioTextOffset + tickerWidth,82);
   } else {
-    canvas.drawString(rt,109,82);
+    canvas.drawString(rt,120,82);
   }
   canvas.clearClipRect();
 
@@ -445,13 +446,13 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   canvas.fillRect(10,h-16,w-20,15,BLACK);
   text(canvas,status,11,h-13,0x7BEF,&lgfx::fonts::Font0);
 }
-void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady,bool wifiConnected,const char* lastInputEvent,uint32_t inputEventCount,const uint8_t* logoData,size_t logoLength,bool logoIsJpg,int16_t radioTextOffset,bool scrollRadioText) {
+void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady,bool wifiConnected,const char* lastInputEvent,uint32_t inputEventCount,const uint8_t* logoData,size_t logoLength,bool logoIsJpg,int16_t radioTextOffset,bool scrollRadioText,bool frequencyBlue) {
   if (useSprite_) {
     sprite_.fillSprite(BLACK);
-    drawLayout(sprite_,s,radioReady,wifiConnected,lastInputEvent,inputEventCount,logoData,logoLength,logoIsJpg,radioTextOffset,scrollRadioText);
+    drawLayout(sprite_,s,radioReady,wifiConnected,lastInputEvent,inputEventCount,logoData,logoLength,logoIsJpg,radioTextOffset,scrollRadioText,frequencyBlue);
     sprite_.pushSprite(0,0);
   } else {
     device_.fillScreen(BLACK);
-    drawLayout(device_,s,radioReady,wifiConnected,lastInputEvent,inputEventCount,logoData,logoLength,logoIsJpg,radioTextOffset,scrollRadioText);
+    drawLayout(device_,s,radioReady,wifiConnected,lastInputEvent,inputEventCount,logoData,logoLength,logoIsJpg,radioTextOffset,scrollRadioText,frequencyBlue);
   }
 }
