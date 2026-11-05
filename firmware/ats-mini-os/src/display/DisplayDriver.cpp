@@ -299,7 +299,7 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
     device_.setFont(&lgfx::fonts::Font2);
     textWidth = device_.textWidth(measuredText);
   }
-  const int textViewportWidth = device_.width() - 115;
+  const int textViewportWidth = device_.width() - 126;
   if (strcmp(lastRadioTextRow_, s.radioText) != 0) {
     strncpy(lastRadioTextRow_, s.radioText, sizeof(lastRadioTextRow_) - 1);
     lastRadioTextRow_[sizeof(lastRadioTextRow_) - 1] = '\0';
@@ -413,7 +413,7 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   canvas.setFont(&lgfx::fonts::Font2);
   canvas.setTextColor(WHITE,BLACK);
   // Keep the ticker strictly inside its own RT field.
-  canvas.setClipRect(116,67,w-10,51);
+  canvas.setClipRect(116,67,w-126,51);
   if (scrollRadioText) {
     char tickerText[72];
     snprintf(tickerText, sizeof(tickerText), "%s    ", s.radioText);
