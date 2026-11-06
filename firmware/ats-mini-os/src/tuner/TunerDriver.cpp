@@ -154,7 +154,8 @@ bool TunerDriver::tune(uint32_t frequencyKHz) {
 
 uint32_t TunerDriver::frequencyKHz() const {
   if (!ready_) return 0;
-  return static_cast<uint32_t>(const_cast<TunerSI4735&>(radio_).getCurrentFrequency()) * 10UL;
+  const uint32_t raw = static_cast<uint32_t>(const_cast<TunerSI4735&>(radio_).getCurrentFrequency());
+  return modulation_ == RadioModulation::FM ? raw * 10UL : raw;
 }
 
 void TunerDriver::refreshSignalQuality() {
