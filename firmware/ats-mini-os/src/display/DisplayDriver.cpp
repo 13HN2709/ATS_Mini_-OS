@@ -171,7 +171,8 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
     "Zurueck", "WLAN-Modus (spaeter)", "Web Control (spaeter)"
   };
   static const char* const systemItems[] = {
-    "Zurueck", "CPU-Profil (spaeter)", "Systeminfo (spaeter)", "Dateimanager"
+    "Zurueck", "CPU-Profil (spaeter)", "Systeminfo (spaeter)", "Dateimanager",
+    "UTC+01:00 * (Sommer +02:00)"
   };
   (void)layoutMode;
   const char* const* items = mainItems;
