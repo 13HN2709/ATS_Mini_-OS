@@ -8,15 +8,14 @@ public:
   bool begin(uint32_t initialFrequencyKHz = 95400);
   void update();
   bool tune(uint32_t frequencyKHz);
+  bool selectBand(uint8_t index);
+  bool nextBand(int8_t direction);
   bool setVolume(uint8_t volume);
   uint8_t volume() const { return tuner_.volume(); }
   bool nextChannel(int16_t acceleratedDelta);
   bool isReady() const { return ready_; }
   const RadioSnapshot& snapshot() const { return snapshot_; }
 private:
-  static constexpr uint32_t kMinFrequencyKHz = 87500;
-  static constexpr uint32_t kMaxFrequencyKHz = 108000;
-  static constexpr uint32_t kChannelStepKHz = 100;
   static constexpr uint32_t kRdsPollIntervalMs = 250;
   TunerDriver tuner_;
   RadioSnapshot snapshot_{};
