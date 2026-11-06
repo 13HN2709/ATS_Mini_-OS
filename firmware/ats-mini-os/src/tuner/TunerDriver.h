@@ -102,6 +102,7 @@ private:
   static constexpr uint32_t kMaxFrequencyKHz = 108000;
   TunerSI4735 radio_;
   bool ready_ = false;
+  bool ssbPatchLoaded_ = false;
   uint8_t volume_ = 25;
   bool haveTextFlag_ = false;
   uint8_t lastTextFlag_ = 0;
