@@ -116,6 +116,12 @@ bool RadioCore::setVolume(uint8_t volume) {
   return ready_ && tuner_.setVolume(volume);
 }
 
+bool RadioCore::setBandwidthChoice(uint8_t choice) {
+  if (!ready_ || !tuner_.setBandwidthChoice(choice)) return false;
+  snapshot_.generation = ++generation_;
+  return true;
+}
+
 bool RadioCore::nextChannel(int16_t acceleratedDelta) {
   if (!ready_ || acceleratedDelta == 0) return false;
   const auto& band = BandManager::current();
