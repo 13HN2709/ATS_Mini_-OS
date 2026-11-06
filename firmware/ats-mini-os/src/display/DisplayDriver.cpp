@@ -162,7 +162,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
     "Zurueck", "Lautstaerke", "Stumm (spaeter)"
   };
   static const char* const displayItems[] = {
-    "Zurueck", "Helligkeit (spaeter)", "Layout: FM"
+    "Zurueck", "Helligkeit (spaeter)"
   };
   static const char* const radioItems[] = {
     "Zurueck", "Schrittweite (spaeter)", "Bandplan (spaeter)"
@@ -173,18 +173,13 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
   static const char* const systemItems[] = {
     "Zurueck", "CPU-Profil (spaeter)", "Systeminfo (spaeter)", "Dateimanager"
   };
-  static char layoutItem[24];
-  snprintf(layoutItem, sizeof(layoutItem), "Layout: %s", layoutMode == 0 ? "FM" : "TEST");
-  static const char* displayItemsMutable[3];
-  displayItemsMutable[0] = "Zurueck";
-  displayItemsMutable[1] = "Helligkeit (spaeter)";
-  displayItemsMutable[2] = layoutItem;
+  (void)layoutMode;
   const char* const* items = mainItems;
   uint8_t count = sizeof(mainItems) / sizeof(mainItems[0]);
   const char* title = "HAUPTMENUE";
   switch (page) {
     case 1: items=volumeItems; count=sizeof(volumeItems)/sizeof(volumeItems[0]); title="AUDIO"; break;
-    case 2: items=displayItemsMutable; count=3; title="ANZEIGE"; break;
+    case 2: items=displayItems; count=sizeof(displayItems)/sizeof(displayItems[0]); title="ANZEIGE"; break;
     case 3: items=radioItems; count=sizeof(radioItems)/sizeof(radioItems[0]); title="RADIO"; break;
     case 4: items=wifiItems; count=sizeof(wifiItems)/sizeof(wifiItems[0]); title="WLAN"; break;
     case 5: items=systemItems; count=sizeof(systemItems)/sizeof(systemItems[0]); title="SYSTEM"; break;
@@ -258,17 +253,16 @@ bool DisplayDriver::begin() {
   Serial.printf("[DISPLAY] ready, panel ID=0x%06lX, size=%ldx%ld\n",
     static_cast<unsigned long>(device_.getDisplayId()),
     static_cast<long>(device_.width()),static_cast<long>(device_.height()));
-  preferences_.begin("atsmini", false);
-  layoutMode_ = preferences_.getUChar("layout3", 0) == 1 ? 1 : 0;
-  Serial.printf("[DISPLAY] saved layout: %s\n", layoutMode_ == 0 ? "FM" : "TEST");
+  layoutMode_ = 0;
+  Serial.println("[DISPLAY] active layout: FM");
   return true;
 }
 
 void DisplayDriver::setLayoutMode(uint8_t mode) {
-  layoutMode_ = mode == 1 ? 1 : 0;
-  preferences_.putUChar("layout3", layoutMode_);
+  (void)mode;
+  layoutMode_ = 0;
   lastGeneration_ = UINT32_MAX;
-  Serial.printf("[DISPLAY] layout changed: %s\n", layoutMode_ == 0 ? "FM" : "TEST");
+  Serial.println("[DISPLAY] FM is the only active layout");
 }
 
 void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConnected,
@@ -358,85 +352,73 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
                 int16_t radioTextOffset,bool scrollRadioText,bool frequencyBlue) {
   const int w=canvas.width();
   const int h=canvas.height();
-  canvas.fillRect(7,4,w-14,24,BLACK);
+  (void)lastInputEvent; (void)inputEventCount; (void)frequencyBlue;
 
-  // Compact FM header: band on the left, RDS clock slot centered,
-  // WLAN status beside the battery percentage on the right.
-  text(canvas,"FM",10,7,GREEN,&lgfx::fonts::Font2);
-  // RDS clock is added once the tuner/RDS layer exposes validated CT data.
-  text(canvas,"--:--",w/2,8,0x7BEF,&lgfx::fonts::Font0);
+  canvas.fillScreen(BLACK);
 
-  text(canvas,wifiConnected?"WLAN":"WLAN-",w-91,8,wifiConnected?CYAN:0x7BEF,&lgfx::fonts::Font0);
+  // Header: band, future RDS clock position, WLAN and estimated battery.
+  text(canvas,"FM",10,5,GREEN,&lgfx::fonts::Font2);
+  text(canvas,"--:--",w/2,7,0x7BEF,&lgfx::fonts::Font0);
+  text(canvas,wifiConnected?"WLAN":"WLAN-",w-91,7,wifiConnected?CYAN:0x7BEF,&lgfx::fonts::Font0);
 
-  // ATS-Mini-DEV battery ADC reference: GPIO4, correction factor 1.702.
-  uint32_t adcTotal = 0;
-  for (uint8_t i = 0; i < 10; ++i) adcTotal += analogRead(4);
-  const float batteryVolts = (static_cast<float>(adcTotal) / 10.0f) * 1.702f / 1000.0f;
-  const bool charging = batteryVolts > 4.3f;
-  // Approximate single-cell Li-ion state of charge from voltage; label it
-  // explicitly as an estimate until a calibrated fuel-gauge source exists.
-  int batteryPercent = static_cast<int>((batteryVolts - 3.30f) * 100.0f / (4.20f - 3.30f) + 0.5f);
-  batteryPercent = constrain(batteryPercent, 0, 100);
+  uint32_t adcTotal=0;
+  for(uint8_t i=0;i<10;++i) adcTotal+=analogRead(4);
+  const float batteryVolts=(static_cast<float>(adcTotal)/10.0f)*1.702f/1000.0f;
+  int batteryPercent=static_cast<int>((batteryVolts-3.30f)*100.0f/0.90f+0.5f);
+  batteryPercent=constrain(batteryPercent,0,100);
   char batteryText[8];
   snprintf(batteryText,sizeof(batteryText),"%d%%",batteryPercent);
-  text(canvas,batteryText,w-43,8,batteryPercent<=15?YELLOW:GREEN,&lgfx::fonts::Font0);
-  if (charging) text(canvas,"+",w-14,8,CYAN,&lgfx::fonts::Font0);
+  text(canvas,batteryText,w-43,7,batteryPercent<=15?YELLOW:GREEN,&lgfx::fonts::Font0);
+  canvas.drawFastHLine(8,25,w-16,DARK_GREEN);
 
-  canvas.drawFastHLine(10,31,w-20,DARK_GREEN);
+  // Station name is the prominent line above the artwork and frequency.
+  const char* station=s.stationName[0]?s.stationName:(radioReady?"--":"RADIO OFFLINE");
+  canvas.fillRect(8,29,w-16,22,BLACK);
+  text(canvas,station,12,30,WHITE,&lgfx::fonts::Font4);
 
-  // Display a cached station logo when one has been downloaded.
-  // Give station artwork almost the full left third of the display.
-  constexpr int logoX = 13, logoY = 39, logoW = 92, logoH = 84;
-  canvas.fillRoundRect(11,37,96,88,4,BLACK);
-  canvas.drawRoundRect(10,36,98,90,5,DARK_GREEN);
-  bool logoDrawn = false;
-  if (logoData && logoLength) {
-    uint16_t sourceW = 0, sourceH = 0;
-    if (getLogoDimensions(logoData, logoLength, sourceW, sourceH)) {
-      // LovyanGFX maxWidth/maxHeight are clipping bounds, not a fit-to-box
-      // operation. Calculate one uniform scale and center the complete logo.
-      const float scaleX = static_cast<float>(logoW) / sourceW;
-      const float scaleY = static_cast<float>(logoH) / sourceH;
-      const float scale = scaleX < scaleY ? scaleX : scaleY;
-      const int drawW = static_cast<int>(sourceW * scale + 0.5f);
-      const int drawH = static_cast<int>(sourceH * scale + 0.5f);
-      const int drawX = logoX + (logoW - drawW) / 2;
-      const int drawY = logoY + (logoH - drawH) / 2;
-      if (logoIsJpg)
-        logoDrawn = canvas.drawJpg(logoData, logoLength, drawX, drawY,
-                                   0, 0, 0, 0, scale, scale);
+  // Left-hand station logo. Source files remain at their original resolution;
+  // the renderer scales them proportionally into this display viewport.
+  constexpr int logoX=12, logoY=55, logoW=96, logoH=65;
+  canvas.fillRoundRect(logoX,logoY,logoW,logoH,6,WHITE);
+  bool logoDrawn=false;
+  if(logoData&&logoLength){
+    uint16_t sourceW=0,sourceH=0;
+    if(getLogoDimensions(logoData,logoLength,sourceW,sourceH)){
+      const float sx=static_cast<float>(logoW-8)/sourceW;
+      const float sy=static_cast<float>(logoH-8)/sourceH;
+      const float scale=sx<sy?sx:sy;
+      const int drawW=static_cast<int>(sourceW*scale+0.5f);
+      const int drawH=static_cast<int>(sourceH*scale+0.5f);
+      const int drawX=logoX+(logoW-drawW)/2;
+      const int drawY=logoY+(logoH-drawH)/2;
+      if(logoIsJpg)
+        logoDrawn=canvas.drawJpg(logoData,logoLength,drawX,drawY,0,0,0,0,scale,scale);
       else
-        logoDrawn = canvas.drawPng(logoData, logoLength, drawX, drawY,
-                                   0, 0, 0, 0, scale, scale);
+        logoDrawn=canvas.drawPng(logoData,logoLength,drawX,drawY,0,0,0,0,scale,scale);
     }
   }
-  if (!logoDrawn) {
-    centered(canvas,logoData ? "LOGO FEHLER" : "LOGO SUCHT...",59,57,0x7BEF,&lgfx::fonts::Font2);
-    centered(canvas,"PI / LittleFS",59,81,DARK_GREEN,&lgfx::fonts::Font0);
+  if(!logoDrawn){
+    centered(canvas,logoData?"LOGO FEHLER":"LOGO SUCHT...",logoX+logoW/2,logoY+20,0x7BEF,&lgfx::fonts::Font2);
+    centered(canvas,"PI / LittleFS",logoX+logoW/2,logoY+42,DARK_GREEN,&lgfx::fonts::Font0);
   }
 
-  const char* station=s.stationName[0]?s.stationName:(radioReady?"Warte auf PS...":"RADIO OFFLINE");
-  canvas.fillRect(116,39,w-126,27,BLACK);
-  text(canvas,station,120,44,WHITE,&lgfx::fonts::Font2);
+  // Large frequency readout, inspired by the supplied concept.
+  char frequency[24];
+  snprintf(frequency,sizeof(frequency),"%lu.%02lu",
+    static_cast<unsigned long>(s.frequencyKHz/1000),
+    static_cast<unsigned long>((s.frequencyKHz%1000)/10));
+  canvas.setTextColor(GREEN,BLACK);
+  canvas.setFont(&lgfx::fonts::Font4);
+  canvas.drawString(frequency,116,61);
+  text(canvas,"MHz",w-43,75,WHITE,&lgfx::fonts::Font2);
 
-  canvas.fillRect(116,67,w-126,51,BLACK);
-  const char* rt=s.radioText[0]?s.radioText:"Warte auf Radiotext...";
-  canvas.setFont(&lgfx::fonts::Font2);
-  canvas.setTextColor(WHITE,BLACK);
-  // Keep the ticker strictly inside its own RT field.
-  canvas.setClipRect(116,67,w-126,51);
-  if (scrollRadioText) {
-    char tickerText[72];
-    snprintf(tickerText, sizeof(tickerText), "%s    ", s.radioText);
-    const int tickerWidth = canvas.textWidth(tickerText);
-    canvas.drawString(tickerText,120 + radioTextOffset,82);
-    canvas.drawString(tickerText,120 + radioTextOffset + tickerWidth,82);
-  } else {
-    canvas.drawString(rt,120,82);
-  }
-  canvas.clearClipRect();
+  // Compact reception badges under the frequency.
+  const int badgeY=103;
+  canvas.drawRoundRect(113,badgeY,75,20,5,GREEN);
+  centered(canvas,s.stereo?"STEREO":"MONO",150,badgeY+3,GREEN,&lgfx::fonts::Font0);
+  canvas.drawRoundRect(193,badgeY,42,20,5,GREEN);
+  centered(canvas,s.rdsAvailable?"RDS":"--",214,badgeY+3,s.rdsAvailable?GREEN:0x7BEF,&lgfx::fonts::Font0);
 
-  // Standard RDS PTY labels (0-31), shown as readable text without a numeric prefix.
   static const char* const ptyNames[32]={
     "NONE","NEWS","CURRENT AFFAIRS","INFO","SPORT","EDUCATION","DRAMA","CULTURE",
     "SCIENCE","VARIED","POP MUSIC","ROCK MUSIC","EASY LISTENING","LIGHT CLASSICS",
@@ -444,51 +426,37 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
     "RELIGION","PHONE IN","TRAVEL","LEISURE","JAZZ","COUNTRY","NATIONAL MUSIC",
     "OLDIES","FOLK MUSIC","DOCUMENTARY","ALARM TEST","ALARM"
   };
-  canvas.drawFastHLine(10,127,w-20,DARK_GREEN);
-  canvas.fillRect(10,131,w-20,18,BLACK);
-  text(canvas,ptyNames[s.pty<32?s.pty:0],11,133,GREEN,&lgfx::fonts::Font2);
+  const char* pty=ptyNames[s.pty<32?s.pty:0];
+  canvas.drawRoundRect(240,badgeY,w-248,20,5,WHITE);
+  canvas.setFont(&lgfx::fonts::Font0);
+  canvas.setTextColor(WHITE,BLACK);
+  canvas.drawCenterString(pty,240+(w-248)/2,badgeY+3);
 
-  // Small diagnostic footer retained during alpha testing.
-  char status[48];
-  snprintf(status,sizeof(status),"%s  PI:%04X  %s",
-    s.stereo?"ST":"MO",static_cast<unsigned>(s.piCode),
-    s.rdsAvailable?"RDS":"NO RDS");
-  canvas.fillRect(10,h-16,w-20,15,BLACK);
-  text(canvas,status,11,h-13,0x7BEF,&lgfx::fonts::Font0);
+  // Bottom RT ticker in its own neon-green rounded frame.
+  constexpr int rtX=8,rtY=130,rtW=304,rtH=32;
+  canvas.drawRoundRect(rtX,rtY,rtW,rtH,7,GREEN);
+  const char* rt=s.radioText[0]?s.radioText:"Warte auf Radiotext...";
+  canvas.setFont(&lgfx::fonts::Font2);
+  canvas.setTextColor(WHITE,BLACK);
+  canvas.setClipRect(rtX+10,rtY+3,rtW-20,rtH-6);
+  if(scrollRadioText){
+    char ticker[72];
+    snprintf(ticker,sizeof(ticker),"%s    ",s.radioText);
+    const int tickerWidth=canvas.textWidth(ticker);
+    canvas.drawString(ticker,rtX+14+radioTextOffset,rtY+8);
+    canvas.drawString(ticker,rtX+14+radioTextOffset+tickerWidth,rtY+8);
+  } else {
+    canvas.drawString(rt,rtX+14,rtY+8);
+  }
+  canvas.clearClipRect();
 }
-template <typename Canvas>
-void drawTestLayout(Canvas& canvas, const RadioSnapshot& s, bool radioReady, bool wifiConnected) {
-  const int w = canvas.width();
-  const int h = canvas.height();
-  canvas.fillScreen(BLACK);
-  text(canvas, "ATS MINI OS - TEST", 8, 5, CYAN, &lgfx::fonts::Font2);
-  canvas.drawFastHLine(8, 27, w - 16, DARK_GREEN);
-  char value[40];
-  snprintf(value, sizeof(value), "%lu.%02lu MHz",
-    static_cast<unsigned long>(s.frequencyKHz / 1000),
-    static_cast<unsigned long>((s.frequencyKHz % 1000) / 10));
-  centered(canvas, value, w / 2, 36, YELLOW, &lgfx::fonts::Font4);
-  snprintf(value, sizeof(value), "RSSI %d dBuV  SNR %d dB", s.rssi, s.snr);
-  text(canvas, value, 8, 78, GREEN, &lgfx::fonts::Font2);
-  snprintf(value, sizeof(value), "PI: %04X  PTY: %u", static_cast<unsigned>(s.piCode), static_cast<unsigned>(s.pty));
-  text(canvas, value, 8, 101, CYAN, &lgfx::fonts::Font2);
-  text(canvas, "PS:", 8, 126, YELLOW, &lgfx::fonts::Font0);
-  text(canvas, s.stationName[0] ? s.stationName : "--", 35, 122, WHITE, &lgfx::fonts::Font2);
-  text(canvas, "RT:", 8, 146, YELLOW, &lgfx::fonts::Font0);
-  text(canvas, s.radioText[0] ? s.radioText : "Kein Radiotext", 35, 142, WHITE, &lgfx::fonts::Font2);
-  if (!radioReady) centered(canvas, "RADIO OFFLINE", w / 2, h - 15, 0xF800, &lgfx::fonts::Font0);
-  else text(canvas, wifiConnected ? "WLAN+" : "WLAN-", w - 42, h - 13, 0x7BEF, &lgfx::fonts::Font0);
-}
-
 void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady,bool wifiConnected,const char* lastInputEvent,uint32_t inputEventCount,const uint8_t* logoData,size_t logoLength,bool logoIsJpg,int16_t radioTextOffset,bool scrollRadioText,bool frequencyBlue) {
   if (useSprite_) {
     sprite_.fillSprite(BLACK);
-    if (layoutMode_ == 0) drawLayout(sprite_,s,radioReady,wifiConnected,lastInputEvent,inputEventCount,logoData,logoLength,logoIsJpg,radioTextOffset,scrollRadioText,frequencyBlue);
-    else drawTestLayout(sprite_,s,radioReady,wifiConnected);
+    drawLayout(sprite_,s,radioReady,wifiConnected,lastInputEvent,inputEventCount,logoData,logoLength,logoIsJpg,radioTextOffset,scrollRadioText,frequencyBlue);
     sprite_.pushSprite(0,0);
   } else {
     device_.fillScreen(BLACK);
-    if (layoutMode_ == 0) drawLayout(device_,s,radioReady,wifiConnected,lastInputEvent,inputEventCount,logoData,logoLength,logoIsJpg,radioTextOffset,scrollRadioText,frequencyBlue);
-    else drawTestLayout(device_,s,radioReady,wifiConnected);
+    drawLayout(device_,s,radioReady,wifiConnected,lastInputEvent,inputEventCount,logoData,logoLength,logoIsJpg,radioTextOffset,scrollRadioText,frequencyBlue);
   }
 }
