@@ -1,4 +1,5 @@
 #include "DisplayDriver.h"
+#include "DisplayLayoutAM.h"
 #include <LittleFS.h>
 
 namespace {
@@ -482,6 +483,19 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   canvas.clearClipRect();
 }
 void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady,bool wifiConnected,const char* lastInputEvent,uint32_t inputEventCount,const uint8_t* logoData,size_t logoLength,bool logoIsJpg,bool logoSearching,int16_t radioTextOffset,bool scrollRadioText,bool frequencyBlue) {
+  // Keep the tested FM logo/RDS screen unchanged; AM-family bands use their
+  // own TEF-inspired layout module.
+  if (s.modulation != RadioModulation::FM) {
+    if (useSprite_) {
+      sprite_.fillSprite(BLACK);
+      drawAmBandLayout(sprite_, s, radioReady, wifiConnected);
+      sprite_.pushSprite(0, 0);
+    } else {
+      device_.fillScreen(BLACK);
+      drawAmBandLayout(device_, s, radioReady, wifiConnected);
+    }
+    return;
+  }
   if (useSprite_) {
     sprite_.fillSprite(BLACK);
     drawLayout(sprite_,s,radioReady,wifiConnected,lastInputEvent,inputEventCount,logoData,logoLength,logoIsJpg,logoSearching,radioTextOffset,scrollRadioText,frequencyBlue);
