@@ -19,7 +19,7 @@ struct RadioBandDefinition {
 
 class BandManager {
 public:
-  static constexpr uint8_t count();
+  static uint8_t count();
   static const RadioBandDefinition& at(uint8_t index);
   static uint8_t currentIndex();
   static const RadioBandDefinition& current();
