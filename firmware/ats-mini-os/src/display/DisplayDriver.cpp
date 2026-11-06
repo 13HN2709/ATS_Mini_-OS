@@ -234,8 +234,10 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
 
   canvas.drawFastHLine(8,h-23,w-16,WHITE);
   canvas.setTextColor(WHITE,BLACK);
-  canvas.setFont(&lgfx::fonts::FreeSans9pt7b);
+  canvas.setFont(&lgfx::fonts::FreeSansBold9pt7b);
   canvas.drawString(page==1?"Drehen: Lautstaerke":"Drehen: Auswahl",10,h-19);
+}
+
 }
 
 bool DisplayDriver::begin() {
