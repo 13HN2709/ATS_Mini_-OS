@@ -115,6 +115,9 @@ void loop() {
             menuSelection = 0;
             Serial.printf("[MENU] opened submenu %u\n", static_cast<unsigned>(menuPage));
           }
+        } else if (menuPage == 2 && menuSelection == 2) {
+          display.setLayoutMode(display.layoutMode() == 0 ? 1 : 0);
+          Serial.println("[MENU] display layout toggled");
         } else if (menuSelection == 0) {
           menuPage = 0;
           menuSelection = 0;
