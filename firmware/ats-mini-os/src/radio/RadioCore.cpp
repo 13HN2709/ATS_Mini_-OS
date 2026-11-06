@@ -53,7 +53,12 @@ void RadioCore::update() {
         snapshot_.rdsClockValid = true;
       }
       if (rds.stationNameUpdated) copyField(snapshot_.stationName, sizeof(snapshot_.stationName), rds.stationName);
-      if (rds.radioTextUpdated) copyField(snapshot_.radioText, sizeof(snapshot_.radioText), rds.radioText);
+      // The RDS A/B flag clears the tuner's assembly buffer. Keep the last
+      // visible text while the next message is being rebuilt, rather than
+      // publishing an empty intermediate buffer and blanking the RT field.
+      // A station change still clears the snapshot in tune().
+      if (rds.radioTextUpdated && rds.radioText[0] != '\0')
+        copyField(snapshot_.radioText, sizeof(snapshot_.radioText), rds.radioText);
       snapshot_.rdsAvailable = true;
     }
   }
