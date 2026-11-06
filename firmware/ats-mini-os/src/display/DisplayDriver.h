@@ -2,6 +2,7 @@
 #define ATS_MINI_OS_DISPLAY_DRIVER_H
 
 #include <LittleFS.h>
+#include <Preferences.h>
 #include <LovyanGFX.hpp>
 #include <Arduino.h>
 #include "../radio/RadioSnapshot.h"
@@ -238,10 +239,14 @@ public:
   bool begin();
   void render(const RadioSnapshot& state, bool radioReady, bool wifiConnected, const char* lastInputEvent, uint32_t inputEventCount, StationLogoClient* logoClient = nullptr, bool menuOpen = false, uint8_t menuPage = 0, uint8_t menuSelection = 0, uint8_t volume = 25, const char* filePath = "/", FileManager::Entry* fileEntries = nullptr, uint8_t fileCount = 0, uint8_t fileSelection = 0, uint8_t fileMode = 0, uint8_t fileActionSelection = 0, const char* fileSelectedName = "", const char* fileMessage = "");
   bool isReady() const { return ready_; }
+  uint8_t layoutMode() const { return layoutMode_; }
+  void setLayoutMode(uint8_t mode);
   void notifyTuning() { tuningUntilMs_ = millis() + 700; }
   uint32_t detectedPanelId() const { return device_.getDisplayId(); }
 private:
   Device device_;
+  Preferences preferences_;
+  uint8_t layoutMode_ = 0; // 0 = FM main layout, 1 = diagnostic/test layout
   lgfx::LGFX_Sprite sprite_{&device_};
   bool useSprite_ = false;
   bool ready_ = false;
@@ -252,6 +257,7 @@ private:
   uint8_t lastMenuPage_ = 0xFF;
   uint8_t lastMenuSelection_ = 0xFF;
   uint8_t lastMenuVolume_ = 0xFF;
+  uint8_t lastMenuLayout_ = 0xFF;
   char lastStationRow_[32] = {};
   char lastRadioTextRow_[65] = {};
   int16_t radioTextOffset_ = 0;
