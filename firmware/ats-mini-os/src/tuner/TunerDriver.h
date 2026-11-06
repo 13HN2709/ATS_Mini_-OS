@@ -87,6 +87,9 @@ public:
   bool tune(uint32_t frequencyKHz, const RadioBandDefinition& band);
   RadioModulation modulation() const { return modulation_; }
   bool setVolume(uint8_t volume);
+  bool setBandwidthChoice(uint8_t choice);
+  uint8_t bandwidthChoice() const { return bandwidthChoice_; }
+  uint8_t bandwidthChoiceCount() const;
   uint8_t volume() const { return volume_; }
   uint32_t frequencyKHz() const;
   void refreshSignalQuality();
@@ -104,6 +107,7 @@ private:
   bool ready_ = false;
   bool ssbPatchLoaded_ = false;
   uint8_t volume_ = 25;
+  uint8_t bandwidthChoice_ = 0;
   bool haveTextFlag_ = false;
   uint8_t lastTextFlag_ = 0;
   RadioModulation modulation_ = RadioModulation::FM;
