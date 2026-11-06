@@ -338,8 +338,9 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
   }
   const bool logoLocked = logoClient && logoKey[0] &&
     logoClient->lockLogo(logoKey, logoData, logoLength, logoIsJpg);
+  const bool logoSearching = !logoLocked && logoClient && logoClient->isLookupPending(logoKey);
   draw(s,radioReady,wifiConnected,lastInputEvent,inputEventCount,
-       logoLocked ? logoData : nullptr,logoLocked ? logoLength : 0,logoIsJpg,
+       logoLocked ? logoData : nullptr,logoLocked ? logoLength : 0,logoIsJpg,logoSearching,
        radioTextOffset_, scrollRadioText, millis() < tuningUntilMs_);
   if (logoLocked) logoClient->unlockLogo();
 }
@@ -349,7 +350,7 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
 template <typename Canvas>
 void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiConnected,
                 const char* lastInputEvent,uint32_t inputEventCount,
-                const uint8_t* logoData,size_t logoLength,bool logoIsJpg,
+                const uint8_t* logoData,size_t logoLength,bool logoIsJpg,bool logoSearching,
                 int16_t radioTextOffset,bool scrollRadioText,bool frequencyBlue) {
   const int w=canvas.width();
   const int h=canvas.height();
@@ -383,7 +384,7 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   // with the first frequency digit.
   const char* station=s.stationName[0]?s.stationName:(radioReady?"--":"RADIO OFFLINE");
   canvas.fillRect(124,29,w-132,22,BLACK);
-  text(canvas,station,124,30,WHITE,&lgfx::fonts::Font4);
+  text(canvas,station,124,30,WHITE,&lgfx::fonts::FreeSansBold9pt7b);
 
   // Left-hand station logo. Source files remain at their original resolution;
   // the renderer scales them proportionally into this display viewport.
@@ -407,27 +408,31 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
     }
   }
   if(!logoDrawn){
-    centered(canvas,logoData?"LOGO FEHLER":"LOGO SUCHT...",logoX+logoW/2,logoY+43,0x7BEF,&lgfx::fonts::Font2);
-    centered(canvas,"PI / LittleFS",logoX+logoW/2,logoY+65,DARK_GREEN,&lgfx::fonts::Font0);
+    canvas.fillRoundRect(logoX,logoY,logoW,logoH,6,BLACK);
+    canvas.drawRoundRect(logoX,logoY,logoW,logoH,6,0x7BEF);
+    if (logoSearching) {
+      centered(canvas,"SEARCHING",logoX+logoW/2,logoY+39,WHITE,&lgfx::fonts::FreeSansBold9pt7b);
+      centered(canvas,"LOGO...",logoX+logoW/2,logoY+59,WHITE,&lgfx::fonts::FreeSansBold9pt7b);
+    } else {
+      centered(canvas,logoData?"LOGO ERROR":"NO LOGO",logoX+logoW/2,logoY+47,WHITE,&lgfx::fonts::FreeSansBold9pt7b);
+    }
   }
 
-  // Large frequency readout, inspired by the supplied concept.
+  // ATS Mini DEV TEF layout 7-segment Font7, scaled to fit the FM panel.
   char frequency[24];
   snprintf(frequency,sizeof(frequency),"%lu.%02lu",
     static_cast<unsigned long>(s.frequencyKHz/1000),
     static_cast<unsigned long>((s.frequencyKHz%1000)/10));
   canvas.setTextColor(frequencyBlue?0x249F:GREEN,BLACK);
-  canvas.setFont(&lgfx::fonts::Font4);
-  canvas.setTextSize(2.0f);
-  canvas.drawString(frequency,124,48);
+  canvas.setFont(&lgfx::fonts::Font7);
+  canvas.setTextSize(0.78f);
+  canvas.drawString(frequency,124,55);
   canvas.setTextSize(1.0f);
 
-  // Larger unit label, anchored to the right display edge.
+  // Match the TEF layout clear FreeSans Bold MHz label.
   canvas.setTextColor(WHITE,BLACK);
-  canvas.setFont(&lgfx::fonts::Font2);
-  canvas.setTextSize(1.6f);
-  canvas.drawRightString("MHz",w-8,78);
-  canvas.setTextSize(1.0f);
+  canvas.setFont(&lgfx::fonts::FreeSansBold9pt7b);
+  canvas.drawRightString("MHz",w-8,84);
 
   // Stereo and PTY share the full row; the redundant RDS badge is removed.
   const int badgeY=103;
@@ -465,13 +470,13 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   }
   canvas.clearClipRect();
 }
-void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady,bool wifiConnected,const char* lastInputEvent,uint32_t inputEventCount,const uint8_t* logoData,size_t logoLength,bool logoIsJpg,int16_t radioTextOffset,bool scrollRadioText,bool frequencyBlue) {
+void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady,bool wifiConnected,const char* lastInputEvent,uint32_t inputEventCount,const uint8_t* logoData,size_t logoLength,bool logoIsJpg,bool logoSearching,int16_t radioTextOffset,bool scrollRadioText,bool frequencyBlue) {
   if (useSprite_) {
     sprite_.fillSprite(BLACK);
-    drawLayout(sprite_,s,radioReady,wifiConnected,lastInputEvent,inputEventCount,logoData,logoLength,logoIsJpg,radioTextOffset,scrollRadioText,frequencyBlue);
+    drawLayout(sprite_,s,radioReady,wifiConnected,lastInputEvent,inputEventCount,logoData,logoLength,logoIsJpg,logoSearching,radioTextOffset,scrollRadioText,frequencyBlue);
     sprite_.pushSprite(0,0);
   } else {
     device_.fillScreen(BLACK);
-    drawLayout(device_,s,radioReady,wifiConnected,lastInputEvent,inputEventCount,logoData,logoLength,logoIsJpg,radioTextOffset,scrollRadioText,frequencyBlue);
+    drawLayout(device_,s,radioReady,wifiConnected,lastInputEvent,inputEventCount,logoData,logoLength,logoIsJpg,logoSearching,radioTextOffset,scrollRadioText,frequencyBlue);
   }
 }
