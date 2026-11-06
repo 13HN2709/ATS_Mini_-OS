@@ -26,4 +26,6 @@ public:
   static bool select(uint8_t index);
   static bool next(int8_t direction);
   static bool contains(uint8_t index, uint32_t frequencyKHz);
+  static uint16_t currentStepKHz();
+  static bool setCurrentStepKHz(uint16_t stepKHz);
 };
