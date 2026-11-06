@@ -1,5 +1,6 @@
 #include "DisplayDriver.h"
 #include "DisplayLayoutAM.h"
+#include "../radio/BandManager.h"
 #include <LittleFS.h>
 
 namespace {
@@ -166,7 +167,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
     "Zurueck", "Helligkeit (spaeter)"
   };
   static const char* const radioItems[] = {
-    "Zurueck", "Band wechseln", "Bandbreite", "Schrittweite (spaeter)", "Bandplan (spaeter)"
+    "Zurueck", "Band waehlen", "Bandbreite", "Schrittweite (spaeter)", "Bandplan (spaeter)"
   };
   static const char* const fmBandwidthItems[] = { "Zurueck", "Auto", "110 kHz", "84 kHz", "60 kHz", "40 kHz" };
   static const char* const amBandwidthItems[] = { "Zurueck", "1.0 kHz", "1.8 kHz", "2.0 kHz", "2.5 kHz", "3.0 kHz", "4.0 kHz", "6.0 kHz" };
@@ -219,7 +220,32 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
 
     canvas.setTextColor(WHITE, BLACK);
     canvas.setFont(&lgfx::fonts::FreeSansBold9pt7b);
-    canvas.drawString(items[index], 16, y+13);
+    if (page == 8) {
+      if (index == 0) {
+        canvas.drawString("Zurueck", 16, y+13);
+      } else {
+        const RadioBandDefinition& band = BandManager::at(static_cast<uint8_t>(index-1));
+        char bandLabel[40];
+        if (band.type == RadioBandType::FM) {
+          snprintf(bandLabel, sizeof(bandLabel), "%s  %lu-%lu MHz", band.name,
+            static_cast<unsigned long>(band.minimumKHz/1000UL),
+            static_cast<unsigned long>(band.maximumKHz/1000UL));
+        } else {
+          snprintf(bandLabel, sizeof(bandLabel), "%s  %lu-%lu kHz", band.name,
+            static_cast<unsigned long>(band.minimumKHz),
+            static_cast<unsigned long>(band.maximumKHz));
+        }
+        if (index-1 == BandManager::currentIndex()) {
+          char currentLabel[44];
+          snprintf(currentLabel, sizeof(currentLabel), "* %s", bandLabel);
+          canvas.drawString(currentLabel, 16, y+13);
+        } else {
+          canvas.drawString(bandLabel, 16, y+13);
+        }
+      }
+    } else {
+      canvas.drawString(items[index], 16, y+13);
+    }
 
     if (page==1 && index==1) {
       char value[12];
