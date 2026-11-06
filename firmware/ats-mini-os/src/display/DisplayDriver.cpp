@@ -353,7 +353,7 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
                 int16_t radioTextOffset,bool scrollRadioText,bool frequencyBlue) {
   const int w=canvas.width();
   const int h=canvas.height();
-  (void)lastInputEvent; (void)inputEventCount; (void)frequencyBlue;
+  (void)lastInputEvent; (void)inputEventCount;
 
   canvas.fillScreen(BLACK);
 
@@ -416,7 +416,7 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   snprintf(frequency,sizeof(frequency),"%lu.%02lu",
     static_cast<unsigned long>(s.frequencyKHz/1000),
     static_cast<unsigned long>((s.frequencyKHz%1000)/10));
-  canvas.setTextColor(GREEN,BLACK);
+  canvas.setTextColor(frequencyBlue?0x249F:GREEN,BLACK);
   canvas.setFont(&lgfx::fonts::Font4);
   canvas.setTextSize(2.0f);
   canvas.drawString(frequency,124,48);
