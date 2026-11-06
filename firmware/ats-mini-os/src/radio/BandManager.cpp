@@ -1,39 +1,39 @@
 #include "BandManager.h"
 
 namespace {
-// Values follow ATS Mini DEV Menu_german.cpp.src (band table).
-// MW1 deliberately starts at 100 kHz as requested; ALL remains the full
-// 100 kHz–30 MHz coverage band. LW is presented as its own selectable range.
+// ATS Mini DEV band presets, converted to kHz. Broad overlapping broadcast
+// presets are omitted; the narrower selectable presets are retained.
+// LW is kept as an additional dedicated longwave range.
 constexpr RadioBandDefinition kBands[] = {
-  {"VHF",   RadioBandType::FM,  RadioModulation::FM,  87500, 108000,  95400, 100, 0},
-  {"ALL",   RadioBandType::ALL, RadioModulation::AM,    100,  30000,  15000,   1, 4},
-  {"LW",    RadioBandType::LW,  RadioModulation::AM,    100,    495,    100,   1, 4},
-  {"MW1",   RadioBandType::MW,  RadioModulation::AM,    100,   1800,    100,  10, 4},
-  {"MW2",   RadioBandType::MW,  RadioModulation::AM,    495,   1701,    783,   9, 4},
-  {"MW3",   RadioBandType::MW,  RadioModulation::AM,   1700,   3500,   2500,   1, 4},
-  {"160M",  RadioBandType::MW,  RadioModulation::LSB,  1800,   2000,   1900,   5, 4},
-  {"90M",   RadioBandType::SW,  RadioModulation::AM,   3000,   3500,   3300,   1, 4},
-  {"75M",   RadioBandType::SW,  RadioModulation::AM,   3500,   4000,   3950,   1, 4},
-  {"80M",   RadioBandType::SW,  RadioModulation::LSB,  3500,   4000,   3800,   5, 4},
-  {"60M",   RadioBandType::SW,  RadioModulation::AM,   4000,   5100,   4950,   1, 4},
-  {"49M",   RadioBandType::SW,  RadioModulation::AM,   5000,   7000,   6000,   1, 4},
-  {"41M",   RadioBandType::SW,  RadioModulation::AM,   7000,   9000,   7300,   1, 4},
-  {"40M",   RadioBandType::SW,  RadioModulation::LSB,  7000,   7300,   7150,   5, 4},
-  {"31M",   RadioBandType::SW,  RadioModulation::AM,   9000,  11000,   9650,   1, 4},
-  {"30M",   RadioBandType::SW,  RadioModulation::LSB, 10000,  10200,  10125,   5, 4},
-  {"25M",   RadioBandType::SW,  RadioModulation::AM,  11000,  13000,  11850,   1, 4},
-  {"22M",   RadioBandType::SW,  RadioModulation::AM,  13500,  13900,  13650,   1, 4},
-  {"20M",   RadioBandType::SW,  RadioModulation::USB, 14000,  14400,  14100,   5, 4},
-  {"19M",   RadioBandType::SW,  RadioModulation::AM,  15100,  15900,  15450,   1, 4},
-  {"16M",   RadioBandType::SW,  RadioModulation::AM,  17400,  18100,  17650,   1, 4},
-  {"17M",   RadioBandType::SW,  RadioModulation::USB, 18000,  18200,  18115,   5, 4},
-  {"15M",   RadioBandType::SW,  RadioModulation::AM,  18900,  19100,  18950,   1, 4},
-  {"15M",   RadioBandType::SW,  RadioModulation::USB, 21000,  21500,  21225,   5, 4},
-  {"13M",   RadioBandType::SW,  RadioModulation::AM,  21500,  21900,  21650,   1, 4},
-  {"12M",   RadioBandType::SW,  RadioModulation::USB, 24800,  25000,  24940,   5, 4},
-  {"CB",    RadioBandType::SW,  RadioModulation::AM,  25000,  28000,  27135,   1, 4},
-  {"11M",   RadioBandType::SW,  RadioModulation::AM,  25600,  26100,  25850,   1, 4},
-  {"10M",   RadioBandType::SW,  RadioModulation::USB, 28000,  29700,  28500,   5, 4},
+  {"VHF",  RadioBandType::FM,  RadioModulation::FM,  64000, 108000,  95400, 100, 0},
+  {"ALL",  RadioBandType::ALL, RadioModulation::AM,    100,  30000,  15000,   1, 4},
+  {"LW",   RadioBandType::LW,  RadioModulation::AM,    100,    495,    100,   1, 4},
+  {"MW1",  RadioBandType::MW,  RadioModulation::AM,    100,   1800,    810,  10, 4},
+  {"MW2",  RadioBandType::MW,  RadioModulation::AM,    495,   1701,    783,   9, 4},
+  {"MW3",  RadioBandType::MW,  RadioModulation::AM,   1700,   3500,   2500,   1, 4},
+  {"160M", RadioBandType::MW,  RadioModulation::LSB,  1800,   2000,   1900,   5, 4},
+  {"90M",  RadioBandType::SW,  RadioModulation::AM,   3200,   3400,   3300,   1, 4},
+  {"80M",  RadioBandType::SW,  RadioModulation::LSB,  3500,   4000,   3800,   5, 4},
+  {"75M",  RadioBandType::SW,  RadioModulation::AM,   3900,   4000,   3950,   1, 4},
+  {"60M",  RadioBandType::SW,  RadioModulation::AM,   4700,   5100,   4950,   1, 4},
+  {"49M",  RadioBandType::SW,  RadioModulation::AM,   5900,   6200,   6000,   1, 4},
+  {"40M",  RadioBandType::SW,  RadioModulation::LSB,  7000,   7300,   7150,   5, 4},
+  {"41M",  RadioBandType::SW,  RadioModulation::AM,   7200,   7500,   7300,   1, 4},
+  {"31M",  RadioBandType::SW,  RadioModulation::AM,   9400,   9900,   9650,   1, 4},
+  {"30M",  RadioBandType::SW,  RadioModulation::LSB, 10000,  10200,  10125,   5, 4},
+  {"25M",  RadioBandType::SW,  RadioModulation::AM,  11600,  12100,  11850,   1, 4},
+  {"22M",  RadioBandType::SW,  RadioModulation::AM,  13500,  13900,  13650,   1, 4},
+  {"20M",  RadioBandType::SW,  RadioModulation::USB, 14000,  14400,  14100,   5, 4},
+  {"19M",  RadioBandType::SW,  RadioModulation::AM,  15100,  15900,  15450,   1, 4},
+  {"16M",  RadioBandType::SW,  RadioModulation::AM,  17400,  18100,  17650,   1, 4},
+  {"17M",  RadioBandType::SW,  RadioModulation::USB, 18000,  18200,  18115,   5, 4},
+  {"15M",  RadioBandType::SW,  RadioModulation::AM,  18900,  19100,  18950,   1, 4},
+  {"15M",  RadioBandType::SW,  RadioModulation::USB, 21000,  21500,  21225,   5, 4},
+  {"13M",  RadioBandType::SW,  RadioModulation::AM,  21500,  21900,  21650,   1, 4},
+  {"12M",  RadioBandType::SW,  RadioModulation::USB, 24800,  25000,  24940,   5, 4},
+  {"CB",   RadioBandType::SW,  RadioModulation::AM,  25000,  28000,  27135,   1, 4},
+  {"11M",  RadioBandType::SW,  RadioModulation::AM,  25600,  26100,  25850,   1, 4},
+  {"10M",  RadioBandType::SW,  RadioModulation::USB, 28000,  29700,  28500,   5, 4},
 };
 uint8_t gCurrentBand = 0;
 }
