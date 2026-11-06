@@ -418,8 +418,16 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
     static_cast<unsigned long>((s.frequencyKHz%1000)/10));
   canvas.setTextColor(GREEN,BLACK);
   canvas.setFont(&lgfx::fonts::Font4);
-  canvas.drawString(frequency,124,58);
-  text(canvas,"MHz",w-43,75,WHITE,&lgfx::fonts::Font2);
+  canvas.setTextSize(2.0f);
+  canvas.drawString(frequency,124,48);
+  canvas.setTextSize(1.0f);
+
+  // Larger unit label, anchored to the right display edge.
+  canvas.setTextColor(WHITE,BLACK);
+  canvas.setFont(&lgfx::fonts::Font2);
+  canvas.setTextSize(1.6f);
+  canvas.drawRightString("MHz",w-8,78);
+  canvas.setTextSize(1.0f);
 
   // Stereo and PTY share the full row; the redundant RDS badge is removed.
   const int badgeY=103;
