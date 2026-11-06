@@ -359,7 +359,7 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   canvas.fillScreen(BLACK);
 
   // Header: band, future RDS clock position, WLAN and estimated battery.
-  text(canvas,"FM",10,5,GREEN,&lgfx::fonts::Font2);
+  text(canvas,s.bandName,10,5,GREEN,&lgfx::fonts::Font2);
   // Show only a valid RDS CT clock; otherwise keep the center completely blank.
   if (s.rdsClockValid) {
     char clockText[6];
@@ -424,24 +424,29 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
 
   // ATS Mini DEV TEF layout 7-segment Font7, scaled to fit the FM panel.
   char frequency[24];
-  snprintf(frequency,sizeof(frequency),"%lu.%02lu",
-    static_cast<unsigned long>(s.frequencyKHz/1000),
-    static_cast<unsigned long>((s.frequencyKHz%1000)/10));
+  const bool isFm = s.modulation == RadioModulation::FM;
+  if (isFm) {
+    snprintf(frequency,sizeof(frequency),"%lu.%02lu",
+      static_cast<unsigned long>(s.frequencyKHz/1000),
+      static_cast<unsigned long>((s.frequencyKHz%1000)/10));
+  } else {
+    snprintf(frequency,sizeof(frequency),"%lu",static_cast<unsigned long>(s.frequencyKHz));
+  }
   canvas.setTextColor(frequencyBlue?0x249F:GREEN,BLACK);
   canvas.setFont(&lgfx::fonts::Font7);
-  canvas.setTextSize(0.78f);
+  canvas.setTextSize(isFm ? 0.78f : 0.68f);
   canvas.drawString(frequency,frequencyX,55);
   canvas.setTextSize(1.0f);
 
-  // Match the TEF layout clear FreeSans Bold MHz label.
+  // FM uses MHz; LW/MW/SW/ALL use kHz like the ATS Mini DEV receiver.
   canvas.setTextColor(WHITE,BLACK);
   canvas.setFont(&lgfx::fonts::FreeSansBold9pt7b);
-  canvas.drawRightString("MHz",w-8,84);
+  canvas.drawRightString(isFm ? "MHz" : "kHz",w-8,84);
 
   // Stereo and PTY share the full row; the redundant RDS badge is removed.
   const int badgeY=103;
   canvas.drawRoundRect(124,badgeY,78,20,5,GREEN);
-  centered(canvas,s.stereo?"STEREO":"MONO",163,badgeY+6,GREEN,&lgfx::fonts::Font0);
+  centered(canvas,isFm?(s.stereo?"STEREO":"MONO"):(s.modulation==RadioModulation::AM?"AM":(s.modulation==RadioModulation::USB?"USB":"LSB")),163,badgeY+6,GREEN,&lgfx::fonts::Font0);
 
   static const char* const ptyNames[32]={
     "NONE","NEWS","CURRENT AFFAIRS","INFO","SPORT","EDUCATION","DRAMA","CULTURE",
