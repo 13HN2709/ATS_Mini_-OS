@@ -101,7 +101,7 @@ public:
 private:
   static constexpr uint8_t kRadioLdoPin = 15;
   static constexpr uint8_t kRadioResetPin = 16;
-  static constexpr uint32_t kMinFrequencyKHz = 87500;
+  static constexpr uint32_t kMinFrequencyKHz = 64000;
   static constexpr uint32_t kMaxFrequencyKHz = 108000;
   TunerSI4735 radio_;
   bool ready_ = false;
