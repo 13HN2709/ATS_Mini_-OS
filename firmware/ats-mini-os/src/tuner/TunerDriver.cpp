@@ -81,6 +81,8 @@ bool TunerDriver::begin(uint32_t initialFrequencyKHz) {
   maximumFrequencyKHz_ = 108000;
   stepKHz_ = 100;
   modulation_ = RadioModulation::FM;
+  bandwidthChoice_ = 0;
+  radio_.setFmBandwidth(0);
   ready_ = true;
   return true;
 }
@@ -89,6 +91,32 @@ bool TunerDriver::setVolume(uint8_t volume) {
   if (!ready_) return false;
   volume_ = static_cast<uint8_t>(constrain(volume, 0, 63));
   radio_.setVolume(volume_);
+  return true;
+}
+
+uint8_t TunerDriver::bandwidthChoiceCount() const {
+  if (modulation_ == RadioModulation::FM) return 5;
+  if (modulation_ == RadioModulation::AM) return 7;
+  return 6;
+}
+
+bool TunerDriver::setBandwidthChoice(uint8_t choice) {
+  if (!ready_ || choice >= bandwidthChoiceCount()) return false;
+  static const uint8_t amProperties[] = {4, 5, 3, 6, 2, 1, 0};
+  static const uint8_t ssbProperties[] = {4, 5, 0, 1, 2, 3};
+  bandwidthChoice_ = choice;
+  if (modulation_ == RadioModulation::FM) {
+    radio_.setFmBandwidth(choice); // Auto, 110, 84, 60, 40 kHz
+  } else if (modulation_ == RadioModulation::AM) {
+    radio_.setBandwidth(amProperties[choice], 1);
+  } else {
+    const uint8_t property = ssbProperties[choice];
+    radio_.setSSBAudioBandwidth(property);
+    radio_.setSSBSidebandCutoffFilter(property == 0 || property == 4 || property == 5 ? 0 : 1);
+    radio_.setSSBConfig(property, 1, 0, 1, 0, 1);
+  }
+  Serial.printf("[TUNER] bandwidth choice=%u mode=%u\n",
+                static_cast<unsigned>(choice), static_cast<unsigned>(modulation_));
   return true;
 }
 
@@ -102,6 +130,7 @@ bool TunerDriver::setBand(const RadioBandDefinition& band) {
   haveTextFlag_ = false;
 
   if (band.modulation == RadioModulation::FM) {
+    bandwidthChoice_ = 0;
     ssbPatchLoaded_ = false;
     radio_.setFM(static_cast<uint16_t>(band.minimumKHz / 10UL),
                  static_cast<uint16_t>(band.maximumKHz / 10UL),
@@ -112,9 +141,11 @@ bool TunerDriver::setBand(const RadioBandDefinition& band) {
                            static_cast<uint16_t>(band.maximumKHz / 10UL));
     radio_.setSeekFmRssiThreshold(0);
     radio_.setSeekFmSNRThreshold(1);
+    radio_.setFmBandwidth(0);
     radio_.RdsInit();
     radio_.setRdsConfig(1, 2, 2, 2, 2);
   } else if (band.modulation == RadioModulation::AM) {
+    bandwidthChoice_ = 4;
     ssbPatchLoaded_ = false;
     radio_.setAM(static_cast<uint16_t>(band.minimumKHz),
                  static_cast<uint16_t>(band.maximumKHz),
@@ -123,18 +154,20 @@ bool TunerDriver::setBand(const RadioBandDefinition& band) {
                            static_cast<uint16_t>(band.maximumKHz));
     radio_.setSeekAmRssiThreshold(10);
     radio_.setSeekAmSNRThreshold(3);
+    radio_.setBandwidth(2, 1);
   } else {
     // The SI4735 requires the SSB DSP patch before sideband mode can be used.
     // Load it only when entering SSB; AM/FM transitions invalidate this state.
+    bandwidthChoice_ = 4;
     if (!ssbPatchLoaded_) {
-      radio_.loadPatch(ssb_patch_content, sizeof(ssb_patch_content), band.bandwidthIndex);
+      radio_.loadPatch(ssb_patch_content, sizeof(ssb_patch_content), 2);
       ssbPatchLoaded_ = true;
     }
     const uint8_t mode = band.modulation == RadioModulation::USB ? 2 : 1;
     radio_.setSSB(static_cast<uint16_t>(band.minimumKHz),
                   static_cast<uint16_t>(band.maximumKHz),
                   static_cast<uint16_t>(target), 0, mode);
-    radio_.setSSBConfig(band.bandwidthIndex, 1, 0, 1, 0, 1);
+    radio_.setSSBConfig(2, 1, 0, 1, 0, 1);
     radio_.setSSBBfo(0);
   }
   radio_.setVolume(volume_);
