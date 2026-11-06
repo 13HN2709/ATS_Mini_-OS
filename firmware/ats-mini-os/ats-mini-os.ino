@@ -89,7 +89,7 @@ void loop() {
             if (radio.setVolume(nextVolume))
               Serial.printf("[MENU] volume=%u/63\n", static_cast<unsigned>(radio.volume()));
           } else {
-            const int16_t itemCount = menuPage == 0 ? 6 : (menuPage==5 ? 5 : (menuPage==3 ? 5 : (menuPage==7 ? radio.bandwidthChoiceCount()+1 : 3)));
+            const int16_t itemCount = menuPage == 0 ? 6 : (menuPage==5 ? 5 : (menuPage==3 ? 5 : (menuPage==7 ? radio.bandwidthChoiceCount()+1 : (menuPage==8 ? radio.bandCount()+1 : 3))));
             int16_t next = (static_cast<int16_t>(menuSelection) + inputEvent.delta) % itemCount;
             if (next < 0) next += itemCount;
             menuSelection = static_cast<uint8_t>(next);
@@ -120,10 +120,18 @@ void loop() {
             Serial.printf("[MENU] opened submenu %u\n", static_cast<unsigned>(menuPage));
           }
         } else if (menuPage == 3 && menuSelection == 1) {
-          if (radio.nextBand(1)) {
+          menuPage = 8;
+          menuSelection = static_cast<uint8_t>(radio.currentBandIndex() + 1);
+        } else if (menuPage == 8 && menuSelection == 0) {
+          menuPage = 3;
+          menuSelection = 0;
+        } else if (menuPage == 8 && menuSelection > 0) {
+          if (radio.selectBand(static_cast<uint8_t>(menuSelection - 1))) {
             display.notifyTuning();
-            Serial.printf("[INPUT] band=%s freq=%lu kHz\\n", radio.snapshot().bandName,
+            Serial.printf("[MENU] band=%s freq=%lu kHz\\n", radio.snapshot().bandName,
               static_cast<unsigned long>(radio.snapshot().frequencyKHz));
+            menuPage = 3;
+            menuSelection = 1;
           }
         } else if (menuPage == 3 && menuSelection == 2) {
           menuPage = 7;
