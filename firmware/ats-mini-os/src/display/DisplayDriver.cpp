@@ -259,14 +259,14 @@ bool DisplayDriver::begin() {
     static_cast<unsigned long>(device_.getDisplayId()),
     static_cast<long>(device_.width()),static_cast<long>(device_.height()));
   preferences_.begin("atsmini", false);
-  layoutMode_ = preferences_.getUChar("layout2", 0) == 1 ? 1 : 0;
+  layoutMode_ = preferences_.getUChar("layout3", 0) == 1 ? 1 : 0;
   Serial.printf("[DISPLAY] saved layout: %s\n", layoutMode_ == 0 ? "FM" : "TEST");
   return true;
 }
 
 void DisplayDriver::setLayoutMode(uint8_t mode) {
   layoutMode_ = mode == 1 ? 1 : 0;
-  preferences_.putUChar("layout2", layoutMode_);
+  preferences_.putUChar("layout3", layoutMode_);
   lastGeneration_ = UINT32_MAX;
   Serial.printf("[DISPLAY] layout changed: %s\n", layoutMode_ == 0 ? "FM" : "TEST");
 }
@@ -368,8 +368,7 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
     static_cast<unsigned long>((s.frequencyKHz%1000)/10));
   text(canvas,freq,10,7,frequencyBlue?0x03FF:GREEN,&lgfx::fonts::Font2);
 
-  text(canvas,"BT",204,8,CYAN,&lgfx::fonts::Font0);
-  text(canvas,wifiConnected?"WiFi+":"WiFi-",226,8,wifiConnected?CYAN:0x7BEF,&lgfx::fonts::Font0);
+  text(canvas,wifiConnected?"WLAN+":"WLAN-",198,8,wifiConnected?CYAN:0x7BEF,&lgfx::fonts::Font0);
   // ATS-Mini-DEV hardware reference: battery monitor is wired to GPIO4.
   // Match DEV's ADC correction factor and voltage thresholds; no fabricated percentage.
   uint32_t adcTotal = 0;
@@ -418,8 +417,8 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
     }
   }
   if (!logoDrawn) {
-    centered(canvas,logoData ? "LOGO ERR" : "NO LOGO",59,57,0x7BEF,&lgfx::fonts::Font2);
-    centered(canvas,"FM-DX / Radio Browser",59,81,DARK_GREEN,&lgfx::fonts::Font0);
+    centered(canvas,logoData ? "LOGO FEHLER" : "LOGO SUCHT...",59,57,0x7BEF,&lgfx::fonts::Font2);
+    centered(canvas,"PI / LittleFS",59,81,DARK_GREEN,&lgfx::fonts::Font0);
   }
 
   const char* station=s.stationName[0]?s.stationName:(radioReady?"Warte auf PS...":"RADIO OFFLINE");
