@@ -153,7 +153,7 @@ void drawFileMenu(Canvas& c,const char* path,FileManager::Entry* entries,uint8_t
 }
 
 template <typename Canvas>
-void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, uint8_t layoutMode) {
+void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, uint8_t layoutMode, RadioModulation modulation) {
   const int w = canvas.width();
   const int h = canvas.height();
   static const char* const mainItems[] = {
@@ -166,8 +166,11 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
     "Zurueck", "Helligkeit (spaeter)"
   };
   static const char* const radioItems[] = {
-    "Zurueck", "Band wechseln", "Schrittweite (spaeter)", "Bandplan (spaeter)"
+    "Zurueck", "Band wechseln", "Bandbreite", "Schrittweite (spaeter)", "Bandplan (spaeter)"
   };
+  static const char* const fmBandwidthItems[] = { "Zurueck", "Auto", "110 kHz", "84 kHz", "60 kHz", "40 kHz" };
+  static const char* const amBandwidthItems[] = { "Zurueck", "1.0 kHz", "1.8 kHz", "2.0 kHz", "2.5 kHz", "3.0 kHz", "4.0 kHz", "6.0 kHz" };
+  static const char* const ssbBandwidthItems[] = { "Zurueck", "0.5 kHz", "1.0 kHz", "1.2 kHz", "2.2 kHz", "3.0 kHz", "4.0 kHz" };
   static const char* const wifiItems[] = {
     "Zurueck", "WLAN-Modus (spaeter)", "Web Control (spaeter)"
   };
@@ -185,6 +188,11 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
     case 3: items=radioItems; count=sizeof(radioItems)/sizeof(radioItems[0]); title="RADIO"; break;
     case 4: items=wifiItems; count=sizeof(wifiItems)/sizeof(wifiItems[0]); title="WLAN"; break;
     case 5: items=systemItems; count=sizeof(systemItems)/sizeof(systemItems[0]); title="SYSTEM"; break;
+    case 7:
+      if (modulation == RadioModulation::FM) { items=fmBandwidthItems; count=sizeof(fmBandwidthItems)/sizeof(fmBandwidthItems[0]); }
+      else if (modulation == RadioModulation::AM) { items=amBandwidthItems; count=sizeof(amBandwidthItems)/sizeof(amBandwidthItems[0]); }
+      else { items=ssbBandwidthItems; count=sizeof(ssbBandwidthItems)/sizeof(ssbBandwidthItems[0]); }
+      title="BANDBREITE"; break;
     default: break;
   }
   canvas.fillScreen(BLACK);
@@ -290,11 +298,11 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
     if(menuPage==6){if(useSprite_){sprite_.fillSprite(BLACK);drawFileMenu(sprite_,filePath,fileEntries,fileCount,fileSelection,fileMode,fileActionSelection,fileSelectedName,fileMessage);sprite_.pushSprite(0,0);}else{device_.fillScreen(BLACK);drawFileMenu(device_,filePath,fileEntries,fileCount,fileSelection,fileMode,fileActionSelection,fileSelectedName,fileMessage);}return;}
     if (useSprite_) {
       sprite_.fillSprite(BLACK);
-      drawMenu(sprite_, menuPage, menuSelection, volume, layoutMode_);
+      drawMenu(sprite_, menuPage, menuSelection, volume, layoutMode_, s.modulation);
       sprite_.pushSprite(0,0);
     } else {
       device_.fillScreen(BLACK);
-      drawMenu(device_, menuPage, menuSelection, volume, layoutMode_);
+      drawMenu(device_, menuPage, menuSelection, volume, layoutMode_, s.modulation);
     }
     return;
   }
