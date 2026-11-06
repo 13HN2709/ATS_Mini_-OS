@@ -380,11 +380,13 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   text(canvas,batteryText,w-43,7,batteryPercent<=15?YELLOW:GREEN,&lgfx::fonts::Font0);
   canvas.drawFastHLine(8,25,w-16,DARK_GREEN);
 
-  // Station name sits directly above the frequency; its left edge aligns
-  // with the first frequency digit.
+  // Keep the station name aligned with the visible first frequency digit.
+  // Font7's leading "1" has a narrower visual stroke, so three-digit MHz
+  // frequencies use a slightly earlier shared anchor to avoid a false gap.
+  const int frequencyX = (s.frequencyKHz / 1000UL) >= 100UL ? 114 : 124;
   const char* station=s.stationName[0]?s.stationName:(radioReady?"--":"RADIO OFFLINE");
-  canvas.fillRect(124,29,w-132,22,BLACK);
-  text(canvas,station,124,30,WHITE,&lgfx::fonts::FreeSansBold9pt7b);
+  canvas.fillRect(frequencyX,29,w-frequencyX-8,22,BLACK);
+  text(canvas,station,frequencyX,30,WHITE,&lgfx::fonts::FreeSansBold9pt7b);
 
   // Left-hand station logo. Source files remain at their original resolution;
   // the renderer scales them proportionally into this display viewport.
@@ -426,7 +428,7 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   canvas.setTextColor(frequencyBlue?0x249F:GREEN,BLACK);
   canvas.setFont(&lgfx::fonts::Font7);
   canvas.setTextSize(0.78f);
-  canvas.drawString(frequency,124,55);
+  canvas.drawString(frequency,frequencyX,55);
   canvas.setTextSize(1.0f);
 
   // Match the TEF layout clear FreeSans Bold MHz label.
