@@ -123,9 +123,9 @@ bool RadioCore::setBandwidthChoice(uint8_t choice) {
 }
 
 bool RadioCore::setStepChoice(uint8_t choice) {
-  static const uint16_t fmSteps[] = {50, 100, 200, 1000};
+  static const uint16_t fmSteps[] = {10, 50, 100, 200, 1000};
   static const uint16_t amSteps[] = {1, 5, 9, 10};
-  if (!ready_ || choice >= 4) return false;
+  if (!ready_ || choice >= (snapshot_.modulation == RadioModulation::FM ? 5 : 4)) return false;
   const uint16_t step = snapshot_.modulation == RadioModulation::FM ? fmSteps[choice] : amSteps[choice];
   if (!tuner_.setStepKHz(step) || !BandManager::setCurrentStepKHz(step)) return false;
   snapshot_.generation = ++generation_;
