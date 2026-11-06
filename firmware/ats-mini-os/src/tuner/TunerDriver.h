@@ -88,6 +88,10 @@ public:
   RadioModulation modulation() const { return modulation_; }
   bool setVolume(uint8_t volume);
   bool setBandwidthChoice(uint8_t choice);
+  bool setStepKHz(uint16_t stepKHz);
+  uint16_t stepKHz() const { return stepKHz_; }
+  uint8_t stepChoiceCount() const;
+  uint8_t stepChoice() const;
   uint8_t bandwidthChoice() const { return bandwidthChoice_; }
   uint8_t bandwidthChoiceCount() const;
   uint8_t volume() const { return volume_; }
