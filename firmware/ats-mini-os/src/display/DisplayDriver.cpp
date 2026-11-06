@@ -358,8 +358,8 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
 
   // Header: band, future RDS clock position, WLAN and estimated battery.
   text(canvas,"FM",10,5,GREEN,&lgfx::fonts::Font2);
-  text(canvas,"--:--",w/2,7,0x7BEF,&lgfx::fonts::Font0);
-  text(canvas,wifiConnected?"WLAN":"WLAN-",w-91,7,wifiConnected?CYAN:0x7BEF,&lgfx::fonts::Font0);
+  // The center remains intentionally empty until valid RDS CT data is available.
+  text(canvas,wifiConnected?"WLAN+":"WLAN-",w-91,7,wifiConnected?CYAN:0x7BEF,&lgfx::fonts::Font0);
 
   uint32_t adcTotal=0;
   for(uint8_t i=0;i<10;++i) adcTotal+=analogRead(4);
