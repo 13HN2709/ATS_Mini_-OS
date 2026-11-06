@@ -1,5 +1,6 @@
 #include "TunerDriver.h"
 #include <Wire.h>
+#include "ssb_patch.h"
 
 namespace {
 constexpr uint8_t kI2cSdaPin = 18;
@@ -101,6 +102,7 @@ bool TunerDriver::setBand(const RadioBandDefinition& band) {
   haveTextFlag_ = false;
 
   if (band.modulation == RadioModulation::FM) {
+    ssbPatchLoaded_ = false;
     radio_.setFM(static_cast<uint16_t>(band.minimumKHz / 10UL),
                  static_cast<uint16_t>(band.maximumKHz / 10UL),
                  static_cast<uint16_t>(target / 10UL),
@@ -113,6 +115,7 @@ bool TunerDriver::setBand(const RadioBandDefinition& band) {
     radio_.RdsInit();
     radio_.setRdsConfig(1, 2, 2, 2, 2);
   } else if (band.modulation == RadioModulation::AM) {
+    ssbPatchLoaded_ = false;
     radio_.setAM(static_cast<uint16_t>(band.minimumKHz),
                  static_cast<uint16_t>(band.maximumKHz),
                  static_cast<uint16_t>(target), stepKHz_);
@@ -121,6 +124,12 @@ bool TunerDriver::setBand(const RadioBandDefinition& band) {
     radio_.setSeekAmRssiThreshold(10);
     radio_.setSeekAmSNRThreshold(3);
   } else {
+    // The SI4735 requires the SSB DSP patch before sideband mode can be used.
+    // Load it only when entering SSB; AM/FM transitions invalidate this state.
+    if (!ssbPatchLoaded_) {
+      radio_.loadPatch(ssb_patch_content, sizeof(ssb_patch_content), band.bandwidthIndex);
+      ssbPatchLoaded_ = true;
+    }
     const uint8_t mode = band.modulation == RadioModulation::USB ? 2 : 1;
     radio_.setSSB(static_cast<uint16_t>(band.minimumKHz),
                   static_cast<uint16_t>(band.maximumKHz),
