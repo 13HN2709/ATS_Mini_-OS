@@ -11,6 +11,9 @@ struct RadioSnapshot {
   uint8_t pty = 0;
   bool stereo = false;
   bool rdsAvailable = false;
+  bool rdsClockValid = false;
+  uint8_t rdsClockHour = 0;
+  uint8_t rdsClockMinute = 0;
   char stationName[9] = {};
   char radioText[65] = {};
   uint32_t generation = 0;
