@@ -259,14 +259,14 @@ bool DisplayDriver::begin() {
     static_cast<unsigned long>(device_.getDisplayId()),
     static_cast<long>(device_.width()),static_cast<long>(device_.height()));
   preferences_.begin("atsmini", false);
-  layoutMode_ = preferences_.getUChar("layout", 0) == 1 ? 1 : 0;
+  layoutMode_ = preferences_.getUChar("layout2", 0) == 1 ? 1 : 0;
   Serial.printf("[DISPLAY] saved layout: %s\n", layoutMode_ == 0 ? "FM" : "TEST");
   return true;
 }
 
 void DisplayDriver::setLayoutMode(uint8_t mode) {
   layoutMode_ = mode == 1 ? 1 : 0;
-  preferences_.putUChar("layout", layoutMode_);
+  preferences_.putUChar("layout2", layoutMode_);
   lastGeneration_ = UINT32_MAX;
   Serial.printf("[DISPLAY] layout changed: %s\n", layoutMode_ == 0 ? "FM" : "TEST");
 }
