@@ -17,10 +17,26 @@ bool isAnchorName(const char* path) {
   if (!path || !*path) return false;
   const char* base = strrchr(path, '/');
   base = base ? base + 1 : path;
-  return strcasecmp(base, "Schedules.json") == 0 ||
-         strcasecmp(base, "schedules.bin") == 0 ||
-         strcasecmp(base, "memories.json") == 0 ||
-         strcasecmp(base, "splash.png") == 0;
+  if (strcasecmp(base, "Schedules.json") == 0 ||
+      strcasecmp(base, "schedules.bin") == 0 ||
+      strcasecmp(base, "memories.json") == 0 ||
+      strcasecmp(base, "splash.png") == 0) return true;
+
+  // A PI-named station logo is also a valid reason to mount LittleFS.
+  // This allows a logo-only filesystem to be discovered without requiring
+  // an unrelated splash/settings file first.
+  const size_t n = strlen(base);
+  if (n < 7) return false;
+  for (size_t i = 0; i < 4; ++i) {
+    const char c = static_cast<char>(toupper(static_cast<unsigned char>(base[i])));
+    if (!((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F'))) return false;
+  }
+  if (base[4] != '_' && base[4] != '-' && base[4] != '.') return false;
+  const char* ext = strrchr(base, '.');
+  if (!ext) return false;
+  return strcasecmp(ext, ".png") == 0 ||
+         strcasecmp(ext, ".jpg") == 0 ||
+         strcasecmp(ext, ".jpeg") == 0;
 }
 
 // Read-only recursive walk, deliberately bounded to avoid pathological trees.
