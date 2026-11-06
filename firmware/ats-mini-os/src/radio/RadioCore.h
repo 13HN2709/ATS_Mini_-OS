@@ -9,6 +9,8 @@ public:
   void update();
   bool tune(uint32_t frequencyKHz);
   bool selectBand(uint8_t index);
+  uint8_t bandCount() const { return BandManager::count(); }
+  uint8_t currentBandIndex() const { return BandManager::currentIndex(); }
   bool nextBand(int8_t direction);
   bool setVolume(uint8_t volume);
   bool setBandwidthChoice(uint8_t choice);
