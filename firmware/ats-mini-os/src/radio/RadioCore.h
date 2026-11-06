@@ -11,6 +11,9 @@ public:
   bool selectBand(uint8_t index);
   bool nextBand(int8_t direction);
   bool setVolume(uint8_t volume);
+  bool setBandwidthChoice(uint8_t choice);
+  uint8_t bandwidthChoice() const { return tuner_.bandwidthChoice(); }
+  uint8_t bandwidthChoiceCount() const { return tuner_.bandwidthChoiceCount(); }
   uint8_t volume() const { return tuner_.volume(); }
   bool nextChannel(int16_t acceleratedDelta);
   bool isReady() const { return ready_; }
