@@ -426,7 +426,6 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   text(canvas,station,120,44,WHITE,&lgfx::fonts::Font2);
 
   canvas.fillRect(116,67,w-126,51,BLACK);
-  text(canvas,"RT",120,69,YELLOW,&lgfx::fonts::Font0);
   const char* rt=s.radioText[0]?s.radioText:"Warte auf Radiotext...";
   canvas.setFont(&lgfx::fonts::Font2);
   canvas.setTextColor(WHITE,BLACK);
@@ -443,7 +442,7 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   }
   canvas.clearClipRect();
 
-  // Standard RDS PTY labels (0-31), shown at the bottom of the layout.
+  // Standard RDS PTY labels (0-31), shown as readable text without a numeric prefix.
   static const char* const ptyNames[32]={
     "NONE","NEWS","CURRENT AFFAIRS","INFO","SPORT","EDUCATION","DRAMA","CULTURE",
     "SCIENCE","VARIED","POP MUSIC","ROCK MUSIC","EASY LISTENING","LIGHT CLASSICS",
@@ -453,8 +452,7 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   };
   canvas.drawFastHLine(10,127,w-20,DARK_GREEN);
   canvas.fillRect(10,131,w-20,18,BLACK);
-  text(canvas,"PTY",11,135,CYAN,&lgfx::fonts::Font0);
-  text(canvas,ptyNames[s.pty<32?s.pty:0],36,133,GREEN,&lgfx::fonts::Font2);
+  text(canvas,ptyNames[s.pty<32?s.pty:0],11,133,GREEN,&lgfx::fonts::Font2);
 
   // Small diagnostic footer retained during alpha testing.
   char status[48];
