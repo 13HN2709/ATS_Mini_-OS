@@ -41,7 +41,7 @@ public:
   }
 
   // Decode RDS group 4A Clock-Time and apply its transmitted local-time offset.
-  bool currentRdsClock(uint8_t& hour, uint8_t& minute) const {
+  bool currentRdsClock(uint8_t& hour, uint8_t& minute) {
     if (getRdsGroupType() != 4 || getRdsVersionCode() != 0) return false;
     const uint16_t blockB = currentBlockB();
     const uint16_t blockC = currentBlockC();
