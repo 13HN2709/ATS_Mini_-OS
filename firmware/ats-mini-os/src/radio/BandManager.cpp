@@ -5,7 +5,7 @@ namespace {
 // MW1 deliberately starts at 100 kHz as requested; ALL remains the full
 // 100 kHz–30 MHz coverage band. LW is presented as its own selectable range.
 constexpr RadioBandDefinition kBands[] = {
-  {"VHF",   RadioBandType::FM,  RadioModulation::FM,  64000, 108000, 103900, 100, 0},
+  {"VHF",   RadioBandType::FM,  RadioModulation::FM,  87500, 108000,  95400, 100, 0},
   {"ALL",   RadioBandType::ALL, RadioModulation::AM,    100,  30000,  15000,   1, 4},
   {"LW",    RadioBandType::LW,  RadioModulation::AM,    100,    495,    100,   1, 4},
   {"MW1",   RadioBandType::MW,  RadioModulation::AM,    100,   1800,    100,  10, 4},
