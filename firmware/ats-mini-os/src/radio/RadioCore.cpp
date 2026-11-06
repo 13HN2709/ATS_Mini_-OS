@@ -47,6 +47,11 @@ void RadioCore::update() {
     if (tuner_.pollRds(rds)) {
       if (rds.piValid) snapshot_.piCode = rds.piCode;
       if (rds.ptyValid) snapshot_.pty = rds.pty;
+      if (rds.clockValid) {
+        snapshot_.rdsClockHour = rds.clockHour;
+        snapshot_.rdsClockMinute = rds.clockMinute;
+        snapshot_.rdsClockValid = true;
+      }
       if (rds.stationNameUpdated) copyField(snapshot_.stationName, sizeof(snapshot_.stationName), rds.stationName);
       if (rds.radioTextUpdated) copyField(snapshot_.radioText, sizeof(snapshot_.radioText), rds.radioText);
       snapshot_.rdsAvailable = true;
@@ -61,6 +66,7 @@ bool RadioCore::tune(uint32_t frequencyKHz) {
   snapshot_.piCode = 0;
   snapshot_.pty = 0;
   snapshot_.rdsAvailable = false;
+  snapshot_.rdsClockValid = false;
   snapshot_.stationName[0] = '\0';
   snapshot_.radioText[0] = '\0';
   snapshot_.generation = ++generation_;
