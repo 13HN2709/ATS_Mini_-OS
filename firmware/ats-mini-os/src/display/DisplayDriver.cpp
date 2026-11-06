@@ -195,41 +195,47 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
       title="BANDBREITE"; break;
     default: break;
   }
-  canvas.fillScreen(BLACK);
-  text(canvas,"ATS MINI OS",10,3,CYAN,&lgfx::fonts::Font2);
-  text(canvas,title,w-88,7,GREEN,&lgfx::fonts::Font0);
-  canvas.drawFastHLine(8,30,w-16,DARK_GREEN);
 
-  const int rowTop=37;
-  const int rowHeight=36;
-  const int visibleRows=(h-58)/rowHeight;
+  // High-contrast monochrome menu: pure black background, bold white text,
+  // thin white selection frame and no glow, gradients or colored highlights.
+  canvas.fillScreen(BLACK);
+  canvas.setTextColor(WHITE, BLACK);
+  canvas.setFont(&lgfx::fonts::FreeSansBold9pt7b);
+  canvas.drawString("ATS MINI OS", 8, 3);
+  canvas.drawRightString(title, w-8, 3);
+  canvas.drawFastHLine(8, 27, w-16, WHITE);
+
+  // Larger rows intentionally show only two entries at a time on the 320x170 panel.
+  const int rowTop = 34;
+  const int rowHeight = 54;
+  const int visibleRows = (h - 58) / rowHeight;
   int first = 0;
   if (selection >= visibleRows) first = selection-visibleRows+1;
   for (int row=0; row<visibleRows && first+row<count; ++row) {
-    const uint8_t index=static_cast<uint8_t>(first+row);
-    const int y=rowTop+row*rowHeight;
-    const bool selected=index==selection;
-    if (selected) {
-      canvas.fillRoundRect(7,y,w-14,31,4,0x0320);
-      canvas.drawRoundRect(7,y,w-14,31,4,GREEN);
-    }
-    text(canvas,items[index],15,y+8,selected?GREEN:WHITE,&lgfx::fonts::Font2);
+    const uint8_t index = static_cast<uint8_t>(first+row);
+    const int y = rowTop + row*rowHeight;
+    const bool selected = index == selection;
+    if (selected) canvas.drawRoundRect(7, y+1, w-14, 48, 3, WHITE);
+
+    canvas.setTextColor(WHITE, BLACK);
+    canvas.setFont(&lgfx::fonts::FreeSansBold9pt7b);
+    canvas.drawString(items[index], 16, y+13);
+
     if (page==1 && index==1) {
       char value[12];
       snprintf(value,sizeof(value),"%u/63",static_cast<unsigned>(volume));
-      canvas.setTextColor(YELLOW,BLACK);
-      canvas.setFont(&lgfx::fonts::Font2);
-      canvas.drawRightString(value,w-18,y+8);
-      const int barX=15, barY=y+25, barW=w-32;
-      canvas.drawRect(barX,barY,barW,4,0x7BEF);
+      canvas.drawRightString(value,w-17,y+13);
+      const int barX=16, barY=y+36, barW=w-33;
+      canvas.drawRect(barX,barY,barW,5,WHITE);
       const int fillW=(barW-2)*volume/63;
-      if(fillW>0) canvas.fillRect(barX+1,barY+1,fillW,2,GREEN);
+      if(fillW>0) canvas.fillRect(barX+1,barY+1,fillW,3,WHITE);
     }
   }
-  canvas.drawFastHLine(8,h-20,w-16,DARK_GREEN);
-  text(canvas,page==1?"Drehen: Lautstaerke":"Drehen: Auswahl",10,h-15,0x7BEF,&lgfx::fonts::Font0);
-}
 
+  canvas.drawFastHLine(8,h-23,w-16,WHITE);
+  canvas.setTextColor(WHITE,BLACK);
+  canvas.setFont(&lgfx::fonts::FreeSans9pt7b);
+  canvas.drawString(page==1?"Drehen: Lautstaerke":"Drehen: Auswahl",10,h-19);
 }
 
 bool DisplayDriver::begin() {
