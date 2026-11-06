@@ -71,6 +71,9 @@ struct TunerRdsData {
   uint16_t piCode = 0;
   uint8_t pty = 0;
   uint8_t eccCode = 0;
+  bool clockValid = false;
+  uint8_t clockHour = 0;
+  uint8_t clockMinute = 0;
   char stationName[9] = {};
   char radioText[65] = {};
 };
