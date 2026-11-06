@@ -165,7 +165,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
     "Zurueck", "Helligkeit (spaeter)"
   };
   static const char* const radioItems[] = {
-    "Zurueck", "Schrittweite (spaeter)", "Bandplan (spaeter)"
+    "Zurueck", "Band wechseln", "Schrittweite (spaeter)", "Bandplan (spaeter)"
   };
   static const char* const wifiItems[] = {
     "Zurueck", "WLAN-Modus (spaeter)", "Web Control (spaeter)"
