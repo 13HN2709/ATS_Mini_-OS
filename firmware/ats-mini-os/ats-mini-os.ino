@@ -89,7 +89,7 @@ void loop() {
             if (radio.setVolume(nextVolume))
               Serial.printf("[MENU] volume=%u/63\n", static_cast<unsigned>(radio.volume()));
           } else {
-            const int16_t itemCount = menuPage == 0 ? 6 : (menuPage==5 ? 4 : 3);
+            const int16_t itemCount = menuPage == 0 ? 6 : (menuPage==5 ? 5 : 3);
             int16_t next = (static_cast<int16_t>(menuSelection) + inputEvent.delta) % itemCount;
             if (next < 0) next += itemCount;
             menuSelection = static_cast<uint8_t>(next);
