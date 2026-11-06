@@ -89,7 +89,7 @@ void loop() {
             if (radio.setVolume(nextVolume))
               Serial.printf("[MENU] volume=%u/63\n", static_cast<unsigned>(radio.volume()));
           } else {
-            const int16_t itemCount = menuPage == 0 ? 6 : (menuPage==5 ? 5 : 3);
+            const int16_t itemCount = menuPage == 0 ? 6 : (menuPage==5 ? 5 : (menuPage==3 ? 4 : 3));
             int16_t next = (static_cast<int16_t>(menuSelection) + inputEvent.delta) % itemCount;
             if (next < 0) next += itemCount;
             menuSelection = static_cast<uint8_t>(next);
@@ -118,6 +118,12 @@ void loop() {
             menuPage = menuSelection;
             menuSelection = 0;
             Serial.printf("[MENU] opened submenu %u\n", static_cast<unsigned>(menuPage));
+          }
+        } else if (menuPage == 3 && menuSelection == 1) {
+          if (radio.nextBand(1)) {
+            display.notifyTuning();
+            Serial.printf("[INPUT] band=%s freq=%lu kHz\\n", radio.snapshot().bandName,
+              static_cast<unsigned long>(radio.snapshot().frequencyKHz));
           }
         } else if (menuPage == 2 && menuSelection == 2) {
           display.setLayoutMode(display.layoutMode() == 0 ? 1 : 0);
