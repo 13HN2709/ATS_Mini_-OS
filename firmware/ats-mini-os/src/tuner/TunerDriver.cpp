@@ -120,6 +120,27 @@ bool TunerDriver::setBandwidthChoice(uint8_t choice) {
   return true;
 }
 
+uint8_t TunerDriver::stepChoiceCount() const {
+  return modulation_ == RadioModulation::FM ? 4 : 4;
+}
+
+uint8_t TunerDriver::stepChoice() const {
+  static const uint16_t fmSteps[] = {50, 100, 200, 1000};
+  static const uint16_t amSteps[] = {1, 5, 9, 10};
+  const uint16_t* steps = modulation_ == RadioModulation::FM ? fmSteps : amSteps;
+  for (uint8_t i = 0; i < 4; ++i) if (steps[i] == stepKHz_) return i;
+  return modulation_ == RadioModulation::FM ? 1 : 0;
+}
+
+bool TunerDriver::setStepKHz(uint16_t stepKHz) {
+  if (!ready_ || !stepKHz) return false;
+  if (modulation_ == RadioModulation::FM) {
+    if (stepKHz != 50 && stepKHz != 100 && stepKHz != 200 && stepKHz != 1000) return false;
+  } else if (stepKHz != 1 && stepKHz != 5 && stepKHz != 9 && stepKHz != 10) return false;
+  stepKHz_ = stepKHz;
+  return true;
+}
+
 bool TunerDriver::setBand(const RadioBandDefinition& band) {
   if (!ready_) return false;
   const uint32_t target = constrain(band.startKHz, band.minimumKHz, band.maximumKHz);
