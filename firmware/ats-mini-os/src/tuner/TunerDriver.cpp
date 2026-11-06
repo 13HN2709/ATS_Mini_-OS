@@ -112,6 +112,10 @@ bool TunerDriver::pollRds(TunerRdsData& out) {
   out.received = true;
   const uint8_t group = radio_.getRdsGroupType();
 
+  // RDS Clock-Time is transmitted in group 4A. Only publish validated times.
+  if (group == 4 && radio_.currentRdsClock(out.clockHour, out.clockMinute))
+    out.clockValid = true;
+
   if (radio_.getRdsNewBlockA()) {
     const uint16_t pi = radio_.currentPiCode();
     if (pi != 0) { out.piValid = true; out.piCode = pi; }
