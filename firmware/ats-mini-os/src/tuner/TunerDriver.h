@@ -27,6 +27,38 @@ public:
       (static_cast<uint16_t>(currentRdsStatus.resp.BLOCKCH) << 8) |
       currentRdsStatus.resp.BLOCKCL);
   }
+
+  uint16_t currentBlockB() const {
+    return static_cast<uint16_t>(
+      (static_cast<uint16_t>(currentRdsStatus.resp.BLOCKBH) << 8) |
+      currentRdsStatus.resp.BLOCKBL);
+  }
+
+  uint16_t currentBlockD() const {
+    return static_cast<uint16_t>(
+      (static_cast<uint16_t>(currentRdsStatus.resp.BLOCKDH) << 8) |
+      currentRdsStatus.resp.BLOCKDL);
+  }
+
+  // Decode RDS group 4A Clock-Time and apply its transmitted local-time offset.
+  bool currentRdsClock(uint8_t& hour, uint8_t& minute) const {
+    if (getRdsGroupType() != 4 || getRdsVersionCode() != 0) return false;
+    const uint16_t blockB = currentBlockB();
+    const uint16_t blockC = currentBlockC();
+    const uint16_t blockD = currentBlockD();
+    const uint32_t mjd = (static_cast<uint32_t>(blockB & 0x0003) << 15) | (blockC >> 1);
+    (void)mjd; // Date is not displayed; the transmitted time and offset are used.
+    int utcMinutes = static_cast<int>(((blockC & 0x0001) << 4) | (blockD >> 12)) * 60
+                   + static_cast<int>((blockD >> 6) & 0x003F);
+    if (utcMinutes >= 24 * 60 || ((blockD >> 6) & 0x003F) > 59) return false;
+    const int offsetHalfHours = blockD & 0x001F;
+    const int offsetMinutes = offsetHalfHours * 30;
+    utcMinutes += (blockD & 0x0020) ? -offsetMinutes : offsetMinutes;
+    utcMinutes = (utcMinutes % 1440 + 1440) % 1440;
+    hour = static_cast<uint8_t>(utcMinutes / 60);
+    minute = static_cast<uint8_t>(utcMinutes % 60);
+    return true;
+  }
 };
 
 struct TunerRdsData {
