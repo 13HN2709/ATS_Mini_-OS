@@ -265,7 +265,7 @@ private:
   uint32_t radioTextLastStepMs_ = 0;
   bool haveStationRow_ = false;
   bool haveRadioTextRow_ = false;
-  void draw(const RadioSnapshot& state, bool radioReady, bool wifiConnected, const char* lastInputEvent, uint32_t inputEventCount, const uint8_t* logoData, size_t logoLength, bool logoIsJpg, int16_t radioTextOffset, bool scrollRadioText, bool frequencyBlue);
+  void draw(const RadioSnapshot& state, bool radioReady, bool wifiConnected, const char* lastInputEvent, uint32_t inputEventCount, const uint8_t* logoData, size_t logoLength, bool logoIsJpg, bool logoSearching, int16_t radioTextOffset, bool scrollRadioText, bool frequencyBlue);
 };
 
 #endif // ATS_MINI_OS_DISPLAY_DRIVER_H
