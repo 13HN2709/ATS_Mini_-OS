@@ -8,7 +8,7 @@ constexpr RadioBandDefinition kBands[] = {
   {"VHF",   RadioBandType::FM,  RadioModulation::FM,  64000, 108000, 103900, 100, 0},
   {"ALL",   RadioBandType::ALL, RadioModulation::AM,    100,  30000,  15000,   1, 4},
   {"LW",    RadioBandType::LW,  RadioModulation::AM,    100,    495,    100,   1, 4},
-  {"MW1",   RadioBandType::MW,  RadioModulation::AM,    100,   1800,    100,   9, 4},
+  {"MW1",   RadioBandType::MW,  RadioModulation::AM,    100,   1800,    100,  10, 4},
   {"MW2",   RadioBandType::MW,  RadioModulation::AM,    495,   1701,    783,   9, 4},
   {"MW3",   RadioBandType::MW,  RadioModulation::AM,   1700,   3500,   2500,   1, 4},
   {"160M",  RadioBandType::MW,  RadioModulation::LSB,  1800,   2000,   1900,   5, 4},
@@ -38,7 +38,7 @@ constexpr RadioBandDefinition kBands[] = {
 uint8_t gCurrentBand = 0;
 }
 
-constexpr uint8_t BandManager::count() {
+uint8_t BandManager::count() {
   return static_cast<uint8_t>(sizeof(kBands) / sizeof(kBands[0]));
 }
 const RadioBandDefinition& BandManager::at(uint8_t index) {
