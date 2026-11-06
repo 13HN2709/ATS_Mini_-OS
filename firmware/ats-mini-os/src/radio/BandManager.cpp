@@ -36,6 +36,7 @@ constexpr RadioBandDefinition kBands[] = {
   {"10M",  RadioBandType::SW,  RadioModulation::USB, 28000,  29700,  28500,   5, 4},
 };
 uint8_t gCurrentBand = 0;
+uint16_t gCurrentStepKHz = kBands[0].stepKHz;
 }
 
 uint8_t BandManager::count() {
@@ -49,6 +50,7 @@ const RadioBandDefinition& BandManager::current() { return at(gCurrentBand); }
 bool BandManager::select(uint8_t index) {
   if (index >= count()) return false;
   gCurrentBand = index;
+  gCurrentStepKHz = kBands[index].stepKHz;
   return true;
 }
 bool BandManager::next(int8_t direction) {
@@ -57,6 +59,12 @@ bool BandManager::next(int8_t direction) {
   if (nextIndex < 0) nextIndex = count() - 1;
   if (nextIndex >= count()) nextIndex = 0;
   gCurrentBand = static_cast<uint8_t>(nextIndex);
+  return true;
+}
+uint16_t BandManager::currentStepKHz() { return gCurrentStepKHz; }
+bool BandManager::setCurrentStepKHz(uint16_t stepKHz) {
+  if (!stepKHz) return false;
+  gCurrentStepKHz = stepKHz;
   return true;
 }
 bool BandManager::contains(uint8_t index, uint32_t frequencyKHz) {
