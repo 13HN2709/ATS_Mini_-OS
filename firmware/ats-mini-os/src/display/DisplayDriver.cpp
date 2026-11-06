@@ -305,10 +305,10 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
   const char* measuredText = tickerText;
   int textWidth = 0;
   if (useSprite_) {
-    sprite_.setFont(&lgfx::fonts::Font2);
+    sprite_.setFont(&lgfx::fonts::FreeSansBold9pt7b);
     textWidth = sprite_.textWidth(measuredText);
   } else {
-    device_.setFont(&lgfx::fonts::Font2);
+    device_.setFont(&lgfx::fonts::FreeSansBold9pt7b);
     textWidth = device_.textWidth(measuredText);
   }
   const int textViewportWidth = device_.width() - 126;
@@ -458,17 +458,19 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   constexpr int rtX=8,rtY=138,rtW=304,rtH=26;
   canvas.drawRoundRect(rtX,rtY,rtW,rtH,7,GREEN);
   const char* rt=s.radioText;
-  canvas.setFont(&lgfx::fonts::Font2);
+  // Slightly larger bold lettering makes the RT line easier to read while
+  // keeping enough vertical room inside the 26 px ticker frame.
+  canvas.setFont(&lgfx::fonts::FreeSansBold9pt7b);
   canvas.setTextColor(WHITE,BLACK);
   canvas.setClipRect(rtX+10,rtY+2,rtW-20,rtH-4);
   if(scrollRadioText){
     char ticker[72];
     snprintf(ticker,sizeof(ticker),"%s    ",s.radioText);
     const int tickerWidth=canvas.textWidth(ticker);
-    canvas.drawString(ticker,rtX+14+radioTextOffset,rtY+5);
-    canvas.drawString(ticker,rtX+14+radioTextOffset+tickerWidth,rtY+5);
+    canvas.drawString(ticker,rtX+14+radioTextOffset,rtY+4);
+    canvas.drawString(ticker,rtX+14+radioTextOffset+tickerWidth,rtY+4);
   } else {
-    canvas.drawString(rt,rtX+14,rtY+5);
+    canvas.drawString(rt,rtX+14,rtY+4);
   }
   canvas.clearClipRect();
 }
