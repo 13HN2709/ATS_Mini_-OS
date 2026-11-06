@@ -140,6 +140,9 @@ bool StationLogoClient::lockLogo(const char* key, const uint8_t*& data, size_t& 
   return true;
 }
 void StationLogoClient::unlockLogo() { if (logoMutex_) xSemaphoreGive(logoMutex_); }
+bool StationLogoClient::isLookupPending(const char* key) const {
+  return busy_ && key && key[0] && strcmp(lastRequestKey_, key) == 0;
+}
 
 bool StationLogoClient::storeLogoInRam(const String& logo, const char* key, const char* source) {
   const bool png=isPng(logo), jpg=isJpeg(logo);
