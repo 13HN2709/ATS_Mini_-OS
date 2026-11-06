@@ -76,6 +76,10 @@ bool TunerDriver::begin(uint32_t initialFrequencyKHz) {
   digitalWrite(kAmplifierEnablePin, HIGH);
   delay(5);
   digitalWrite(kAudioMutePin, LOW);
+  minimumFrequencyKHz_ = 87500;
+  maximumFrequencyKHz_ = 108000;
+  stepKHz_ = 100;
+  modulation_ = RadioModulation::FM;
   ready_ = true;
   return true;
 }
@@ -87,9 +91,63 @@ bool TunerDriver::setVolume(uint8_t volume) {
   return true;
 }
 
+bool TunerDriver::setBand(const RadioBandDefinition& band) {
+  if (!ready_) return false;
+  const uint32_t target = constrain(band.startKHz, band.minimumKHz, band.maximumKHz);
+  minimumFrequencyKHz_ = band.minimumKHz;
+  maximumFrequencyKHz_ = band.maximumKHz;
+  stepKHz_ = band.stepKHz ? band.stepKHz : 1;
+  modulation_ = band.modulation;
+  haveTextFlag_ = false;
+
+  if (band.modulation == RadioModulation::FM) {
+    radio_.setFM(static_cast<uint16_t>(band.minimumKHz / 10UL),
+                 static_cast<uint16_t>(band.maximumKHz / 10UL),
+                 static_cast<uint16_t>(target / 10UL),
+                 static_cast<uint16_t>(stepKHz_ / 10UL));
+    radio_.setTuneFrequencyAntennaCapacitor(1);
+    radio_.setSeekFmLimits(static_cast<uint16_t>(band.minimumKHz / 10UL),
+                           static_cast<uint16_t>(band.maximumKHz / 10UL));
+    radio_.setSeekFmRssiThreshold(0);
+    radio_.setSeekFmSNRThreshold(1);
+    radio_.RdsInit();
+    radio_.setRdsConfig(1, 2, 2, 2, 2);
+  } else if (band.modulation == RadioModulation::AM) {
+    radio_.setAM(static_cast<uint16_t>(band.minimumKHz),
+                 static_cast<uint16_t>(band.maximumKHz),
+                 static_cast<uint16_t>(target), stepKHz_);
+    radio_.setSeekAmLimits(static_cast<uint16_t>(band.minimumKHz),
+                           static_cast<uint16_t>(band.maximumKHz));
+    radio_.setSeekAmRssiThreshold(10);
+    radio_.setSeekAmSNRThreshold(3);
+  } else {
+    const uint8_t mode = band.modulation == RadioModulation::USB ? 2 : 1;
+    radio_.setSSB(static_cast<uint16_t>(band.minimumKHz),
+                  static_cast<uint16_t>(band.maximumKHz),
+                  static_cast<uint16_t>(target), 0, mode);
+    radio_.setSSBConfig(band.bandwidthIndex, 1, 0, 1, 0, 1);
+    radio_.setSSBBfo(0);
+  }
+  radio_.setVolume(volume_);
+  return true;
+}
+
+bool TunerDriver::tune(uint32_t frequencyKHz, const RadioBandDefinition& band) {
+  if (!ready_ || frequencyKHz < band.minimumKHz || frequencyKHz > band.maximumKHz) return false;
+  if (band.modulation == RadioModulation::FM)
+    radio_.setFrequency(static_cast<uint16_t>(frequencyKHz / 10UL));
+  else
+    radio_.setFrequency(static_cast<uint16_t>(frequencyKHz));
+  haveTextFlag_ = false;
+  return true;
+}
+
 bool TunerDriver::tune(uint32_t frequencyKHz) {
-  if (!ready_ || frequencyKHz < kMinFrequencyKHz || frequencyKHz > kMaxFrequencyKHz) return false;
-  radio_.setFrequency(static_cast<uint16_t>(frequencyKHz / 10UL));
+  if (!ready_ || frequencyKHz < minimumFrequencyKHz_ || frequencyKHz > maximumFrequencyKHz_) return false;
+  if (modulation_ == RadioModulation::FM)
+    radio_.setFrequency(static_cast<uint16_t>(frequencyKHz / 10UL));
+  else
+    radio_.setFrequency(static_cast<uint16_t>(frequencyKHz));
   haveTextFlag_ = false;
   return true;
 }
