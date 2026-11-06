@@ -1,5 +1,6 @@
 #include "RadioCore.h"
 #include <stdio.h>
+#include <string.h>
 
 namespace {
 void copyField(char* dst, size_t capacity, const char* src) {
@@ -8,14 +9,22 @@ void copyField(char* dst, size_t capacity, const char* src) {
   for (; i + 1 < capacity && src[i] != '\0'; ++i) dst[i] = src[i];
   dst[i] = '\0';
 }
+void publishBand(RadioSnapshot& snapshot, const RadioBandDefinition& band) {
+  strncpy(snapshot.bandName, band.name, sizeof(snapshot.bandName) - 1);
+  snapshot.bandName[sizeof(snapshot.bandName) - 1] = '\0';
+  snapshot.modulation = band.modulation;
+  snapshot.bandMinimumKHz = band.minimumKHz;
+  snapshot.bandMaximumKHz = band.maximumKHz;
+  snapshot.tuningStepKHz = band.stepKHz;
+}
 }
 
 bool RadioCore::begin(uint32_t initialFrequencyKHz) {
-  // First milestone deliberately avoids persistent storage: boot and test the
-  // tuner/display/RDS path before adding settings, memories or schedules.
+  BandManager::select(0);
   ready_ = tuner_.begin(initialFrequencyKHz);
   if (!ready_) return false;
-
+  const auto& band = BandManager::current();
+  publishBand(snapshot_, band);
   tuner_.refreshSignalQuality();
   snapshot_.frequencyKHz = tuner_.frequencyKHz();
   snapshot_.rssi = tuner_.rssi();
@@ -24,8 +33,8 @@ bool RadioCore::begin(uint32_t initialFrequencyKHz) {
   snapshot_.generation = ++generation_;
   lastPollMs_ = millis();
   lastRdsPollMs_ = lastPollMs_;
-  Serial.printf("[RADIO] Test mode; no settings/memories/schedules storage. Start=%lu kHz\n",
-                static_cast<unsigned long>(snapshot_.frequencyKHz));
+  Serial.printf("[RADIO] Ready; band=%s start=%lu kHz\n",
+                snapshot_.bandName, static_cast<unsigned long>(snapshot_.frequencyKHz));
   return true;
 }
 
@@ -40,7 +49,7 @@ void RadioCore::update() {
     snapshot_.snr = tuner_.snr();
     snapshot_.stereo = tuner_.stereo();
   }
-
+  if (snapshot_.modulation != RadioModulation::FM) return;
   if (now - lastRdsPollMs_ >= kRdsPollIntervalMs) {
     lastRdsPollMs_ = now;
     TunerRdsData rds;
@@ -53,10 +62,6 @@ void RadioCore::update() {
         snapshot_.rdsClockValid = true;
       }
       if (rds.stationNameUpdated) copyField(snapshot_.stationName, sizeof(snapshot_.stationName), rds.stationName);
-      // The RDS A/B flag clears the tuner's assembly buffer. Keep the last
-      // visible text while the next message is being rebuilt, rather than
-      // publishing an empty intermediate buffer and blanking the RT field.
-      // A station change still clears the snapshot in tune().
       if (rds.radioTextUpdated && rds.radioText[0] != '\0')
         copyField(snapshot_.radioText, sizeof(snapshot_.radioText), rds.radioText);
       snapshot_.rdsAvailable = true;
@@ -65,8 +70,9 @@ void RadioCore::update() {
 }
 
 bool RadioCore::tune(uint32_t frequencyKHz) {
-  if (!ready_ || frequencyKHz < kMinFrequencyKHz || frequencyKHz > kMaxFrequencyKHz ||
-      !tuner_.tune(frequencyKHz)) return false;
+  const auto& band = BandManager::current();
+  if (!ready_ || !BandManager::contains(BandManager::currentIndex(), frequencyKHz) ||
+      !tuner_.tune(frequencyKHz, band)) return false;
   snapshot_.frequencyKHz = tuner_.frequencyKHz();
   snapshot_.piCode = 0;
   snapshot_.pty = 0;
@@ -78,21 +84,46 @@ bool RadioCore::tune(uint32_t frequencyKHz) {
   return true;
 }
 
+bool RadioCore::selectBand(uint8_t index) {
+  if (!ready_ || index >= BandManager::count()) return false;
+  const auto& band = BandManager::at(index);
+  if (!tuner_.setBand(band) || !BandManager::select(index)) return false;
+  publishBand(snapshot_, band);
+  snapshot_.frequencyKHz = tuner_.frequencyKHz();
+  snapshot_.piCode = 0;
+  snapshot_.pty = 0;
+  snapshot_.rdsAvailable = false;
+  snapshot_.rdsClockValid = false;
+  snapshot_.stationName[0] = '\0';
+  snapshot_.radioText[0] = '\0';
+  snapshot_.generation = ++generation_;
+  lastRdsPollMs_ = millis();
+  Serial.printf("[RADIO] band=%s mode=%u freq=%lu kHz\n",
+                band.name, static_cast<unsigned>(band.modulation),
+                static_cast<unsigned long>(snapshot_.frequencyKHz));
+  return true;
+}
+
+bool RadioCore::nextBand(int8_t direction) {
+  if (!direction) return false;
+  int16_t index = static_cast<int16_t>(BandManager::currentIndex()) + (direction > 0 ? 1 : -1);
+  if (index < 0) index = BandManager::count() - 1;
+  if (index >= BandManager::count()) index = 0;
+  return selectBand(static_cast<uint8_t>(index));
+}
+
 bool RadioCore::setVolume(uint8_t volume) {
   return ready_ && tuner_.setVolume(volume);
 }
 
 bool RadioCore::nextChannel(int16_t acceleratedDelta) {
   if (!ready_ || acceleratedDelta == 0) return false;
-  // The input driver supplies signed 1/2/4/8/16-step deltas, matching ATS Mini
-  // Dev's acceleration factors. Wrap cleanly across the FM band limits.
-  const int32_t span = static_cast<int32_t>(kMaxFrequencyKHz - kMinFrequencyKHz + kChannelStepKHz);
-  int32_t offset = static_cast<int32_t>(snapshot_.frequencyKHz) -
-                   static_cast<int32_t>(kMinFrequencyKHz);
-  offset += static_cast<int32_t>(acceleratedDelta) * static_cast<int32_t>(kChannelStepKHz);
+  const auto& band = BandManager::current();
+  const uint32_t step = band.stepKHz ? band.stepKHz : 1;
+  const int64_t span = static_cast<int64_t>(band.maximumKHz) - band.minimumKHz + step;
+  int64_t offset = static_cast<int64_t>(snapshot_.frequencyKHz) - band.minimumKHz;
+  offset += static_cast<int64_t>(acceleratedDelta) * step;
   offset %= span;
   if (offset < 0) offset += span;
-  const uint32_t target = kMinFrequencyKHz + static_cast<uint32_t>(offset);
-  return tune(target);
+  return tune(band.minimumKHz + static_cast<uint32_t>(offset));
 }
-
