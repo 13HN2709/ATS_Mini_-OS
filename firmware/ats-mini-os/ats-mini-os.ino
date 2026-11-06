@@ -127,7 +127,7 @@ void loop() {
           }
         } else if (menuPage == 3 && menuSelection == 2) {
           menuPage = 7;
-          menuSelection = 0;
+          menuSelection = static_cast<uint8_t>(radio.bandwidthChoice() + 1);
         } else if (menuPage == 7 && menuSelection == 0) {
           menuPage = 3;
           menuSelection = 0;
