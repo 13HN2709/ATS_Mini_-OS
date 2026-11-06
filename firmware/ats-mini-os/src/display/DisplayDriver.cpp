@@ -379,14 +379,15 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   text(canvas,batteryText,w-43,7,batteryPercent<=15?YELLOW:GREEN,&lgfx::fonts::Font0);
   canvas.drawFastHLine(8,25,w-16,DARK_GREEN);
 
-  // Station name is the prominent line above the artwork and frequency.
+  // Station name sits directly above the frequency; its left edge aligns
+  // with the first frequency digit.
   const char* station=s.stationName[0]?s.stationName:(radioReady?"--":"RADIO OFFLINE");
-  canvas.fillRect(8,29,w-16,22,BLACK);
-  text(canvas,station,12,30,WHITE,&lgfx::fonts::Font4);
+  canvas.fillRect(124,29,w-132,22,BLACK);
+  text(canvas,station,124,30,WHITE,&lgfx::fonts::Font4);
 
   // Left-hand station logo. Source files remain at their original resolution;
   // the renderer scales them proportionally into this display viewport.
-  constexpr int logoX=12, logoY=55, logoW=96, logoH=65;
+  constexpr int logoX=8, logoY=51, logoW=108, logoH=76;
   canvas.fillRoundRect(logoX,logoY,logoW,logoH,6,WHITE);
   bool logoDrawn=false;
   if(logoData&&logoLength){
@@ -417,15 +418,13 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
     static_cast<unsigned long>((s.frequencyKHz%1000)/10));
   canvas.setTextColor(GREEN,BLACK);
   canvas.setFont(&lgfx::fonts::Font4);
-  canvas.drawString(frequency,116,61);
+  canvas.drawString(frequency,124,58);
   text(canvas,"MHz",w-43,75,WHITE,&lgfx::fonts::Font2);
 
-  // Compact reception badges under the frequency.
+  // Stereo and PTY share the full row; the redundant RDS badge is removed.
   const int badgeY=103;
-  canvas.drawRoundRect(113,badgeY,75,20,5,GREEN);
-  centered(canvas,s.stereo?"STEREO":"MONO",150,badgeY+3,GREEN,&lgfx::fonts::Font0);
-  canvas.drawRoundRect(193,badgeY,42,20,5,GREEN);
-  centered(canvas,s.rdsAvailable?"RDS":"--",214,badgeY+3,s.rdsAvailable?GREEN:0x7BEF,&lgfx::fonts::Font0);
+  canvas.drawRoundRect(124,badgeY,78,20,5,GREEN);
+  centered(canvas,s.stereo?"STEREO":"MONO",163,badgeY+6,GREEN,&lgfx::fonts::Font0);
 
   static const char* const ptyNames[32]={
     "NONE","NEWS","CURRENT AFFAIRS","INFO","SPORT","EDUCATION","DRAMA","CULTURE",
@@ -435,15 +434,15 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
     "OLDIES","FOLK MUSIC","DOCUMENTARY","ALARM TEST","ALARM"
   };
   const char* pty=ptyNames[s.pty<32?s.pty:0];
-  canvas.drawRoundRect(240,badgeY,w-248,20,5,WHITE);
+  canvas.drawRoundRect(210,badgeY,w-218,20,5,WHITE);
   canvas.setFont(&lgfx::fonts::Font0);
   canvas.setTextColor(WHITE,BLACK);
-  canvas.drawCenterString(pty,240+(w-248)/2,badgeY+3);
+  canvas.drawCenterString(pty,210+(w-218)/2,badgeY+6);
 
   // Bottom RT ticker in its own neon-green rounded frame.
   constexpr int rtX=8,rtY=130,rtW=304,rtH=32;
   canvas.drawRoundRect(rtX,rtY,rtW,rtH,7,GREEN);
-  const char* rt=s.radioText[0]?s.radioText:"Warte auf Radiotext...";
+  const char* rt=s.radioText;
   canvas.setFont(&lgfx::fonts::Font2);
   canvas.setTextColor(WHITE,BLACK);
   canvas.setClipRect(rtX+10,rtY+3,rtW-20,rtH-6);
