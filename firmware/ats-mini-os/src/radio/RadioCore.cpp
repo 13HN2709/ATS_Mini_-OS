@@ -122,10 +122,21 @@ bool RadioCore::setBandwidthChoice(uint8_t choice) {
   return true;
 }
 
+bool RadioCore::setStepChoice(uint8_t choice) {
+  static const uint16_t fmSteps[] = {50, 100, 200, 1000};
+  static const uint16_t amSteps[] = {1, 5, 9, 10};
+  if (!ready_ || choice >= 4) return false;
+  const uint16_t step = snapshot_.modulation == RadioModulation::FM ? fmSteps[choice] : amSteps[choice];
+  if (!tuner_.setStepKHz(step) || !BandManager::setCurrentStepKHz(step)) return false;
+  snapshot_.generation = ++generation_;
+  Serial.printf("[RADIO] step=%u kHz mode=%u\\n", static_cast<unsigned>(step), static_cast<unsigned>(snapshot_.modulation));
+  return true;
+}
+
 bool RadioCore::nextChannel(int16_t acceleratedDelta) {
   if (!ready_ || acceleratedDelta == 0) return false;
   const auto& band = BandManager::current();
-  const uint32_t step = band.stepKHz ? band.stepKHz : 1;
+  const uint32_t step = BandManager::currentStepKHz() ? BandManager::currentStepKHz() : (band.stepKHz ? band.stepKHz : 1);
   const int64_t span = static_cast<int64_t>(band.maximumKHz) - band.minimumKHz + step;
   int64_t offset = static_cast<int64_t>(snapshot_.frequencyKHz) - band.minimumKHz;
   offset += static_cast<int64_t>(acceleratedDelta) * step;
