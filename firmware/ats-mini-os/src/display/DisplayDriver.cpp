@@ -358,35 +358,29 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
                 int16_t radioTextOffset,bool scrollRadioText,bool frequencyBlue) {
   const int w=canvas.width();
   const int h=canvas.height();
-  canvas.fillRect(7,4,116,24,BLACK);
-  canvas.fillRect(198,4,w-205,24,BLACK);
+  canvas.fillRect(7,4,w-14,24,BLACK);
 
-  // Header: two decimal places for FM, with compact status indicators.
-  char freq[20];
-  snprintf(freq,sizeof(freq),"%lu.%02lu MHz",
-    static_cast<unsigned long>(s.frequencyKHz/1000),
-    static_cast<unsigned long>((s.frequencyKHz%1000)/10));
-  text(canvas,freq,10,7,frequencyBlue?0x03FF:GREEN,&lgfx::fonts::Font2);
+  // Compact FM header: band on the left, RDS clock slot centered,
+  // WLAN status beside the battery percentage on the right.
+  text(canvas,"FM",10,7,GREEN,&lgfx::fonts::Font2);
+  // RDS clock is added once the tuner/RDS layer exposes validated CT data.
+  text(canvas,"--:--",w/2,8,0x7BEF,&lgfx::fonts::Font0);
 
-  text(canvas,wifiConnected?"WLAN+":"WLAN-",198,8,wifiConnected?CYAN:0x7BEF,&lgfx::fonts::Font0);
-  // ATS-Mini-DEV hardware reference: battery monitor is wired to GPIO4.
-  // Match DEV's ADC correction factor and voltage thresholds; no fabricated percentage.
+  text(canvas,wifiConnected?"WLAN":"WLAN-",w-91,8,wifiConnected?CYAN:0x7BEF,&lgfx::fonts::Font0);
+
+  // ATS-Mini-DEV battery ADC reference: GPIO4, correction factor 1.702.
   uint32_t adcTotal = 0;
   for (uint8_t i = 0; i < 10; ++i) adcTotal += analogRead(4);
   const float batteryVolts = (static_cast<float>(adcTotal) / 10.0f) * 1.702f / 1000.0f;
   const bool charging = batteryVolts > 4.3f;
-  const uint8_t batterySegments = batteryVolts < 3.68f ? 1 : batteryVolts < 3.78f ? 2 : batteryVolts < 3.88f ? 3 : 4;
-  canvas.drawRoundRect(w-31,7,20,10,2,CYAN);
-  canvas.fillRect(w-10,10,2,4,CYAN);
-  if (charging) {
-    canvas.fillRoundRect(w-29,9,16,6,1,CYAN);
-    canvas.drawLine(w-22,8,w-24,12,BLACK);
-    canvas.drawLine(w-24,12,w-21,12,BLACK);
-    canvas.drawLine(w-21,12,w-23,15,BLACK);
-  } else {
-    for (uint8_t i = 0; i < batterySegments; ++i)
-      canvas.fillRect(w-28 + i*4,9,3,6,batteryVolts < 3.68f ? YELLOW : GREEN);
-  }
+  // Approximate single-cell Li-ion state of charge from voltage; label it
+  // explicitly as an estimate until a calibrated fuel-gauge source exists.
+  int batteryPercent = static_cast<int>((batteryVolts - 3.30f) * 100.0f / (4.20f - 3.30f) + 0.5f);
+  batteryPercent = constrain(batteryPercent, 0, 100);
+  char batteryText[8];
+  snprintf(batteryText,sizeof(batteryText),"%d%%",batteryPercent);
+  text(canvas,batteryText,w-43,8,batteryPercent<=15?YELLOW:GREEN,&lgfx::fonts::Font0);
+  if (charging) text(canvas,"+",w-14,8,CYAN,&lgfx::fonts::Font0);
 
   canvas.drawFastHLine(10,31,w-20,DARK_GREEN);
 
