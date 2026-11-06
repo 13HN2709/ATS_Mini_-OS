@@ -14,6 +14,9 @@ public:
   bool nextBand(int8_t direction);
   bool setVolume(uint8_t volume);
   bool setBandwidthChoice(uint8_t choice);
+  bool setStepChoice(uint8_t choice);
+  uint8_t stepChoice() const { return tuner_.stepChoice(); }
+  uint8_t stepChoiceCount() const { return tuner_.stepChoiceCount(); }
   uint8_t bandwidthChoice() const { return tuner_.bandwidthChoice(); }
   uint8_t bandwidthChoiceCount() const { return tuner_.bandwidthChoiceCount(); }
   uint8_t volume() const { return tuner_.volume(); }
