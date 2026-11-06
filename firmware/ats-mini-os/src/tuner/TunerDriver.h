@@ -1,6 +1,7 @@
 #pragma once
 #include <Arduino.h>
 #include <SI4735.h>
+#include "../radio/BandManager.h"
 
 // Thin adapter: PU2CLR keeps the individual RT buffer-clear helpers protected.
 class TunerSI4735 : public SI4735 {
@@ -82,6 +83,9 @@ class TunerDriver {
 public:
   bool begin(uint32_t initialFrequencyKHz);
   bool tune(uint32_t frequencyKHz);
+  bool setBand(const RadioBandDefinition& band);
+  bool tune(uint32_t frequencyKHz, const RadioBandDefinition& band);
+  RadioModulation modulation() const { return modulation_; }
   bool setVolume(uint8_t volume);
   uint8_t volume() const { return volume_; }
   uint32_t frequencyKHz() const;
@@ -101,4 +105,8 @@ private:
   uint8_t volume_ = 25;
   bool haveTextFlag_ = false;
   uint8_t lastTextFlag_ = 0;
+  RadioModulation modulation_ = RadioModulation::FM;
+  uint32_t minimumFrequencyKHz_ = 87500;
+  uint32_t maximumFrequencyKHz_ = 108000;
+  uint16_t stepKHz_ = 100;
 };
