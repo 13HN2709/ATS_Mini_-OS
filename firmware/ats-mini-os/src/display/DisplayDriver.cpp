@@ -385,7 +385,7 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   constexpr int stationX = 124;
   // Font7 has a little leading side-bearing on a three-digit MHz value.
   // Move only the frequency slightly left; keep clear of the logo border.
-  const int frequencyX = (s.frequencyKHz / 1000UL) >= 100UL ? 120 : 124;
+  const int frequencyX = (s.frequencyKHz / 1000UL) >= 100UL ? 116 : 124;
   const char* station=s.stationName[0]?s.stationName:(radioReady?"--":"RADIO OFFLINE");
   canvas.fillRect(stationX,29,w-stationX-8,22,BLACK);
   text(canvas,station,stationX,30,WHITE,&lgfx::fonts::FreeSansBold9pt7b);
