@@ -187,6 +187,9 @@ void StationLogoClient::update(const RadioSnapshot& state, bool wifiConnected) {
   if (haveRequested_ && strcmp(lastRequestKey_,key)==0 && millis()-lastAttemptMs_<60000) return;
   strncpy(lastRequestKey_,key,sizeof(lastRequestKey_)-1); lastRequestKey_[sizeof(lastRequestKey_)-1]=0;
   haveRequested_=true; lastAttemptMs_=millis();
+  Serial.printf("[LOGO] lookup requested: PI=%04X frequency=%lu kHz LittleFS=%s\\n",
+    static_cast<unsigned>(state.piCode), static_cast<unsigned long>(state.frequencyKHz),
+    StorageDiscovery::ready() ? "ready" : "not-ready");
   LookupJob* job=new(std::nothrow) LookupJob{this,state};
   if (!job) return;
   busy_=true;
@@ -204,6 +207,7 @@ void StationLogoClient::runLookup(const RadioSnapshot& state) {
   snprintf(key,sizeof(key),"%04X_%lu",static_cast<unsigned>(state.piCode),static_cast<unsigned long>(state.frequencyKHz));
   const String pi=String(state.piCode,HEX); String piUpper=pi; piUpper.toUpperCase();
 
+  bool localLogoFound = false;
   // Local LittleFS lookup always has priority. Accept files in both /logos
   // and the filesystem root so manually uploaded ATS Mini logo packs work.
   const char* logoDirectories[] = {"/logos", "/"};
@@ -232,8 +236,10 @@ void StationLogoClient::runLookup(const RadioSnapshot& state) {
           }
           entry.close();
           directory.close();
-          if (storeLogoInRam(image, key, path.c_str()))
+          if (storeLogoInRam(image, key, path.c_str())) {
+            localLogoFound = true;
             Serial.printf("[LOGO] local PI match: %s\\n", path.c_str());
+          }
           return;
         }
       }
@@ -243,6 +249,8 @@ void StationLogoClient::runLookup(const RadioSnapshot& state) {
     directory.close();
   }
 
+
+  if (!localLogoFound) Serial.printf("[LOGO] no local file matched PI %s in /logos or /\\n", piUpper.c_str());
 
   TemporaryLogoWifi temporaryWifi;
   if (!WiFi.isConnected()) {
