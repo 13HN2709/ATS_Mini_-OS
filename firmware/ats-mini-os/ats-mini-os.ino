@@ -4,6 +4,7 @@
 #include <LittleFS.h>
 #include "src/radio/RadioCore.h"
 #include "src/system/PerformanceManager.h"
+#include "src/system/ClockService.h"
 #include "src/display/DisplayDriver.h"
 #include "src/input/EncoderInput.h"
 #include "src/network/WifiClient.h"
@@ -16,6 +17,7 @@ namespace {
 constexpr uint32_t SERIAL_BAUD = 115200;
 constexpr uint32_t DEFAULT_FM_FREQUENCY_KHZ = 95400;
 PerformanceManager performance;
+ClockService systemClock;
 RadioCore radio;
 DisplayDriver display;
 EncoderInput encoder;
@@ -45,6 +47,7 @@ void fmChoose(uint8_t visual){ if(visual==0){ if(fmMode==3)return; fmParent(); r
 }
 void setup() {
   Serial.begin(SERIAL_BAUD); delay(250); performance.begin();
+  systemClock.begin();
   Serial.println(); Serial.println("ATS Mini OS - UKW/RDS hardware test");
   Serial.println("First milestone: display, SI4735 audio, RDS. No memories/EiBi storage.");
   PartitionDiagnostics::printToSerial();
@@ -63,6 +66,7 @@ void setup() {
 void loop() {
   performance.update();
   wifi.update();
+  systemClock.update(wifi.connected());
   if (wifi.connected() && !diagnosticsServerStarted) {
     diagnosticsServer.begin();
     diagnosticsServerStarted = true;
