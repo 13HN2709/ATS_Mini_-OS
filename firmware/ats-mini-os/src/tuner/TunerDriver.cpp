@@ -5,7 +5,7 @@
 namespace {
 constexpr uint8_t kI2cSdaPin = 18;
 constexpr uint8_t kI2cSclPin = 17;
-constexpr uint16_t kMinFrequency10KHz = 8750;
+constexpr uint16_t kMinFrequency10KHz = 6400;
 constexpr uint16_t kMaxFrequency10KHz = 10800;
 constexpr uint16_t kDefaultSpacing10KHz = 10;
 constexpr uint8_t kDefaultVolume = 25;
@@ -77,7 +77,7 @@ bool TunerDriver::begin(uint32_t initialFrequencyKHz) {
   digitalWrite(kAmplifierEnablePin, HIGH);
   delay(5);
   digitalWrite(kAudioMutePin, LOW);
-  minimumFrequencyKHz_ = 87500;
+  minimumFrequencyKHz_ = 64000;
   maximumFrequencyKHz_ = 108000;
   stepKHz_ = 100;
   modulation_ = RadioModulation::FM;
