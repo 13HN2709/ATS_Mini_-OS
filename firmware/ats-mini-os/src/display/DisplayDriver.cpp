@@ -172,7 +172,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
   static const char* const fmBandwidthItems[] = { "Zurueck", "Auto", "110 kHz", "84 kHz", "60 kHz", "40 kHz" };
   static const char* const amBandwidthItems[] = { "Zurueck", "1.0 kHz", "1.8 kHz", "2.0 kHz", "2.5 kHz", "3.0 kHz", "4.0 kHz", "6.0 kHz" };
   static const char* const ssbBandwidthItems[] = { "Zurueck", "0.5 kHz", "1.0 kHz", "1.2 kHz", "2.2 kHz", "3.0 kHz", "4.0 kHz" };
-  static const char* const fmStepItems[] = { "Zurueck", "50 kHz", "100 kHz", "200 kHz", "1 MHz" };
+  static const char* const fmStepItems[] = { "Zurueck", "10 kHz (DX)", "50 kHz", "100 kHz", "200 kHz", "1 MHz" };
   static const char* const amStepItems[] = { "Zurueck", "1 kHz", "5 kHz", "9 kHz", "10 kHz" };
   static const char* const wifiItems[] = {
     "Zurueck", "WLAN-Modus (spaeter)", "Web Control (spaeter)"
