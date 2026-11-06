@@ -387,7 +387,7 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
 
   // Left-hand station logo. Source files remain at their original resolution;
   // the renderer scales them proportionally into this display viewport.
-  constexpr int logoX=8, logoY=51, logoW=108, logoH=76;
+  constexpr int logoX=8, logoY=27, logoW=108, logoH=108;
   canvas.fillRoundRect(logoX,logoY,logoW,logoH,6,WHITE);
   bool logoDrawn=false;
   if(logoData&&logoLength){
@@ -407,8 +407,8 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
     }
   }
   if(!logoDrawn){
-    centered(canvas,logoData?"LOGO FEHLER":"LOGO SUCHT...",logoX+logoW/2,logoY+20,0x7BEF,&lgfx::fonts::Font2);
-    centered(canvas,"PI / LittleFS",logoX+logoW/2,logoY+42,DARK_GREEN,&lgfx::fonts::Font0);
+    centered(canvas,logoData?"LOGO FEHLER":"LOGO SUCHT...",logoX+logoW/2,logoY+43,0x7BEF,&lgfx::fonts::Font2);
+    centered(canvas,"PI / LittleFS",logoX+logoW/2,logoY+65,DARK_GREEN,&lgfx::fonts::Font0);
   }
 
   // Large frequency readout, inspired by the supplied concept.
@@ -440,20 +440,20 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   canvas.drawCenterString(pty,210+(w-218)/2,badgeY+6);
 
   // Bottom RT ticker in its own neon-green rounded frame.
-  constexpr int rtX=8,rtY=130,rtW=304,rtH=32;
+  constexpr int rtX=8,rtY=138,rtW=304,rtH=26;
   canvas.drawRoundRect(rtX,rtY,rtW,rtH,7,GREEN);
   const char* rt=s.radioText;
   canvas.setFont(&lgfx::fonts::Font2);
   canvas.setTextColor(WHITE,BLACK);
-  canvas.setClipRect(rtX+10,rtY+3,rtW-20,rtH-6);
+  canvas.setClipRect(rtX+10,rtY+2,rtW-20,rtH-4);
   if(scrollRadioText){
     char ticker[72];
     snprintf(ticker,sizeof(ticker),"%s    ",s.radioText);
     const int tickerWidth=canvas.textWidth(ticker);
-    canvas.drawString(ticker,rtX+14+radioTextOffset,rtY+8);
-    canvas.drawString(ticker,rtX+14+radioTextOffset+tickerWidth,rtY+8);
+    canvas.drawString(ticker,rtX+14+radioTextOffset,rtY+5);
+    canvas.drawString(ticker,rtX+14+radioTextOffset+tickerWidth,rtY+5);
   } else {
-    canvas.drawString(rt,rtX+14,rtY+8);
+    canvas.drawString(rt,rtX+14,rtY+5);
   }
   canvas.clearClipRect();
 }
