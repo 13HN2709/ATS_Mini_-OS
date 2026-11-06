@@ -152,7 +152,7 @@ void drawFileMenu(Canvas& c,const char* path,FileManager::Entry* entries,uint8_t
 }
 
 template <typename Canvas>
-void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume) {
+void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, uint8_t layoutMode) {
   const int w = canvas.width();
   const int h = canvas.height();
   static const char* const mainItems[] = {
@@ -162,7 +162,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume) {
     "Zurueck", "Lautstaerke", "Stumm (spaeter)"
   };
   static const char* const displayItems[] = {
-    "Zurueck", "Helligkeit (spaeter)", "Layout (spaeter)"
+    "Zurueck", "Helligkeit (spaeter)", "Layout: FM"
   };
   static const char* const radioItems[] = {
     "Zurueck", "Schrittweite (spaeter)", "Bandplan (spaeter)"
@@ -173,12 +173,18 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume) {
   static const char* const systemItems[] = {
     "Zurueck", "CPU-Profil (spaeter)", "Systeminfo (spaeter)", "Dateimanager"
   };
+  static char layoutItem[24];
+  snprintf(layoutItem, sizeof(layoutItem), "Layout: %s", layoutMode == 0 ? "FM" : "TEST");
+  static const char* displayItemsMutable[3];
+  displayItemsMutable[0] = "Zurueck";
+  displayItemsMutable[1] = "Helligkeit (spaeter)";
+  displayItemsMutable[2] = layoutItem;
   const char* const* items = mainItems;
   uint8_t count = sizeof(mainItems) / sizeof(mainItems[0]);
   const char* title = "HAUPTMENUE";
   switch (page) {
     case 1: items=volumeItems; count=sizeof(volumeItems)/sizeof(volumeItems[0]); title="AUDIO"; break;
-    case 2: items=displayItems; count=sizeof(displayItems)/sizeof(displayItems[0]); title="ANZEIGE"; break;
+    case 2: items=displayItemsMutable; count=3; title="ANZEIGE"; break;
     case 3: items=radioItems; count=sizeof(radioItems)/sizeof(radioItems[0]); title="RADIO"; break;
     case 4: items=wifiItems; count=sizeof(wifiItems)/sizeof(wifiItems[0]); title="WLAN"; break;
     case 5: items=systemItems; count=sizeof(systemItems)/sizeof(systemItems[0]); title="SYSTEM"; break;
@@ -252,7 +258,17 @@ bool DisplayDriver::begin() {
   Serial.printf("[DISPLAY] ready, panel ID=0x%06lX, size=%ldx%ld\n",
     static_cast<unsigned long>(device_.getDisplayId()),
     static_cast<long>(device_.width()),static_cast<long>(device_.height()));
+  preferences_.begin("atsmini", false);
+  layoutMode_ = preferences_.getUChar("layout", 0) == 1 ? 1 : 0;
+  Serial.printf("[DISPLAY] saved layout: %s\n", layoutMode_ == 0 ? "FM" : "TEST");
   return true;
+}
+
+void DisplayDriver::setLayoutMode(uint8_t mode) {
+  layoutMode_ = mode == 1 ? 1 : 0;
+  preferences_.putUChar("layout", layoutMode_);
+  lastGeneration_ = UINT32_MAX;
+  Serial.printf("[DISPLAY] layout changed: %s\n", layoutMode_ == 0 ? "FM" : "TEST");
 }
 
 void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConnected,
@@ -262,7 +278,7 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
   if(!ready_)return;
   const uint32_t now=millis();
   const bool menuStateChanged = menuOpen != lastMenuOpen_ || menuPage != lastMenuPage_ ||
-      menuSelection != lastMenuSelection_ || volume != lastMenuVolume_;
+      menuSelection != lastMenuSelection_ || volume != lastMenuVolume_ || layoutMode_ != lastMenuLayout_;
   // Redraw the file manager promptly while the encoder is moving; this also
   // keeps the selection frame visually attached to the active row.
   const uint32_t redrawInterval = menuOpen ? ((menuPage==6) ? 20 : 500) : 40;
@@ -273,15 +289,16 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
   lastMenuPage_=menuPage;
   lastMenuSelection_=menuSelection;
   lastMenuVolume_=volume;
+  lastMenuLayout_=layoutMode_;
   if (menuOpen) {
     if(menuPage==6){if(useSprite_){sprite_.fillSprite(BLACK);drawFileMenu(sprite_,filePath,fileEntries,fileCount,fileSelection,fileMode,fileActionSelection,fileSelectedName,fileMessage);sprite_.pushSprite(0,0);}else{device_.fillScreen(BLACK);drawFileMenu(device_,filePath,fileEntries,fileCount,fileSelection,fileMode,fileActionSelection,fileSelectedName,fileMessage);}return;}
     if (useSprite_) {
       sprite_.fillSprite(BLACK);
-      drawMenu(sprite_, menuPage, menuSelection, volume);
+      drawMenu(sprite_, menuPage, menuSelection, volume, layoutMode_);
       sprite_.pushSprite(0,0);
     } else {
       device_.fillScreen(BLACK);
-      drawMenu(device_, menuPage, menuSelection, volume);
+      drawMenu(device_, menuPage, menuSelection, volume, layoutMode_);
     }
     return;
   }
@@ -448,13 +465,39 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   canvas.fillRect(10,h-16,w-20,15,BLACK);
   text(canvas,status,11,h-13,0x7BEF,&lgfx::fonts::Font0);
 }
+template <typename Canvas>
+void drawTestLayout(Canvas& canvas, const RadioSnapshot& s, bool radioReady, bool wifiConnected) {
+  const int w = canvas.width();
+  const int h = canvas.height();
+  canvas.fillScreen(BLACK);
+  text(canvas, "ATS MINI OS - TEST", 8, 5, CYAN, &lgfx::fonts::Font2);
+  canvas.drawFastHLine(8, 27, w - 16, DARK_GREEN);
+  char value[40];
+  snprintf(value, sizeof(value), "%lu.%02lu MHz",
+    static_cast<unsigned long>(s.frequencyKHz / 1000),
+    static_cast<unsigned long>((s.frequencyKHz % 1000) / 10));
+  centered(canvas, value, w / 2, 36, YELLOW, &lgfx::fonts::Font4);
+  snprintf(value, sizeof(value), "RSSI %d dBuV  SNR %d dB", s.rssi, s.snr);
+  text(canvas, value, 8, 78, GREEN, &lgfx::fonts::Font2);
+  snprintf(value, sizeof(value), "PI: %04X  PTY: %u", static_cast<unsigned>(s.piCode), static_cast<unsigned>(s.pty));
+  text(canvas, value, 8, 101, CYAN, &lgfx::fonts::Font2);
+  text(canvas, "PS:", 8, 126, YELLOW, &lgfx::fonts::Font0);
+  text(canvas, s.stationName[0] ? s.stationName : "--", 35, 122, WHITE, &lgfx::fonts::Font2);
+  text(canvas, "RT:", 8, 146, YELLOW, &lgfx::fonts::Font0);
+  text(canvas, s.radioText[0] ? s.radioText : "Kein Radiotext", 35, 142, WHITE, &lgfx::fonts::Font2);
+  if (!radioReady) centered(canvas, "RADIO OFFLINE", w / 2, h - 15, 0xF800, &lgfx::fonts::Font0);
+  else text(canvas, wifiConnected ? "WLAN+" : "WLAN-", w - 42, h - 13, 0x7BEF, &lgfx::fonts::Font0);
+}
+
 void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady,bool wifiConnected,const char* lastInputEvent,uint32_t inputEventCount,const uint8_t* logoData,size_t logoLength,bool logoIsJpg,int16_t radioTextOffset,bool scrollRadioText,bool frequencyBlue) {
   if (useSprite_) {
     sprite_.fillSprite(BLACK);
-    drawLayout(sprite_,s,radioReady,wifiConnected,lastInputEvent,inputEventCount,logoData,logoLength,logoIsJpg,radioTextOffset,scrollRadioText,frequencyBlue);
+    if (layoutMode_ == 0) drawLayout(sprite_,s,radioReady,wifiConnected,lastInputEvent,inputEventCount,logoData,logoLength,logoIsJpg,radioTextOffset,scrollRadioText,frequencyBlue);
+    else drawTestLayout(sprite_,s,radioReady,wifiConnected);
     sprite_.pushSprite(0,0);
   } else {
     device_.fillScreen(BLACK);
-    drawLayout(device_,s,radioReady,wifiConnected,lastInputEvent,inputEventCount,logoData,logoLength,logoIsJpg,radioTextOffset,scrollRadioText,frequencyBlue);
+    if (layoutMode_ == 0) drawLayout(device_,s,radioReady,wifiConnected,lastInputEvent,inputEventCount,logoData,logoLength,logoIsJpg,radioTextOffset,scrollRadioText,frequencyBlue);
+    else drawTestLayout(device_,s,radioReady,wifiConnected);
   }
 }
