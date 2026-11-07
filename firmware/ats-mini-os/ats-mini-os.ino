@@ -132,7 +132,7 @@ void loop() {
         lastEncoderEvent = inputEvent.type == EncoderEventType::RotateClockwise ? "CW" : "CCW";
         if (menuOpen) {
           if(menuPage==6){ if(fmMode==1){int v=(int)fmActionSelection+inputEvent.delta;v%=6;if(v<0)v+=6;fmActionSelection=(uint8_t)v;} else if(fmMode==2)fmActionSelection=fmActionSelection?0:1; else if(fmMode==4){const char* chars="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 _-.";size_t n=strlen(chars);char ch=fmEditName[fmEditCursor];const char* q=strchr(chars,ch?ch:65);int pos=q?(int)(q-chars):0;pos=(pos+inputEvent.delta)%(int)n;if(pos<0)pos+=(int)n;fmEditName[fmEditCursor]=chars[pos];fmEditName[fmEditCursor+1]=0;} else {uint8_t n=fmCount+(fmMode==3?1:3);int v=(int)fmSelection+inputEvent.delta;v%=n;if(v<0)v+=n;fmSelection=(uint8_t)v;} }
-          else if (menuPage == 2 && menuSelection == 1) {
+          else if ((menuPage == 2 && menuSelection == 1) || (menuPage == 0 && menuSelection == 7)) {
             const int16_t requested = static_cast<int16_t>(display.brightness()) + inputEvent.delta * 5;
             const uint8_t nextBrightness = static_cast<uint8_t>(constrain(requested, 10, 255));
             display.setBrightness(nextBrightness);
@@ -145,7 +145,7 @@ void loop() {
             if (radio.setVolume(nextVolume))
               Serial.printf("[MENU] volume=%u/63\n", static_cast<unsigned>(radio.volume()));
           } else {
-            const int16_t itemCount = menuPage == 0 ? 6 : (menuPage==2 ? 4 : (menuPage==13 ? 3 : (menuPage==10 ? 4 : (menuPage==11 ? (radio.snapshot().modulation==RadioModulation::FM ? 10 : 14) : (menuPage==5 ? 5 : (menuPage==3 ? 6 : (menuPage==12 ? MenuSSB::kItemCount : (menuPage==7 ? radio.bandwidthChoiceCount()+1 : (menuPage==8 ? radio.bandCount()+1 : (menuPage==9 ? radio.stepChoiceCount()+1 : 3))))))))));
+            const int16_t itemCount = menuPage == 0 ? 11 : (menuPage==2 ? 4 : (menuPage==13 ? 3 : (menuPage==10 ? 4 : (menuPage==11 ? (radio.snapshot().modulation==RadioModulation::FM ? 10 : 14) : (menuPage==5 ? 5 : (menuPage==3 ? 6 : (menuPage==12 ? MenuSSB::kItemCount : (menuPage==7 ? radio.bandwidthChoiceCount()+1 : (menuPage==8 ? radio.bandCount()+1 : (menuPage==9 ? radio.stepChoiceCount()+1 : 3))))))))));
             int16_t next = (static_cast<int16_t>(menuSelection) + inputEvent.delta) % itemCount;
             if (next < 0) next += itemCount;
             menuSelection = static_cast<uint8_t>(next);
@@ -165,36 +165,40 @@ void loop() {
           menuSelection = 0;
           Serial.println("[MENU] opened");
         } else if(menuPage==6){ if(fmMode==1){ if(fmActionSelection==0)fmMode=0; else if(fmActionSelection==1||fmActionSelection==2){fmPendingAction=fmActionSelection;fmMode=3;fmSelection=0;} else if(fmActionSelection==4){fmMode=2;fmActionSelection=0;} else {fmPendingAction=fmActionSelection==5?5:3; if(fmPendingAction==5)fmEditName[0]=0;else strncpy(fmEditName,fmSelectedName,sizeof(fmEditName)-1);fmEditName[sizeof(fmEditName)-1]=0;fmEditCursor=0;fmMode=4;} } else if(fmMode==2){if(fmActionSelection==1){bool ok=FileManager::removeFile(fmSelectedPath);fmMessageSet(ok?"Datei geloescht":"Loeschen fehlgeschlagen");fmRefresh();}fmMode=0;} else if(fmMode==4){if(fmEditCursor<sizeof(fmEditName)-2){++fmEditCursor;if(fmEditCursor>=strlen(fmEditName)){fmEditName[fmEditCursor]=65;fmEditName[fmEditCursor+1]=0;}}} else if(fmMode==3){if(fmSelection==0){const char* b=strrchr(fmSelectedPath,47);b=b?b+1:fmSelectedPath;char dest[96];snprintf(dest,sizeof(dest),"%s%s%s",fmPath,strcmp(fmPath,"/")==0?"":"/",b);bool ok=fmPendingAction==1?FileManager::copyFile(fmSelectedPath,dest):FileManager::moveFile(fmSelectedPath,dest);fmMessageSet(ok?"Erledigt":"Aktion fehlgeschlagen");fmMode=0;fmRefresh();}else {uint8_t idx=fmSelection-1;if(idx<fmCount&&fmEntries[idx].directory){strncpy(fmPath,fmEntries[idx].path,sizeof(fmPath)-1);fmPath[sizeof(fmPath)-1]=0;fmSelection=0;fmRefresh();}}}else fmChoose(fmSelection);
-        } else if (menuPage==5 && menuSelection==3) {fmOpen();
+        } else if ((menuPage==5 && menuSelection==3) || (menuPage==0 && menuSelection==10)) {fmOpen();
         } else if (menuPage == 0) {
           if (menuSelection == 0) {
             menuOpen = false;
             Serial.println("[MENU] closed via Back");
-          } else {
-            menuPage = menuSelection;
-            menuSelection = 0;
-            Serial.printf("[MENU] opened submenu %u\n", static_cast<unsigned>(menuPage));
+          } else if (menuSelection != 7) {
+            static const uint8_t targetPages[] = {0, 1, 8, 7, 9, 11, 12, 0, 13, 10, 5};
+            menuPage = targetPages[menuSelection];
+            if (menuPage == 8) menuSelection = static_cast<uint8_t>(radio.currentBandIndex() + 1);
+            else if (menuPage == 13) menuSelection = static_cast<uint8_t>(display.layoutMode() + 1);
+            else if (menuPage == 10) menuSelection = static_cast<uint8_t>(display.themeIndex() + 1);
+            else menuSelection = 0;
+            Serial.printf("[MENU] opened selection page %u\n", static_cast<unsigned>(menuPage));
           }
         } else if (menuPage == 2 && menuSelection == 2) {
           menuPage = 13;
           menuSelection = static_cast<uint8_t>(display.layoutMode() + 1);
         } else if (menuPage == 13 && menuSelection == 0) {
-          menuPage = 2;
-          menuSelection = 2;
+          menuPage = 0;
+          menuSelection = 8;
         } else if (menuPage == 13 && menuSelection > 0) {
           const uint8_t layout = static_cast<uint8_t>(menuSelection - 1);
           display.setLayoutMode(layout);
           const bool saved = settingsStore.saveDisplayLayout(layout);
           Serial.printf("[SETTINGS] display layout=%s %s\\n",
             layout == 1 ? "HJB" : "FM Standard", saved ? "saved" : "save failed");
-          menuPage = 2;
-          menuSelection = 2;
+          menuPage = 0;
+          menuSelection = 8;
         } else if (menuPage == 2 && menuSelection == 3) {
           menuPage = 10;
           menuSelection = static_cast<uint8_t>(display.themeIndex() + 1);
         } else if (menuPage == 10 && menuSelection == 0) {
-          menuPage = 2;
-          menuSelection = 3;
+          menuPage = 0;
+          menuSelection = 9;
         } else if (menuPage == 10 && menuSelection > 0) {
           display.setTheme(static_cast<uint8_t>(menuSelection - 1));
           themeSavePending = true;
@@ -202,8 +206,8 @@ void loop() {
           menuPage = MenuSSB::kPage;
           menuSelection = 0;
         } else if (menuPage == MenuSSB::kPage && menuSelection == 0) {
-          menuPage = 3;
-          menuSelection = 5;
+          menuPage = 0;
+          menuSelection = 6;
         } else if (menuPage == MenuSSB::kPage && menuSelection > 0) {
           if (MenuSSB::apply(radio, menuSelection)) {
             const bool saved = settingsStore.saveBfoOffsetHz(radio.bfoOffsetHz());
@@ -213,8 +217,8 @@ void loop() {
           menuPage = 11;
           menuSelection = 0;
         } else if (menuPage == 11 && menuSelection == 0) {
-          menuPage = 3;
-          menuSelection = 4;
+          menuPage = 0;
+          menuSelection = 5;
         } else if (menuPage == 11 && menuSelection == 1) {
           if (radio.setAgcAutomatic(true)) {
             const bool saved = settingsStore.saveAgcAutomatic(true);
@@ -248,33 +252,33 @@ void loop() {
           menuPage = 8;
           menuSelection = static_cast<uint8_t>(radio.currentBandIndex() + 1);
         } else if (menuPage == 8 && menuSelection == 0) {
-          menuPage = 3;
-          menuSelection = 0;
+          menuPage = 0;
+          menuSelection = 2;
         } else if (menuPage == 8 && menuSelection > 0) {
           if (radio.selectBand(static_cast<uint8_t>(menuSelection - 1))) {
             display.notifyTuning();
             Serial.printf("[MENU] band=%s freq=%lu kHz\n", radio.snapshot().bandName,
               static_cast<unsigned long>(radio.snapshot().frequencyKHz));
-            menuPage = 3;
-            menuSelection = 1;
+            menuPage = 0;
+            menuSelection = 2;
           }
         } else if (menuPage == 3 && menuSelection == 3) {
           menuPage = 9;
           menuSelection = static_cast<uint8_t>(radio.stepChoice() + 1);
         } else if (menuPage == 9 && menuSelection == 0) {
-          menuPage = 3;
-          menuSelection = 0;
+          menuPage = 0;
+          menuSelection = 4;
         } else if (menuPage == 9 && menuSelection > 0) {
           if (radio.setStepChoice(static_cast<uint8_t>(menuSelection - 1))) {
-            menuPage = 3;
-            menuSelection = 3;
+            menuPage = 0;
+            menuSelection = 4;
           }
         } else if (menuPage == 3 && menuSelection == 2) {
           menuPage = 7;
           menuSelection = static_cast<uint8_t>(radio.bandwidthChoice() + 1);
         } else if (menuPage == 7 && menuSelection == 0) {
-          menuPage = 3;
-          menuSelection = 0;
+          menuPage = 0;
+          menuSelection = 3;
         } else if (menuPage == 7 && menuSelection > 0) {
           if (radio.setBandwidthChoice(static_cast<uint8_t>(menuSelection - 1))) {
             if (radio.snapshot().modulation == RadioModulation::LSB || radio.snapshot().modulation == RadioModulation::USB) {
@@ -282,8 +286,8 @@ void loop() {
               Serial.printf("[SETTINGS] SSB bandwidth=%u %s\n", static_cast<unsigned>(menuSelection - 1), saved ? "saved" : "save failed");
             }
             Serial.printf("[MENU] bandwidth choice=%u\n", static_cast<unsigned>(menuSelection - 1));
-            menuPage = 3;
-            menuSelection = 2;
+            menuPage = 0;
+            menuSelection = 3;
           }
         } else if (menuPage == 2 && menuSelection == 0) {
           saveBrightnessIfPending();
