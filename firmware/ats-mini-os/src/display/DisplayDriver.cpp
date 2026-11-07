@@ -210,39 +210,39 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
   // Main-menu labels intentionally match ATS Mini Dev verbatim.
   // A trailing * marks entries that are not implemented in ATS Mini OS yet.
   static const char* const mainItems[] = {
-    "Mode", "Bands", "Volume", "Keypad*", "DUAL RX*", "VFO A/B*",
-    "Frequency*", "BFO", "Steps", "Seek*", "Scan*", "Memory*", "Squelch*",
-    "Bandwidth", "AGC/ATTN", "AVC", "SoftMute", "Settings",
-    "VHF Spectrum*", "ALL Band Spectrum*"
+    "Modulation", "Bänder", "Lautstärke", "Keypad*", "DUAL RX*", "VFO A/B*",
+    "Frequenz*", "BFO", "Schrittweite", "Suche*", "Scannen*", "Speicher*", "Rauschsperre*",
+    "Bandbreite", "AGC/Dämpfung", "Auto-Lautstärke", "Soft-Mute", "Einstellungen",
+    "VHF Spektrum*", "Gesamtes Bandspektrum*"
   };
   static const char* const volumeItems[] = {
     "Zurueck", "Lautstärke", "Stumm (später)"
   };
   static const char* const displayItems[] = {
-    "Zurueck", "Display-Helligkeit", "Layout", "Farbschema"
+    "Zurück", "Display-Helligkeit", "Layout", "Farbschema"
   };
-  static const char* const layoutGroupItems[] = { "Zurueck", "UKW / FM", "LW / MW / KW" };
-  static const char* const fmLayoutItems[] = { "Zurueck", "DAB Style", "TEF6686 -FM Version" };
-  static const char* const amLayoutItems[] = { "Zurueck", "HJB" };
-  static const char* const bfoItems[] = { "Zurueck", "BFO einstellen" };
+  static const char* const layoutGroupItems[] = { "Zurück", "UKW / FM", "LW / MW / KW" };
+  static const char* const fmLayoutItems[] = { "Zurück", "DAB Style", "TEF6686 -FM Version" };
+  static const char* const amLayoutItems[] = { "Zurück", "HJB" };
+  static const char* const bfoItems[] = { "Zurück", "BFO einstellen" };
   static const char* const radioItems[] = {
-    "Zurueck", "Modulation", "Band wählen", "Bandbreite", "Schrittweite",
+    "Zurück", "Modulation", "Band wählen", "Bandbreite", "Schrittweite",
     "Empfangseinstellungen", "SSB / BFO"
   };
-  static const char* const fmModulationItems[] = { "Zurueck", "FM" };
-  static const char* const amModulationItems[] = { "Zurueck", "AM", "USB", "LSB" };
-  static const char* const fmBandwidthItems[] = { "Zurueck", "Auto", "110 kHz", "84 kHz", "60 kHz", "40 kHz" };
-  static const char* const amBandwidthItems[] = { "Zurueck", "1.0 kHz", "1.8 kHz", "2.0 kHz", "2.5 kHz", "3.0 kHz", "4.0 kHz", "6.0 kHz" };
-  static const char* const ssbBandwidthItems[] = { "Zurueck", "0.5 kHz", "1.0 kHz", "1.2 kHz", "2.2 kHz", "3.0 kHz", "4.0 kHz" };
-  static const char* const radioSettingsItems[] = { "Zurueck", "AGC Auto", "AGC Manuell 0", "AGC Manuell 8", "AGC Manuell 16", "AGC Manuell 24", "Soft Mute 0 dB", "Soft Mute 4 dB", "Soft Mute 8 dB", "Soft Mute 12 dB", "AVC 12", "AVC 30", "AVC 60", "AVC 90" };
-  static const char* const themeItems[] = { "Zurueck", "Classic", "TEF Blue", "Amber" };
-  static const char* const fmStepItems[] = { "Zurueck", "10 kHz (DX)", "50 kHz", "100 kHz", "200 kHz", "1 MHz" };
-  static const char* const amStepItems[] = { "Zurueck", "1 kHz", "5 kHz", "9 kHz", "10 kHz" };
+  static const char* const fmModulationItems[] = { "Zurück", "FM" };
+  static const char* const amModulationItems[] = { "Zurück", "AM", "USB", "LSB" };
+  static const char* const fmBandwidthItems[] = { "Zurück", "Auto", "110 kHz", "84 kHz", "60 kHz", "40 kHz" };
+  static const char* const amBandwidthItems[] = { "Zurück", "1.0 kHz", "1.8 kHz", "2.0 kHz", "2.5 kHz", "3.0 kHz", "4.0 kHz", "6.0 kHz" };
+  static const char* const ssbBandwidthItems[] = { "Zurück", "0.5 kHz", "1.0 kHz", "1.2 kHz", "2.2 kHz", "3.0 kHz", "4.0 kHz" };
+  static const char* const radioSettingsItems[] = { "Zurück", "AGC Auto", "AGC Manuell 0", "AGC Manuell 8", "AGC Manuell 16", "AGC Manuell 24", "Soft Mute 0 dB", "Soft Mute 4 dB", "Soft Mute 8 dB", "Soft Mute 12 dB", "AVC 12", "AVC 30", "AVC 60", "AVC 90" };
+  static const char* const themeItems[] = { "Zurück", "Classic", "TEF Blue", "Amber" };
+  static const char* const fmStepItems[] = { "Zurück", "10 kHz (DX)", "50 kHz", "100 kHz", "200 kHz", "1 MHz" };
+  static const char* const amStepItems[] = { "Zurück", "1 kHz", "5 kHz", "9 kHz", "10 kHz" };
   static const char* const wifiItems[] = {
-    "Zurueck", "WLAN-Modus (später)", "Web Control (später)"
+    "Zurück", "WLAN-Modus (später)", "Web Control (später)"
   };
   static const char* const systemItems[] = {
-    "Zurueck", "CPU-Profil (spaeter)", "Systeminfo (spaeter)", "Dateimanager",
+    "Zurück", "CPU-Profil (später)", "Systeminfo (später)", "Dateimanager",
     "UTC+01:00 * (Sommer +02:00)", "UKW / FM Layouts", "KW / MW / LW Layouts"
   };
   const char* const* items = mainItems;
@@ -262,7 +262,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
       else if (modulation == RadioModulation::AM) { items=amBandwidthItems; count=sizeof(amBandwidthItems)/sizeof(amBandwidthItems[0]); }
       else { items=ssbBandwidthItems; count=sizeof(ssbBandwidthItems)/sizeof(ssbBandwidthItems[0]); }
       title="BANDBREITE"; break;
-    case 8: count=static_cast<uint8_t>(BandManager::count()+1); title="BAND WAEHLEN"; break;
+    case 8: count=static_cast<uint8_t>(BandManager::count()+1); title="BAND WÄHLEN"; break;
     case 11: items=radioSettingsItems; count=(modulation==RadioModulation::FM?10:14); title="EMPFANG"; break;
     case 12: items=bfoItems; count=sizeof(bfoItems)/sizeof(bfoItems[0]); title="SSB / BFO"; break;
     case 16:
