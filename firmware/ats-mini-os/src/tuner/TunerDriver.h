@@ -92,6 +92,10 @@ public:
   bool setSoftMuteEnabled(bool enabled);
   bool setSoftMuteAttenuation(uint8_t attenuationDb);
   bool setAvcGain(uint8_t gain);
+  bool agcAutomatic() const { return agcAutomatic_; }
+  uint8_t agcGainIndex() const { return agcGainIndex_; }
+  uint8_t softMuteAttenuationDb() const { return softMuteAttenuationDb_; }
+  uint8_t avcGain() const { return avcGain_; }
   bool setBandwidthChoice(uint8_t choice);
   bool setStepKHz(uint16_t stepKHz);
   uint16_t stepKHz() const { return stepKHz_; }
