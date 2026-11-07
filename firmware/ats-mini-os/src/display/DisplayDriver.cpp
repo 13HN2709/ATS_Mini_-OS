@@ -389,7 +389,7 @@ void DisplayDriver::setTheme(uint8_t index) {
 void DisplayDriver::setFmLayout(uint8_t mode) {
   fmLayout_ = mode <= 2 ? mode : 0;
   lastGeneration_ = UINT32_MAX;
-  Serial.printf("[DISPLAY] FM layout: %s\\n", fmLayout_ == 1 ? "HJB" : "DAB Style");
+  Serial.printf("[DISPLAY] FM layout: %s\\n", fmLayout_ == 1 ? "HJB" : (fmLayout_ == 2 ? "TEF6686 - FM Version" : "DAB Style"));
 }
 
 void DisplayDriver::setAmLayout(uint8_t mode) {
