@@ -1553,3 +1553,34 @@ Zuerst die vorhandene Menü-Engine, TunerDriver-/RadioCore-Schnittstellen und di
 - **Noch nicht kompiliert oder auf Hardware getestet.** Keine GitHub Action ausgelöst, kein Build gestartet, nichts geflasht.
 - Nächster Schritt nach erfolgreichem QSPI/OSPI-Compile: Theme-Vorschau und Farbabstimmung auf dem ATS Mini V4 prüfen; danach weitere Appearance-Einstellungen modular ergänzen.
 - Letzter bestätigter Build bleibt #116 (QSPI + OSPI). Die Theme-Änderungen benötigen einen neuen manuellen Compile-only-Lauf durch den Nutzer.
+
+
+## Build #117 – Theme-System erfolgreich kompiliert (2026-11-07)
+
+- Run: https://github.com/13HN2709/ATS_Mini_-OS/actions/runs/42357809506
+- Branch: `dev/first-build-preparation`
+- Getesteter Commit: `8903df9c4d1bb8ba685f2f01c82a765a7649b376`
+- Ergebnis: `completed / success`; QSPI und OSPI erfolgreich.
+- Beide Jobs haben Kompilierung, read-only Image-Slot-Prüfung und Artefakt-Erstellung erfolgreich abgeschlossen.
+- ThemeManager mit Classic, TEF Blue und Amber sowie Menüauswahl und NVS-Persistenz ist damit für beide Profile compile-verifiziert.
+- Kein Flashen und kein Hardwaretest.
+
+## 2026-11-07 – Radio-Empfangseinstellungen: AGC, Soft Mute und AVC
+
+- `TunerDriver` erweitert, RadioCore bleibt die einzige UI-nahe Radio-API; SI4735-Aufrufe bleiben ausschließlich im TunerDriver.
+- SI4735-Aufrufe gegen den tatsächlich verwendeten PU2CLR-Tag **2.1.8** geprüft:
+  - `setAutomaticGainControl(AGCDIS, AGCIDX)`
+  - FM/AM/SSB Soft-Mute-Max-Attenuation-Aufrufe
+  - `setAvcAmMaxGain(uint8_t)`
+- Radio-Menü: bisheriger Bandplan-Platzhalter wurde durch „Empfangseinstellungen“ ersetzt.
+- Neues Untermenü:
+  - AGC Auto
+  - AGC Manual (fester Override-Index 20; noch keine manuelle Index-Einstellung)
+  - Soft Mute Ein/Aus (8 dB bzw. 0 dB)
+  - AVC 90/60/30 (nur AM/SSB; AVC wird im FM-Modus nicht angeboten)
+- Einstellungen werden über Bandwechsel hinweg im TunerDriver gehalten und beim Eintritt in den jeweiligen Empfangsmodus erneut angewendet.
+- AVC-Gain-Auswahl wird vom Treiber auf 12–90 begrenzt. Für FM wird AVC abgewiesen.
+- Noch nicht persistent gespeichert; aktueller Stand gilt bis zum Neustart. Eine spätere Settings-Erweiterung folgt nach Funktionsprüfung.
+- **Diese Radio-Änderungen sind noch nicht kompiliert und nicht auf Hardware getestet.** Kein Workflow gestartet, nichts geflasht.
+- Nächster Schritt: Nutzer startet manuellen Compile-only-Lauf für QSPI und OSPI. Bei Fehlern zuerst beide Compiler-Logs prüfen; bei Erfolg anschließend die Empfangseinstellungen am Gerät testen.
+- Letzter bestätigter Compile-Stand: Build #117, Commit `8903df9c4d1bb8ba685f2f01c82a765a7649b376`.
