@@ -200,7 +200,8 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
       else { items=ssbBandwidthItems; count=sizeof(ssbBandwidthItems)/sizeof(ssbBandwidthItems[0]); }
       title="BANDBREITE"; break;
     case 8: count=static_cast<uint8_t>(BandManager::count()+1); title="BAND WAEHLEN"; break;
-    case 11: items=radioSettingsItems; count=(modulation==RadioModulation::FM?5:8); title="EMPFANG"; break;\n    case 10: items=themeItems; count=sizeof(themeItems)/sizeof(themeItems[0]); title="FARBSCHEMA"; break;
+    case 11: items=radioSettingsItems; count=(modulation==RadioModulation::FM?5:8); title="EMPFANG"; break;
+    case 10: items=themeItems; count=sizeof(themeItems)/sizeof(themeItems[0]); title="FARBSCHEMA"; break;
     case 9:
       if (modulation == RadioModulation::FM) { items=fmStepItems; count=sizeof(fmStepItems)/sizeof(fmStepItems[0]); }
       else { items=amStepItems; count=sizeof(amStepItems)/sizeof(amStepItems[0]); }
