@@ -158,7 +158,7 @@ void drawFileMenu(Canvas& c,const char* path,FileManager::Entry* entries,uint8_t
 }
 
 template <typename Canvas>
-void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, uint8_t brightness, uint8_t layoutMode, RadioModulation modulation, uint8_t themeIndex, bool sliderAdjustmentActive) {
+void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, uint8_t brightness, uint8_t layoutMode, RadioModulation modulation, uint32_t frequencyKHz, uint8_t themeIndex, bool sliderAdjustmentActive) {
   const int w = canvas.width();
   const int h = canvas.height();
   static const char* const mainItems[] = {
@@ -177,8 +177,11 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
   static const char* const amLayoutItems[] = { "Zurueck", "Standard LW/MW/KW", "HJB" };
   static const char* const bfoItems[] = { "Zurueck", "BFO einstellen" };
   static const char* const radioItems[] = {
-    "Zurueck", "Band waehlen", "Bandbreite", "Schrittweite", "Empfangseinstellungen", "SSB / BFO"
+    "Zurueck", "Modulation", "Band waehlen", "Bandbreite", "Schrittweite",
+    "Empfangseinstellungen", "SSB / BFO"
   };
+  static const char* const fmModulationItems[] = { "Zurueck", "FM" };
+  static const char* const amModulationItems[] = { "Zurueck", "AM", "USB", "LSB" };
   static const char* const fmBandwidthItems[] = { "Zurueck", "Auto", "110 kHz", "84 kHz", "60 kHz", "40 kHz" };
   static const char* const amBandwidthItems[] = { "Zurueck", "1.0 kHz", "1.8 kHz", "2.0 kHz", "2.5 kHz", "3.0 kHz", "4.0 kHz", "6.0 kHz" };
   static const char* const ssbBandwidthItems[] = { "Zurueck", "0.5 kHz", "1.0 kHz", "1.2 kHz", "2.2 kHz", "3.0 kHz", "4.0 kHz" };
@@ -213,6 +216,10 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
     case 8: count=static_cast<uint8_t>(BandManager::count()+1); title="BAND WAEHLEN"; break;
     case 11: items=radioSettingsItems; count=(modulation==RadioModulation::FM?10:14); title="EMPFANG"; break;
     case 12: items=bfoItems; count=sizeof(bfoItems)/sizeof(bfoItems[0]); title="SSB / BFO"; break;
+    case 16:
+      if (BandManager::current().type == RadioBandType::FM) { items=fmModulationItems; count=2; }
+      else { items=amModulationItems; count=(frequencyKHz >= 1800 && frequencyKHz <= 30000) ? 4 : 2; }
+      title="MODULATION"; break;
     case 10: items=themeItems; count=sizeof(themeItems)/sizeof(themeItems[0]); title="FARBSCHEMA"; break;
     case 9:
       if (modulation == RadioModulation::FM) { items=fmStepItems; count=sizeof(fmStepItems)/sizeof(fmStepItems[0]); }
@@ -268,6 +275,14 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
           canvas.drawString(bandLabel, 42, y+13);
         }
       }
+    } else if (page == 16 && index > 0) {
+      const bool fmBand = BandManager::current().type == RadioBandType::FM;
+      const RadioModulation mode = fmBand ? RadioModulation::FM :
+        (index == 1 ? RadioModulation::AM : (index == 2 ? RadioModulation::USB : RadioModulation::LSB));
+      if (mode == modulation) {
+        char selectedMode[24]; snprintf(selectedMode,sizeof(selectedMode),"* %s",items[index]);
+        canvas.drawString(selectedMode,42,y+13);
+      } else canvas.drawString(items[index],42,y+13);
     } else if ((page == 14 || page == 15) && index > 0 && index - 1 == layoutMode) {
       char selectedLayout[40];
       snprintf(selectedLayout, sizeof(selectedLayout), "* %s", items[index]);
@@ -406,7 +421,7 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
     if(menuPage==6){if(useSprite_){sprite_.fillSprite(BLACK);drawFileMenu(sprite_,filePath,fileEntries,fileCount,fileSelection,fileMode,fileActionSelection,fileSelectedName,fileMessage);sprite_.pushSprite(0,0);}else{device_.fillScreen(BLACK);drawFileMenu(device_,filePath,fileEntries,fileCount,fileSelection,fileMode,fileActionSelection,fileSelectedName,fileMessage);}return;}
     if (useSprite_) {
       sprite_.fillSprite(BLACK);
-      drawMenu(sprite_, menuPage, menuSelection, volume, brightness_, s.modulation == RadioModulation::FM ? fmLayout_ : amLayout_, s.modulation, themeIndex_, sliderAdjustmentActive);
+      drawMenu(sprite_, menuPage, menuSelection, volume, brightness_, s.modulation == RadioModulation::FM ? fmLayout_ : amLayout_, s.modulation, s.frequencyKHz, themeIndex_, sliderAdjustmentActive);
       sprite_.pushSprite(0,0);
     } else {
       device_.fillScreen(BLACK);
