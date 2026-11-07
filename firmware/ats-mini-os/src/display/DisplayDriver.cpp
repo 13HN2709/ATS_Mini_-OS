@@ -24,6 +24,52 @@ void centered(Canvas& d,const char* s,int x,int y,uint16_t c,const lgfx::IFont* 
   d.drawCenterString(s ? s : "",x,y);
 }
 
+// ATS Mini DEV-style digital menu text. Orbitron does not need UTF-8
+// umlaut glyphs: draw the base letter and add the two dots explicitly.
+// German sharp-s is rendered as "SS", matching the DEV menu renderer.
+template <typename Canvas>
+int drawMenuDigitalText(Canvas& d,const char* value,int x,int y,uint16_t color,const lgfx::IFont* font) {
+  d.setFont(font);
+  d.setTextColor(color,BLACK);
+  d.setTextDatum(TL_DATUM);
+  int cursor=x;
+  while(value && *value) {
+    char glyph[2]={0,0};
+    bool umlaut=false, sharpS=false;
+    char ch=*value++;
+    if(static_cast<uint8_t>(ch)==0xC3 && *value) {
+      const uint8_t next=static_cast<uint8_t>(*value++);
+      switch(next) {
+        case 0x84: ch='A'; umlaut=true; break;
+        case 0x96: ch='O'; umlaut=true; break;
+        case 0x9C: ch='U'; umlaut=true; break;
+        case 0xA4: ch='a'; umlaut=true; break;
+        case 0xB6: ch='o'; umlaut=true; break;
+        case 0xBC: ch='u'; umlaut=true; break;
+        case 0x9F: ch='S'; sharpS=true; break;
+        default: ch='?'; break;
+      }
+    }
+    glyph[0]=ch;
+    const int width=d.textWidth(glyph);
+    d.drawString(glyph,cursor,y);
+    d.drawString(glyph,cursor+1,y);
+    if(sharpS) {
+      d.drawString("S",cursor+width,y);
+      d.drawString("S",cursor+width+1,y);
+      cursor+=width*2;
+      continue;
+    }
+    if(umlaut) {
+      const int center=cursor+width/2;
+      d.fillCircle(center-3,y+2,1,color);
+      d.fillCircle(center+3,y+2,1,color);
+    }
+    cursor+=width;
+  }
+  return cursor-x;
+}
+
 bool getLogoDimensions(const uint8_t* data, size_t length, uint16_t& width, uint16_t& height) {
   width = height = 0;
   if (!data || length < 10) return false;
@@ -84,7 +130,7 @@ void drawFileMenu(Canvas& c,const char* path,FileManager::Entry* entries,uint8_t
   c.drawFastHLine(8,40,w-16,DARK_GREEN);
 
   if(mode==1){
-    const char* items[]={"Zurueck","Kopieren","Verschieben","Umbenennen","Loeschen","Neuer Ordner"};
+    const char* items[]={"Zurück","Kopieren","Verschieben","Umbenennen","Loeschen","Neuer Ordner"};
     text(c,selected,8,45,YELLOW,&lgfx::fonts::Font2);
     const int actionFirstY = 68;
     const int actionRowHeight = 25;
@@ -170,7 +216,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
     "VHF Spectrum*", "ALL Band Spectrum*"
   };
   static const char* const volumeItems[] = {
-    "Zurueck", "Lautstaerke", "Stumm (spaeter)"
+    "Zurueck", "Lautstärke", "Stumm (später)"
   };
   static const char* const displayItems[] = {
     "Zurueck", "Display-Helligkeit", "Layout", "Farbschema"
@@ -180,7 +226,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
   static const char* const amLayoutItems[] = { "Zurueck", "HJB" };
   static const char* const bfoItems[] = { "Zurueck", "BFO einstellen" };
   static const char* const radioItems[] = {
-    "Zurueck", "Modulation", "Band waehlen", "Bandbreite", "Schrittweite",
+    "Zurueck", "Modulation", "Band wählen", "Bandbreite", "Schrittweite",
     "Empfangseinstellungen", "SSB / BFO"
   };
   static const char* const fmModulationItems[] = { "Zurueck", "FM" };
@@ -193,7 +239,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
   static const char* const fmStepItems[] = { "Zurueck", "10 kHz (DX)", "50 kHz", "100 kHz", "200 kHz", "1 MHz" };
   static const char* const amStepItems[] = { "Zurueck", "1 kHz", "5 kHz", "9 kHz", "10 kHz" };
   static const char* const wifiItems[] = {
-    "Zurueck", "WLAN-Modus (spaeter)", "Web Control (spaeter)"
+    "Zurueck", "WLAN-Modus (später)", "Web Control (später)"
   };
   static const char* const systemItems[] = {
     "Zurueck", "CPU-Profil (spaeter)", "Systeminfo (spaeter)", "Dateimanager",
@@ -201,7 +247,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
   };
   const char* const* items = mainItems;
   uint8_t count = sizeof(mainItems) / sizeof(mainItems[0]);
-  const char* title = "HAUPTMENUE";
+  const char* title = "HAUPTMENÜ";
   switch (page) {
     case 1: items=volumeItems; count=sizeof(volumeItems)/sizeof(volumeItems[0]); title="AUDIO"; break;
     case 2: items=displayItems; count=sizeof(displayItems)/sizeof(displayItems[0]); title="ANZEIGE"; break;
@@ -275,28 +321,22 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
     }
   }
 
-  // Font7 is a seven-segment display font and does not reliably contain
-  // alphabetic glyphs. Use a full character font for menu labels.
-  canvas.setFont(&lgfx::fonts::FreeSansBold9pt7b);
-  canvas.setTextSize(1.35f);
-  int labelWidth = canvas.textWidth(displayLabel);
-  if (labelWidth > w-28) {
-    canvas.setTextSize(1.0f);
-    labelWidth = canvas.textWidth(displayLabel);
+  // Match the ATS Mini DEV menu: Orbitron digital lettering plus
+  // explicit UTF-8 handling for Ä/Ö/Ü/ä/ö/ü/ß.
+  const lgfx::IFont* menuFont=&lgfx::fonts::Orbitron_Light_24;
+  int labelWidth=canvas.textWidth(displayLabel,menuFont);
+  if(labelWidth>w-28) {
+    menuFont=&lgfx::fonts::FreeSansBold9pt7b;
+    labelWidth=canvas.textWidth(displayLabel,menuFont);
   }
-  if (labelWidth > w-28) {
-    canvas.setFont(&lgfx::fonts::Font2);
-    canvas.setTextSize(1.0f);
-  }
-  canvas.setTextDatum(MC_DATUM);
-  canvas.setTextColor(menuCyan, BLACK);
-  canvas.drawCenterString(displayLabel, w/2, (h/2)+2);
-  canvas.setTextSize(1.0f);
+  const int labelY=(h/2)-12;
+  const int labelX=(w-labelWidth)/2;
+  drawMenuDigitalText(canvas,displayLabel,labelX,labelY,menuCyan,menuFont);
 
   canvas.setTextDatum(TL_DATUM);
   canvas.setFont(&lgfx::fonts::Font0);
   canvas.setTextColor(menuCyan, BLACK);
-  canvas.drawString("DREHEN: AUSWAEHLEN", 12, h-18);
+  canvas.drawString("DREHEN: AUSWÄHLEN", 12, h-18);
   canvas.setTextDatum(TR_DATUM);
   canvas.drawString("KLICK: OK", w-12, h-18);
 
