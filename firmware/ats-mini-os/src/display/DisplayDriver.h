@@ -262,6 +262,7 @@ private:
   uint32_t lastDrawMs_ = 0;
   uint32_t tuningUntilMs_ = 0;
   bool lastMenuOpen_ = false;
+  bool lastMenuSliderAdjustmentActive_ = false;
   uint8_t lastMenuPage_ = 0xFF;
   uint8_t lastMenuSelection_ = 0xFF;
   uint8_t lastMenuVolume_ = 0xFF;
