@@ -1,6 +1,7 @@
 #include "DisplayDriver.h"
 #include "ThemeManager.h"
 #include "DisplayLayoutAM.h"
+#include "DisplayLayoutHJB.h"
 #include "../radio/BandManager.h"
 #include "../menus/MenuSSB.h"
 #include <LittleFS.h>
@@ -167,8 +168,9 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
     "Zurueck", "Lautstaerke", "Stumm (spaeter)"
   };
   static const char* const displayItems[] = {
-    "Zurueck", "Display-Helligkeit", "Farbschema"
+    "Zurueck", "Display-Helligkeit", "Layout", "Farbschema"
   };
+  static const char* const layoutItems[] = { "Zurueck", "FM Standard", "HJB - Alle Baender" };
   static const char* const radioItems[] = {
     "Zurueck", "Band waehlen", "Bandbreite", "Schrittweite", "Empfangseinstellungen", "SSB / BFO"
   };
@@ -193,6 +195,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
   switch (page) {
     case 1: items=volumeItems; count=sizeof(volumeItems)/sizeof(volumeItems[0]); title="AUDIO"; break;
     case 2: items=displayItems; count=sizeof(displayItems)/sizeof(displayItems[0]); title="ANZEIGE"; break;
+    case 13: items=layoutItems; count=sizeof(layoutItems)/sizeof(layoutItems[0]); title="LAYOUT"; break;
     case 3: items=radioItems; count=sizeof(radioItems)/sizeof(radioItems[0]); title="RADIO"; break;
     case 4: items=wifiItems; count=sizeof(wifiItems)/sizeof(wifiItems[0]); title="WLAN"; break;
     case 5: items=systemItems; count=sizeof(systemItems)/sizeof(systemItems[0]); title="SYSTEM"; break;
@@ -345,10 +348,9 @@ void DisplayDriver::setTheme(uint8_t index) {
 }
 
 void DisplayDriver::setLayoutMode(uint8_t mode) {
-  (void)mode;
-  layoutMode_ = 0;
+  layoutMode_ = mode <= 1 ? mode : 0;
   lastGeneration_ = UINT32_MAX;
-  Serial.println("[DISPLAY] FM is the only active layout");
+  Serial.printf("[DISPLAY] active layout: %s\\n", layoutMode_ == 1 ? "HJB (all bands)" : "FM Standard");
 }
 
 void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConnected,
@@ -577,6 +579,18 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   canvas.clearClipRect();
 }
 void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady,bool wifiConnected,const char* lastInputEvent,uint32_t inputEventCount,const uint8_t* logoData,size_t logoLength,bool logoIsJpg,bool logoSearching,int16_t radioTextOffset,bool scrollRadioText,bool frequencyBlue) {
+  // HJB is a standalone, logo-free layout for FM, AM, LW/MW/SW and SSB.
+  if (layoutMode_ == 1) {
+    if (useSprite_) {
+      sprite_.fillSprite(BLACK);
+      drawHJBLayout(sprite_, s, radioReady, wifiConnected);
+      sprite_.pushSprite(0, 0);
+    } else {
+      device_.fillScreen(BLACK);
+      drawHJBLayout(device_, s, radioReady, wifiConnected);
+    }
+    return;
+  }
   // Keep the tested FM logo/RDS screen unchanged; AM-family bands use their
   // own TEF-inspired layout module.
   if (s.modulation != RadioModulation::FM) {
