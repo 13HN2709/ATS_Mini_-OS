@@ -520,7 +520,7 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   canvas.setTextSize(1.0f);
 
   // FM uses MHz; LW/MW/SW/ALL use kHz like the ATS Mini DEV receiver.
-  canvas.setTextColor(WHITE,BLACK);
+  canvas.setTextColor(UNIT_COLOR,BLACK);
   canvas.setFont(&lgfx::fonts::FreeSansBold9pt7b);
   canvas.drawRightString(isFm ? "MHz" : "kHz",w-8,84);
 
@@ -549,7 +549,7 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   // Slightly larger bold lettering makes the RT line easier to read while
   // keeping enough vertical room inside the 26 px ticker frame.
   canvas.setFont(&lgfx::fonts::FreeSansBold9pt7b);
-  canvas.setTextColor(WHITE,BLACK);
+  canvas.setTextColor(RDS_COLOR,BLACK);
   canvas.setClipRect(rtX+10,rtY+2,rtW-20,rtH-4);
   if(scrollRadioText){
     char ticker[72];
