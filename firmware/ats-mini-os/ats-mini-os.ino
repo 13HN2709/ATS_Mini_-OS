@@ -164,7 +164,7 @@ void loop() {
               ((menuPage == 14) ? 3 : (menuPage == 15) ? 2 :
               menuPage == 10 ? 4 : menuPage == 11 ?
               (radio.snapshot().modulation == RadioModulation::FM ? 10 : 14) :
-              menuPage == 5 ? 5 : menuPage == 3 ? 7 :
+              menuPage == 3 ? 7 :
               menuPage == 12 ? 2 : menuPage == 16 ?
               (radio.canUseModulation(RadioModulation::USB) ? 4 : 2) :
               menuPage == 7 ? radio.bandwidthChoiceCount()+1 :
