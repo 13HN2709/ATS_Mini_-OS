@@ -135,7 +135,7 @@ bool TunerDriver::setAvcGain(uint8_t gain) {
   // AM/SSB band switch because AVC is not a valid FM control.
   avcGain_ = gain;
   if (modulation_ != RadioModulation::FM) radio_.setAvcAmMaxGain(gain);
-  Serial.printf("[TUNER] AVC max gain=%u%s\\n", static_cast<unsigned>(gain),
+  Serial.printf("[TUNER] AVC max gain=%u%s\n", static_cast<unsigned>(gain),
                 modulation_ == RadioModulation::FM ? " (stored for AM/SSB)" : "");
   return true;
 }
