@@ -172,9 +172,9 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
   static const char* const displayItems[] = {
     "Zurueck", "Display-Helligkeit", "Layout", "Farbschema"
   };
-  static const char* const layoutGroupItems[] = { "Zurueck", "UKW / FM", "AM / USB / LSB" };
+  static const char* const layoutGroupItems[] = { "Zurueck", "UKW / FM", "LW / MW / KW" };
   static const char* const fmLayoutItems[] = { "Zurueck", "DAB Style", "HJB" };
-  static const char* const amLayoutItems[] = { "Zurueck", "AM Layout", "HJB" };
+  static const char* const amLayoutItems[] = { "Zurueck", "Standard LW/MW/KW", "HJB" };
   static const char* const radioItems[] = {
     "Zurueck", "Band waehlen", "Bandbreite", "Schrittweite", "Empfangseinstellungen", "SSB / BFO"
   };
@@ -200,7 +200,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
     case 2: items=displayItems; count=sizeof(displayItems)/sizeof(displayItems[0]); title="ANZEIGE"; break;
     case 13: items=layoutGroupItems; count=sizeof(layoutGroupItems)/sizeof(layoutGroupItems[0]); title="LAYOUT GRUPPE"; break;
     case 14: items=fmLayoutItems; count=sizeof(fmLayoutItems)/sizeof(fmLayoutItems[0]); title="LAYOUT UKW / FM"; break;
-    case 15: items=amLayoutItems; count=sizeof(amLayoutItems)/sizeof(amLayoutItems[0]); title="LAYOUT AM / SSB"; break;
+    case 15: items=amLayoutItems; count=sizeof(amLayoutItems)/sizeof(amLayoutItems[0]); title="LAYOUT LW / MW / KW"; break;
     case 3: items=radioItems; count=sizeof(radioItems)/sizeof(radioItems[0]); title="RADIO"; break;
     case 4: items=wifiItems; count=sizeof(wifiItems)/sizeof(wifiItems[0]); title="WLAN"; break;
     case 5: items=systemItems; count=sizeof(systemItems)/sizeof(systemItems[0]); title="SYSTEM"; break;
@@ -225,9 +225,9 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
   canvas.fillScreen(BLACK);
   canvas.setTextColor(WHITE, BLACK);
   canvas.setFont(&lgfx::fonts::FreeSansBold9pt7b);
-  canvas.drawString("ATS MINI OS", 20, 3);
-  canvas.drawRightString(title, w-20, 3);
-  canvas.drawFastHLine(20, 27, w-40, WHITE);
+  canvas.drawString("ATS MINI OS", 32, 3);
+  canvas.drawRightString(title, w-30, 3);
+  canvas.drawFastHLine(30, 27, w-60, WHITE);
 
   // Keep the two-row list, but use a safe inset on the ATS Mini V4 panel.
   // The extra left margin prevents the first glyphs from being clipped.
@@ -240,13 +240,13 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
     const uint8_t index = static_cast<uint8_t>(first+row);
     const int y = rowTop + row*rowHeight;
     const bool selected = index == selection;
-    if (selected) canvas.drawRect(12, y+1, w-24, 48, WHITE);
+    if (selected) canvas.drawRect(24, y+1, w-48, 48, WHITE);
 
     canvas.setTextColor(WHITE, BLACK);
     canvas.setFont(&lgfx::fonts::FreeSansBold9pt7b);
     if (page == 8) {
       if (index == 0) {
-        canvas.drawString("Zurueck", 24, y+13);
+        canvas.drawString("Zurueck", 42, y+13);
       } else {
         const RadioBandDefinition& band = BandManager::at(static_cast<uint8_t>(index-1));
         char bandLabel[40];
@@ -262,23 +262,23 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
         if (index-1 == BandManager::currentIndex()) {
           char currentLabel[44];
           snprintf(currentLabel, sizeof(currentLabel), "* %s", bandLabel);
-          canvas.drawString(currentLabel, 24, y+13);
+          canvas.drawString(currentLabel, 42, y+13);
         } else {
-          canvas.drawString(bandLabel, 24, y+13);
+          canvas.drawString(bandLabel, 42, y+13);
         }
       }
     } else if ((page == 14 || page == 15) && index > 0 && index - 1 == layoutMode) {
       char selectedLayout[40];
       snprintf(selectedLayout, sizeof(selectedLayout), "* %s", items[index]);
-      canvas.drawString(selectedLayout, 24, y+13);
+      canvas.drawString(selectedLayout, 42, y+13);
     } else if (page == 10 && index > 0 && index - 1 == ThemeManager::normalize(themeIndex)) {
       char selectedTheme[32];
       snprintf(selectedTheme, sizeof(selectedTheme), "* %s", items[index]);
-      canvas.drawString(selectedTheme, 24, y+13);
+      canvas.drawString(selectedTheme, 42, y+13);
     } else if (page == MenuSSB::kPage) {
-      canvas.drawString(MenuSSB::itemLabel(index), 24, y+13);
+      canvas.drawString(MenuSSB::itemLabel(index), 42, y+13);
     } else {
-      canvas.drawString(items[index], 24, y+13);
+      canvas.drawString(items[index], 42, y+13);
     }
 
     if ((page==1 && index==1) || (page==0 && index==7)) {
@@ -288,25 +288,25 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
       char value[12];
       if (volumeControl) snprintf(value,sizeof(value),"%u/63",static_cast<unsigned>(level));
       else snprintf(value,sizeof(value),"%u%%",static_cast<unsigned>((static_cast<uint16_t>(level)*100U)/255U));
-      canvas.drawRightString(value,w-17,y+13);
-      const int barX=24, barY=y+36, barW=w-48;
+      canvas.drawRightString(value,w-28,y+13);
+      const int barX=42, barY=y+36, barW=w-70;
       canvas.drawRect(barX,barY,barW,5,WHITE);
       const int fillW=(barW-2)*level/maximum;
       if(fillW>0) canvas.fillRect(barX+1,barY+1,fillW,3,WHITE);
     }
   }
 
-  canvas.drawFastHLine(20,h-23,w-40,WHITE);
+  canvas.drawFastHLine(30,h-23,w-60,WHITE);
   canvas.setTextColor(WHITE,BLACK);
   canvas.setFont(&lgfx::fonts::FreeSansBold9pt7b);
   if ((page == 1 && selection == 1) || (page == 0 && selection == 7) || (page == 2 && selection == 1)) {
     if (sliderAdjustmentActive) {
-      canvas.drawString(page == 1 ? "Drehen: Lautstaerke | Klick: Fertig" : "Drehen: Helligkeit | Klick: Fertig",24,h-19);
+      canvas.drawString(page == 1 ? "Drehen: Lautstaerke | Klick: Fertig" : "Drehen: Helligkeit | Klick: Fertig",38,h-19);
     } else {
-      canvas.drawString("Klick: Einstellen",24,h-19);
+      canvas.drawString("Klick: Einstellen",38,h-19);
     }
   } else {
-    canvas.drawString("Drehen: Auswahl",24,h-19);
+    canvas.drawString("Drehen: Auswahl",38,h-19);
   }
 }
 
@@ -347,7 +347,7 @@ bool DisplayDriver::begin(uint8_t initialBrightness) {
     static_cast<long>(device_.width()),static_cast<long>(device_.height()));
   fmLayout_ = 0;
   amLayout_ = 0;
-  Serial.println("[DISPLAY] active layouts: DAB Style (FM), AM Layout (AM/SSB)");
+  Serial.println("[DISPLAY] active layout groups: FM/UKW and LW/MW/KW (AM/USB/LSB)");
   return true;
 }
 
