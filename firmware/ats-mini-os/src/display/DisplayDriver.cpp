@@ -275,17 +275,23 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
     }
   }
 
-  const lgfx::IFont* menuFont = &lgfx::fonts::Font7;
-  canvas.setFont(menuFont);
+  // Font7 is a seven-segment display font and does not reliably contain
+  // alphabetic glyphs. Use a full character font for menu labels.
+  canvas.setFont(&lgfx::fonts::FreeSansBold9pt7b);
+  canvas.setTextSize(1.35f);
   int labelWidth = canvas.textWidth(displayLabel);
   if (labelWidth > w-28) {
-    menuFont = &lgfx::fonts::FreeSansBold9pt7b;
-    canvas.setFont(menuFont);
+    canvas.setTextSize(1.0f);
     labelWidth = canvas.textWidth(displayLabel);
+  }
+  if (labelWidth > w-28) {
+    canvas.setFont(&lgfx::fonts::Font2);
+    canvas.setTextSize(1.0f);
   }
   canvas.setTextDatum(MC_DATUM);
   canvas.setTextColor(menuCyan, BLACK);
   canvas.drawCenterString(displayLabel, w/2, (h/2)+2);
+  canvas.setTextSize(1.0f);
 
   canvas.setTextDatum(TL_DATUM);
   canvas.setFont(&lgfx::fonts::Font0);
