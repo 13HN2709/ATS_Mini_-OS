@@ -315,7 +315,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
   canvas.drawFastHLine(30,h-23,w-60,WHITE);
   canvas.setTextColor(WHITE,BLACK);
   canvas.setFont(&lgfx::fonts::FreeSansBold9pt7b);
-  if ((page == 1 && selection == 1) || (page == 0 && selection == 7) || (page == 2 && selection == 1)) {
+  if ((page == 1 && selection == 1) || (page == 0 && selection == 8) || (page == 2 && selection == 1)) {
     if (sliderAdjustmentActive) {
       canvas.drawString(page == 1 ? "Drehen: Lautstaerke | Klick: Fertig" : "Drehen: Helligkeit | Klick: Fertig",38,h-19);
     } else {
