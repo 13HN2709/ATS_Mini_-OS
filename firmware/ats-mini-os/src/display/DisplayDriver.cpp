@@ -158,7 +158,7 @@ void drawFileMenu(Canvas& c,const char* path,FileManager::Entry* entries,uint8_t
 }
 
 template <typename Canvas>
-void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, uint8_t brightness, uint8_t layoutMode, RadioModulation modulation, uint8_t themeIndex) {
+void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, uint8_t brightness, uint8_t layoutMode, RadioModulation modulation, uint8_t themeIndex, bool sliderAdjustmentActive) {
   const int w = canvas.width();
   const int h = canvas.height();
   static const char* const mainItems[] = {
@@ -299,7 +299,14 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
   canvas.drawFastHLine(20,h-23,w-40,WHITE);
   canvas.setTextColor(WHITE,BLACK);
   canvas.setFont(&lgfx::fonts::FreeSansBold9pt7b);
-  canvas.drawString(page==1?"Drehen: Lautstaerke":((page==0 && selection==7)?"Drehen: Helligkeit":"Drehen: Auswahl"),24,h-19);
+  if ((page == 1 && selection == 1) || (page == 0 && selection == 7) || (page == 2 && selection == 1)) {
+    const char* controlName = page == 1 ? "Lautstaerke" : "Helligkeit";
+    canvas.drawString(sliderAdjustmentActive
+      ? (page == 1 ? "Drehen: Lautstaerke | Klick: Fertig" : "Drehen: Helligkeit | Klick: Fertig")
+      : (page == 1 ? "Klick: Einstellen" : "Klick: Einstellen"),24,h-19);
+  } else {
+    canvas.drawString("Drehen: Auswahl",24,h-19);
+  }
 }
 
 }
@@ -374,7 +381,7 @@ void DisplayDriver::setAmLayout(uint8_t mode) {
 void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConnected,
                            const char* lastInputEvent,uint32_t inputEventCount,
                            StationLogoClient* logoClient, bool menuOpen,
-                           uint8_t menuPage, uint8_t menuSelection, uint8_t volume, const char* filePath, FileManager::Entry* fileEntries, uint8_t fileCount, uint8_t fileSelection, uint8_t fileMode, uint8_t fileActionSelection, const char* fileSelectedName, const char* fileMessage) {
+                           uint8_t menuPage, uint8_t menuSelection, uint8_t volume, const char* filePath, FileManager::Entry* fileEntries, uint8_t fileCount, uint8_t fileSelection, uint8_t fileMode, uint8_t fileActionSelection, const char* fileSelectedName, const char* fileMessage, bool sliderAdjustmentActive) {
   if(!ready_)return;
   const uint32_t now=millis();
   const bool menuStateChanged = menuOpen != lastMenuOpen_ || menuPage != lastMenuPage_ ||
@@ -396,11 +403,11 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
     if(menuPage==6){if(useSprite_){sprite_.fillSprite(BLACK);drawFileMenu(sprite_,filePath,fileEntries,fileCount,fileSelection,fileMode,fileActionSelection,fileSelectedName,fileMessage);sprite_.pushSprite(0,0);}else{device_.fillScreen(BLACK);drawFileMenu(device_,filePath,fileEntries,fileCount,fileSelection,fileMode,fileActionSelection,fileSelectedName,fileMessage);}return;}
     if (useSprite_) {
       sprite_.fillSprite(BLACK);
-      drawMenu(sprite_, menuPage, menuSelection, volume, brightness_, s.modulation == RadioModulation::FM ? fmLayout_ : amLayout_, s.modulation, themeIndex_);
+      drawMenu(sprite_, menuPage, menuSelection, volume, brightness_, s.modulation == RadioModulation::FM ? fmLayout_ : amLayout_, s.modulation, themeIndex_, sliderAdjustmentActive);
       sprite_.pushSprite(0,0);
     } else {
       device_.fillScreen(BLACK);
-      drawMenu(device_, menuPage, menuSelection, volume, brightness_, s.modulation == RadioModulation::FM ? fmLayout_ : amLayout_, s.modulation, themeIndex_);
+      drawMenu(device_, menuPage, menuSelection, volume, brightness_, s.modulation == RadioModulation::FM ? fmLayout_ : amLayout_, s.modulation, themeIndex_, sliderAdjustmentActive);
     }
     return;
   }
