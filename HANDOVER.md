@@ -1495,3 +1495,18 @@ Zuerst die vorhandene Menü-Engine, TunerDriver-/RadioCore-Schnittstellen und di
 - **Status:** Änderungen auf `dev/first-build-preparation` committed, aber noch nicht kompiliert und nicht auf dem ATS Mini V4 getestet. Kein Workflow durch den Assistenten gestartet, nichts geflasht.
 - **Nächster Schritt:** Nutzer startet den manuellen Compile-only-Workflow. QSPI und OSPI müssen beide erfolgreich sein. Erst danach den Build in der Übergabeliste als erfolgreich markieren; anschließend beim ausdrücklich freigegebenen Gerätetest prüfen, ob die Helligkeit nach Neustart erhalten bleibt.
 - Projektregeln bleiben unverändert: FM-Layout/RDS nicht anfassen; keine Partition-/Offset-/Bootloaderänderung; kein Flashen; keine automatische GitHub Action.
+
+
+### Build #115 – erster Compile-Fehler und Korrektur (2026-11-07)
+
+- Run: https://github.com/13HN2709/ATS_Mini_-OS/actions/runs/42351728925
+- Ergebnis: `completed / failure`; QSPI und OSPI beide beim Schritt „Compile ATS Mini OS scaffold“ fehlgeschlagen.
+- Exakte Ursache in beiden Logs:
+  `src/display/DisplayDriver.h:249:3: error: 'Preferences' does not name a type`
+- Ursache: Beim Entfernen der direkten `Preferences.h`-Abhängigkeit aus `DisplayDriver.h` blieb das alte, nicht mehr verwendete Member `Preferences preferences_;` stehen.
+- Prüfung: Das Member kam ausschließlich in dieser Deklaration vor; es wurde im Displaytreiber nicht verwendet.
+- Korrektur committed:
+  - `fb9190315df62c8b507cff929b186156de2c01a9` – ungenutztes Preferences-Member aus `DisplayDriver.h` entfernt.
+- **Status:** Korrektur committed, aber noch nicht kompiliert. Build #115 zählt ausdrücklich nicht als erfolgreicher Build.
+- Nächster Schritt: Nutzer startet den nächsten manuellen Compile-only-Build. Beide Profile QSPI und OSPI müssen erfolgreich sein.
+- Unverändert: keine Workflow-Neustarts durch den Assistenten, kein Flashen, keine Änderungen an Partitionen/Offsets, FM-Layout und Radiofunktionen bleiben unangetastet.
