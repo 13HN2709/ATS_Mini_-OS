@@ -170,7 +170,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
   static const char* const displayItems[] = {
     "Zurueck", "Display-Helligkeit", "Layout", "Farbschema"
   };
-  static const char* const layoutItems[] = { "Zurueck", "FM Standard", "HJB - Alle Baender" };
+  static const char* const layoutItems[] = { "Zurueck", "Auto (FM/HJB)", "HJB - Alle Baender" };
   static const char* const radioItems[] = {
     "Zurueck", "Band waehlen", "Bandbreite", "Schrittweite", "Empfangseinstellungen", "SSB / BFO"
   };
@@ -327,7 +327,7 @@ bool DisplayDriver::begin(uint8_t initialBrightness) {
     static_cast<unsigned long>(device_.getDisplayId()),
     static_cast<long>(device_.width()),static_cast<long>(device_.height()));
   layoutMode_ = 0;
-  Serial.println("[DISPLAY] active layout: FM");
+  Serial.println("[DISPLAY] active layout: Auto (FM/HJB)");
   return true;
 }
 
@@ -350,7 +350,7 @@ void DisplayDriver::setTheme(uint8_t index) {
 void DisplayDriver::setLayoutMode(uint8_t mode) {
   layoutMode_ = mode <= 1 ? mode : 0;
   lastGeneration_ = UINT32_MAX;
-  Serial.printf("[DISPLAY] active layout: %s\\n", layoutMode_ == 1 ? "HJB (all bands)" : "FM Standard");
+  Serial.printf("[DISPLAY] active layout: %s\\n", layoutMode_ == 1 ? "HJB (all bands)" : "Auto (FM/HJB)");
 }
 
 void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConnected,
@@ -426,9 +426,9 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
       static_cast<unsigned>(s.piCode), static_cast<unsigned long>(s.frequencyKHz));
   }
   // HJB intentionally has no sender-logo area and must not trigger logo lookups.
-  const bool logoLocked = layoutMode_ == 0 && logoClient && logoKey[0] &&
+  const bool useFmStandard = layoutMode_ == 0 && s.modulation == RadioModulation::FM;\n  const bool logoLocked = useFmStandard && logoClient && logoKey[0] &&
     logoClient->lockLogo(logoKey, logoData, logoLength, logoIsJpg);
-  const bool logoSearching = layoutMode_ == 0 && !logoLocked && logoClient && logoClient->isLookupPending(logoKey);
+  const bool logoSearching = useFmStandard && !logoLocked && logoClient && logoClient->isLookupPending(logoKey);
   draw(s,radioReady,wifiConnected,lastInputEvent,inputEventCount,
        logoLocked ? logoData : nullptr,logoLocked ? logoLength : 0,logoIsJpg,logoSearching,
        radioTextOffset_, scrollRadioText, millis() < tuningUntilMs_);
@@ -580,8 +580,10 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   canvas.clearClipRect();
 }
 void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady,bool wifiConnected,const char* lastInputEvent,uint32_t inputEventCount,const uint8_t* logoData,size_t logoLength,bool logoIsJpg,bool logoSearching,int16_t radioTextOffset,bool scrollRadioText,bool frequencyBlue) {
-  // HJB is a standalone, logo-free layout for FM, AM, LW/MW/SW and SSB.
-  if (layoutMode_ == 1) {
+  // Automatic mode: keep the established FM screen with station logos,
+  // but switch every non-FM mode to the universal, logo-free HJB layout.
+  // Explicit HJB mode uses HJB on FM as well, still without sender logos.
+  if (layoutMode_ == 1 || s.modulation != RadioModulation::FM) {
     if (useSprite_) {
       sprite_.fillSprite(BLACK);
       drawHJBLayout(sprite_, s, radioReady, wifiConnected);
@@ -589,19 +591,6 @@ void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady,bool wifiConnect
     } else {
       device_.fillScreen(BLACK);
       drawHJBLayout(device_, s, radioReady, wifiConnected);
-    }
-    return;
-  }
-  // Keep the tested FM logo/RDS screen unchanged; AM-family bands use their
-  // own TEF-inspired layout module.
-  if (s.modulation != RadioModulation::FM) {
-    if (useSprite_) {
-      sprite_.fillSprite(BLACK);
-      drawAmBandLayout(sprite_, s, radioReady, wifiConnected);
-      sprite_.pushSprite(0, 0);
-    } else {
-      device_.fillScreen(BLACK);
-      drawAmBandLayout(device_, s, radioReady, wifiConnected);
     }
     return;
   }
