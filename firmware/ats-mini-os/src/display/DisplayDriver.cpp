@@ -164,7 +164,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
   static const char* const mainItems[] = {
     "Zurueck", "Lautstaerke", "Band waehlen", "Bandbreite", "Schrittweite",
     "Empfang (AGC / Soft Mute / AVC)", "SSB / BFO", "Display-Helligkeit",
-    "Layout", "Farbschema", "Dateimanager", "UTC+01:00 *"
+    "Layout", "Farbschema", "System / UTC"
   };
   static const char* const volumeItems[] = {
     "Zurueck", "Lautstaerke", "Stumm (spaeter)"
@@ -274,11 +274,12 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
       canvas.drawString(items[index], 24, y+13);
     }
 
-    if ((page==1 || page==2) && index==1) {
-      const uint8_t level = page==1 ? volume : brightness;
-      const uint8_t maximum = page==1 ? 63 : 255;
+    if ((page==1 && index==1) || (page==0 && index==7)) {
+      const bool volumeControl = page == 1;
+      const uint8_t level = volumeControl ? volume : brightness;
+      const uint8_t maximum = volumeControl ? 63 : 255;
       char value[12];
-      if (page==1) snprintf(value,sizeof(value),"%u/63",static_cast<unsigned>(level));
+      if (volumeControl) snprintf(value,sizeof(value),"%u/63",static_cast<unsigned>(level));
       else snprintf(value,sizeof(value),"%u%%",static_cast<unsigned>((static_cast<uint16_t>(level)*100U)/255U));
       canvas.drawRightString(value,w-17,y+13);
       const int barX=24, barY=y+36, barW=w-48;
