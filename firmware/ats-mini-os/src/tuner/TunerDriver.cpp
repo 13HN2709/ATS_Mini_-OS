@@ -129,6 +129,23 @@ bool TunerDriver::setSoftMuteAttenuation(uint8_t attenuationDb) {
   return true;
 }
 
+bool TunerDriver::setBfoOffsetHz(int16_t offsetHz) {
+  if (!ready_ || offsetHz < -16000 || offsetHz > 16000) return false;
+  bfoOffsetHz_ = offsetHz;
+  if (modulation_ == RadioModulation::LSB || modulation_ == RadioModulation::USB) radio_.setSSBBfo(bfoOffsetHz_);
+  Serial.printf("[TUNER] BFO offset=%d Hz%s\n", static_cast<int>(bfoOffsetHz_),
+                (modulation_ == RadioModulation::LSB || modulation_ == RadioModulation::USB) ? "" : " (stored for SSB)");
+  return true;
+}
+
+bool TunerDriver::setSsbBandwidthChoice(uint8_t choice) {
+  if (choice >= 6) return false;
+  ssbBandwidthChoice_ = choice;
+  if (!ready_) return true;
+  if (modulation_ == RadioModulation::LSB || modulation_ == RadioModulation::USB) return setBandwidthChoice(choice);
+  return true;
+}
+
 bool TunerDriver::setAvcGain(uint8_t gain) {
   if (!ready_ || gain < 12 || gain > 90) return false;
   // Remember the AM/SSB value while listening to FM; apply it on the next
@@ -158,6 +175,7 @@ bool TunerDriver::setBandwidthChoice(uint8_t choice) {
   static const uint8_t amProperties[] = {4, 5, 3, 6, 2, 1, 0};
   static const uint8_t ssbProperties[] = {4, 5, 0, 1, 2, 3};
   bandwidthChoice_ = choice;
+  if (modulation_ == RadioModulation::LSB || modulation_ == RadioModulation::USB) ssbBandwidthChoice_ = choice;
   if (modulation_ == RadioModulation::FM) {
     radio_.setFmBandwidth(choice); // Auto, 110, 84, 60, 40 kHz
   } else if (modulation_ == RadioModulation::AM) {
@@ -237,7 +255,7 @@ bool TunerDriver::setBand(const RadioBandDefinition& band) {
   } else {
     // The SI4735 requires the SSB DSP patch before sideband mode can be used.
     // Load it only when entering SSB; AM/FM transitions invalidate this state.
-    bandwidthChoice_ = 4;
+    bandwidthChoice_ = ssbBandwidthChoice_;
     if (!ssbPatchLoaded_) {
       radio_.loadPatch(ssb_patch_content, sizeof(ssb_patch_content), 2);
       ssbPatchLoaded_ = true;
@@ -247,7 +265,8 @@ bool TunerDriver::setBand(const RadioBandDefinition& band) {
                   static_cast<uint16_t>(band.maximumKHz),
                   static_cast<uint16_t>(target), 0, mode);
     radio_.setSSBConfig(2, 1, 0, 1, 0, 1);
-    radio_.setSSBBfo(0);
+    radio_.setSSBBfo(bfoOffsetHz_);
+    setBandwidthChoice(ssbBandwidthChoice_);
     radio_.setAutomaticGainControl(agcAutomatic_ ? 0 : 1, agcGainIndex_);
     radio_.setSsbSoftMuteMaxAttenuation(softMuteAttenuationDb_);
     radio_.setAvcAmMaxGain(avcGain_);
