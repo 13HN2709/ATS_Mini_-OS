@@ -58,6 +58,17 @@ bool SettingsStore::saveDisplayTheme(uint8_t theme) {
   return preferences_.putUChar(kDisplayThemeKey, theme) == sizeof(uint8_t);
 }
 
+uint8_t SettingsStore::displayLayout(uint8_t fallback) {
+  if (!ready_) return fallback;
+  const uint8_t saved = preferences_.getUChar(kDisplayLayoutKey, fallback);
+  return saved <= 1 ? saved : fallback;
+}
+
+bool SettingsStore::saveDisplayLayout(uint8_t layout) {
+  return ready_ && layout <= 1 &&
+         preferences_.putUChar(kDisplayLayoutKey, layout) == sizeof(uint8_t);
+}
+
 bool SettingsStore::agcAutomatic(bool fallback) {
   return ready_ ? preferences_.getBool(kAgcAutomaticKey, fallback) : fallback;
 }
