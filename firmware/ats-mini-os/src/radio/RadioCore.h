@@ -14,7 +14,9 @@ public:
   bool nextBand(int8_t direction);
   bool setVolume(uint8_t volume);
   bool setAgcAutomatic(bool automatic);
+  bool setAgcManualGain(uint8_t index);
   bool setSoftMuteEnabled(bool enabled);
+  bool setSoftMuteAttenuation(uint8_t attenuationDb);
   bool setAvcGain(uint8_t gain);
   bool setBandwidthChoice(uint8_t choice);
   bool setStepChoice(uint8_t choice);
