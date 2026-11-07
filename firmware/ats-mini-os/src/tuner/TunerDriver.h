@@ -84,6 +84,7 @@ public:
   bool begin(uint32_t initialFrequencyKHz);
   bool tune(uint32_t frequencyKHz);
   bool setBand(const RadioBandDefinition& band);
+  bool setModulation(const RadioBandDefinition& band, RadioModulation modulation);
   bool tune(uint32_t frequencyKHz, const RadioBandDefinition& band);
   RadioModulation modulation() const { return modulation_; }
   bool setVolume(uint8_t volume);
