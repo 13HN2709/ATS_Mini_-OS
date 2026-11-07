@@ -154,7 +154,7 @@ void drawFileMenu(Canvas& c,const char* path,FileManager::Entry* entries,uint8_t
 }
 
 template <typename Canvas>
-void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, uint8_t layoutMode, RadioModulation modulation) {
+void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, uint8_t brightness, uint8_t layoutMode, RadioModulation modulation) {
   const int w = canvas.width();
   const int h = canvas.height();
   static const char* const mainItems[] = {
@@ -164,7 +164,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
     "Zurueck", "Lautstaerke", "Stumm (spaeter)"
   };
   static const char* const displayItems[] = {
-    "Zurueck", "Helligkeit (spaeter)"
+    "Zurueck", "Display-Helligkeit"
   };
   static const char* const radioItems[] = {
     "Zurueck", "Band waehlen", "Bandbreite", "Schrittweite", "Bandplan (spaeter)"
@@ -254,13 +254,16 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
       canvas.drawString(items[index], 16, y+13);
     }
 
-    if (page==1 && index==1) {
+    if ((page==1 || page==2) && index==1) {
+      const uint8_t level = page==1 ? volume : brightness;
+      const uint8_t maximum = page==1 ? 63 : 255;
       char value[12];
-      snprintf(value,sizeof(value),"%u/63",static_cast<unsigned>(volume));
+      if (page==1) snprintf(value,sizeof(value),"%u/63",static_cast<unsigned>(level));
+      else snprintf(value,sizeof(value),"%u%%",static_cast<unsigned>((static_cast<uint16_t>(level)*100U)/255U));
       canvas.drawRightString(value,w-17,y+13);
       const int barX=16, barY=y+36, barW=w-33;
       canvas.drawRect(barX,barY,barW,5,WHITE);
-      const int fillW=(barW-2)*volume/63;
+      const int fillW=(barW-2)*level/maximum;
       if(fillW>0) canvas.fillRect(barX+1,barY+1,fillW,3,WHITE);
     }
   }
@@ -287,9 +290,10 @@ bool DisplayDriver::begin() {
   }
   // Match ATS Mini Dev: the ATS Mini V4 panel is correctly oriented at rotation 3.
   device_.setRotation(3);
-  device_.setBrightness(180);
+  brightness_ = 180;
+  device_.setBrightness(brightness_);
 #if !defined(LILYGO_SI473X)
-  ledcWrite(38, 180);
+  ledcWrite(38, brightness_);
 #endif
   sprite_.setPsram(true);
   sprite_.setColorDepth(16);
@@ -309,6 +313,15 @@ bool DisplayDriver::begin() {
   return true;
 }
 
+void DisplayDriver::setBrightness(uint8_t value) {
+  if (value < 10) value = 10;
+  brightness_ = value;
+  device_.setBrightness(brightness_);
+#if !defined(LILYGO_SI473X)
+  ledcWrite(38, brightness_);
+#endif
+}
+
 void DisplayDriver::setLayoutMode(uint8_t mode) {
   (void)mode;
   layoutMode_ = 0;
@@ -323,7 +336,7 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
   if(!ready_)return;
   const uint32_t now=millis();
   const bool menuStateChanged = menuOpen != lastMenuOpen_ || menuPage != lastMenuPage_ ||
-      menuSelection != lastMenuSelection_ || volume != lastMenuVolume_ || layoutMode_ != lastMenuLayout_;
+      menuSelection != lastMenuSelection_ || volume != lastMenuVolume_ || layoutMode_ != lastMenuLayout_ || brightness_ != lastMenuBrightness_;
   // Redraw the file manager promptly while the encoder is moving; this also
   // keeps the selection frame visually attached to the active row.
   const uint32_t redrawInterval = menuOpen ? ((menuPage==6) ? 20 : 500) : 40;
@@ -335,15 +348,16 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
   lastMenuSelection_=menuSelection;
   lastMenuVolume_=volume;
   lastMenuLayout_=layoutMode_;
+  lastMenuBrightness_=brightness_;
   if (menuOpen) {
     if(menuPage==6){if(useSprite_){sprite_.fillSprite(BLACK);drawFileMenu(sprite_,filePath,fileEntries,fileCount,fileSelection,fileMode,fileActionSelection,fileSelectedName,fileMessage);sprite_.pushSprite(0,0);}else{device_.fillScreen(BLACK);drawFileMenu(device_,filePath,fileEntries,fileCount,fileSelection,fileMode,fileActionSelection,fileSelectedName,fileMessage);}return;}
     if (useSprite_) {
       sprite_.fillSprite(BLACK);
-      drawMenu(sprite_, menuPage, menuSelection, volume, layoutMode_, s.modulation);
+      drawMenu(sprite_, menuPage, menuSelection, volume, brightness_, layoutMode_, s.modulation);
       sprite_.pushSprite(0,0);
     } else {
       device_.fillScreen(BLACK);
-      drawMenu(device_, menuPage, menuSelection, volume, layoutMode_, s.modulation);
+      drawMenu(device_, menuPage, menuSelection, volume, brightness_, layoutMode_, s.modulation);
     }
     return;
   }
