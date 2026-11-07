@@ -284,9 +284,6 @@ void loop() {
           } else Serial.println("[MENU] BFO change rejected (limit +/-16000 Hz)");
         } else if (menuPage == 3 && menuSelection == 6) {
           menuPage = 12; menuSelection = 0;
-        } else if (menuPage == 3 && menuSelection == 6) {
-          menuPage = 12;
-          menuSelection = 0;
         } else if (menuPage == 3 && menuSelection == 5) {
           menuPage = 11;
           menuSelection = 0;
