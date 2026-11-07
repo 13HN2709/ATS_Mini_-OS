@@ -241,12 +241,15 @@ public:
   bool isReady() const { return ready_; }
   uint8_t layoutMode() const { return layoutMode_; }
   void setLayoutMode(uint8_t mode);
+  uint8_t brightness() const { return brightness_; }
+  void setBrightness(uint8_t value);
   void notifyTuning() { tuningUntilMs_ = millis() + 700; }
   uint32_t detectedPanelId() const { return device_.getDisplayId(); }
 private:
   Device device_;
   Preferences preferences_;
   uint8_t layoutMode_ = 0; // 0 = FM main layout, 1 = diagnostic/test layout
+  uint8_t brightness_ = 180;
   lgfx::LGFX_Sprite sprite_{&device_};
   bool useSprite_ = false;
   bool ready_ = false;
@@ -258,6 +261,7 @@ private:
   uint8_t lastMenuSelection_ = 0xFF;
   uint8_t lastMenuVolume_ = 0xFF;
   uint8_t lastMenuLayout_ = 0xFF;
+  uint8_t lastMenuBrightness_ = 0xFF;
   char lastStationRow_[32] = {};
   char lastRadioTextRow_[65] = {};
   int16_t radioTextOffset_ = 0;
