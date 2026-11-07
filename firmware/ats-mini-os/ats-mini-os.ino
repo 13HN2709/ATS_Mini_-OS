@@ -46,7 +46,7 @@ char fmEditName[48] = "";
 void saveBrightnessIfPending() {
   if (!brightnessSavePending) return;
   if (settingsStore.saveDisplayBrightness(display.brightness())) {
-    Serial.printf("[SETTINGS] display brightness saved: %u/255\\n",
+    Serial.printf("[SETTINGS] display brightness saved: %u/255\n",
       static_cast<unsigned>(display.brightness()));
   } else {
     Serial.println("[SETTINGS] display brightness save failed; current session remains active.");
@@ -56,7 +56,7 @@ void saveBrightnessIfPending() {
 void saveThemeIfPending() {
   if (!themeSavePending) return;
   if (settingsStore.saveDisplayTheme(display.themeIndex())) {
-    Serial.printf("[SETTINGS] display theme saved: %s\\n", ThemeManager::at(display.themeIndex()).name);
+    Serial.printf("[SETTINGS] display theme saved: %s\n", ThemeManager::at(display.themeIndex()).name);
   } else {
     Serial.println("[SETTINGS] display theme save failed; current session remains active.");
   }
@@ -80,12 +80,12 @@ void setup() {
 
   encoder.begin();
   const bool settingsReady = settingsStore.begin();
-  Serial.printf("[SETTINGS] dedicated NVS %s\\n", settingsReady ? "ready" : "unavailable; using defaults");
+  Serial.printf("[SETTINGS] dedicated NVS %s\n", settingsReady ? "ready" : "unavailable; using defaults");
   const uint8_t savedBrightness = settingsStore.displayBrightness(180);
   const uint8_t savedTheme = settingsStore.displayTheme(0);
   if (display.begin(savedBrightness)) {
     display.setTheme(savedTheme);
-    Serial.printf("[DISPLAY] first UI initialized; brightness=%u/255\\n",
+    Serial.printf("[DISPLAY] first UI initialized; brightness=%u/255\n",
       static_cast<unsigned>(display.brightness()));
   }
   if (radio.begin(DEFAULT_FM_FREQUENCY_KHZ)) {
@@ -97,10 +97,10 @@ void setup() {
     else radio.setAgcManualGain(agcIndex);
     radio.setSoftMuteAttenuation(softMuteDb);
     radio.setAvcGain(avcGain); // Remembered in FM, applied automatically in AM/SSB.
-    Serial.printf("[SETTINGS] RX restored: AGC=%s/%u SoftMute=%u dB AVC=%u\\n",
+    Serial.printf("[SETTINGS] RX restored: AGC=%s/%u SoftMute=%u dB AVC=%u\n",
       agcAuto ? "AUTO" : "MANUAL", static_cast<unsigned>(agcIndex),
       static_cast<unsigned>(softMuteDb), static_cast<unsigned>(avcGain));
-    Serial.printf("Radio ready: %.1f MHz\\n",radio.snapshot().frequencyKHz/1000.0f);
+    Serial.printf("Radio ready: %.1f MHz\n",radio.snapshot().frequencyKHz/1000.0f);
   } else Serial.println("[TUNER] init failed; check I2C, radio power and GPIO configuration.");
   wifi.begin();
   Serial.printf("CPU profile: %s\n",performance.profileName());
@@ -112,7 +112,7 @@ void loop() {
   if (wifi.connected() && !diagnosticsServerStarted) {
     diagnosticsServer.begin();
     diagnosticsServerStarted = true;
-    Serial.printf("[DIAG] Web status server: http://%s/ logo status only\\n", WiFi.localIP().toString().c_str());
+    Serial.printf("[DIAG] Web status server: http://%s/ logo status only\n", WiFi.localIP().toString().c_str());
   }
   if (diagnosticsServerStarted) diagnosticsServer.handleClient();
   encoder.update();
@@ -130,7 +130,7 @@ void loop() {
             const uint8_t nextBrightness = static_cast<uint8_t>(constrain(requested, 10, 255));
             display.setBrightness(nextBrightness);
             brightnessSavePending = true;
-            Serial.printf("[MENU] display brightness=%u/255 (pending save)\\n",
+            Serial.printf("[MENU] display brightness=%u/255 (pending save)\n",
               static_cast<unsigned>(display.brightness()));
           } else if (menuPage == 1 && menuSelection == 1) {
             const int16_t requested = static_cast<int16_t>(radio.volume()) + inputEvent.delta;
@@ -186,7 +186,7 @@ void loop() {
         } else if (menuPage == 11 && menuSelection == 1) {
           if (radio.setAgcAutomatic(true)) {
             const bool saved = settingsStore.saveAgcAutomatic(true);
-            Serial.printf("[SETTINGS] AGC AUTO %s\\n", saved ? "saved" : "save failed");
+            Serial.printf("[SETTINGS] AGC AUTO %s\n", saved ? "saved" : "save failed");
           }
         } else if (menuPage == 11 && menuSelection >= 2 && menuSelection <= 5) {
           static const uint8_t agcIndexes[] = {0, 8, 16, 24};
@@ -194,14 +194,14 @@ void loop() {
           if (radio.setAgcManualGain(index)) {
             const bool modeSaved = settingsStore.saveAgcAutomatic(false);
             const bool indexSaved = settingsStore.saveAgcGainIndex(index);
-            Serial.printf("[SETTINGS] AGC manual index=%u %s\\n",
+            Serial.printf("[SETTINGS] AGC manual index=%u %s\n",
               static_cast<unsigned>(index), modeSaved && indexSaved ? "saved" : "save failed");
           }
         } else if (menuPage == 11 && menuSelection >= 6 && menuSelection <= 9) {
           const uint8_t attenuation = static_cast<uint8_t>((menuSelection - 6) * 4);
           if (radio.setSoftMuteAttenuation(attenuation)) {
             const bool saved = settingsStore.saveSoftMuteAttenuationDb(attenuation);
-            Serial.printf("[SETTINGS] Soft Mute=%u dB %s\\n",
+            Serial.printf("[SETTINGS] Soft Mute=%u dB %s\n",
               static_cast<unsigned>(attenuation), saved ? "saved" : "save failed");
           }
         } else if (menuPage == 11 && menuSelection >= 10 && menuSelection <= 13) {
@@ -209,7 +209,7 @@ void loop() {
           const uint8_t gain = avcGains[menuSelection - 10];
           if (radio.setAvcGain(gain)) {
             const bool saved = settingsStore.saveAvcGain(gain);
-            Serial.printf("[SETTINGS] AVC=%u %s\\n",
+            Serial.printf("[SETTINGS] AVC=%u %s\n",
               static_cast<unsigned>(gain), saved ? "saved" : "save failed");
           }
         } else if (menuPage == 3 && menuSelection == 1) {
@@ -221,7 +221,7 @@ void loop() {
         } else if (menuPage == 8 && menuSelection > 0) {
           if (radio.selectBand(static_cast<uint8_t>(menuSelection - 1))) {
             display.notifyTuning();
-            Serial.printf("[MENU] band=%s freq=%lu kHz\\n", radio.snapshot().bandName,
+            Serial.printf("[MENU] band=%s freq=%lu kHz\n", radio.snapshot().bandName,
               static_cast<unsigned long>(radio.snapshot().frequencyKHz));
             menuPage = 3;
             menuSelection = 1;
@@ -245,7 +245,7 @@ void loop() {
           menuSelection = 0;
         } else if (menuPage == 7 && menuSelection > 0) {
           if (radio.setBandwidthChoice(static_cast<uint8_t>(menuSelection - 1))) {
-            Serial.printf("[MENU] bandwidth choice=%u\\n", static_cast<unsigned>(menuSelection - 1));
+            Serial.printf("[MENU] bandwidth choice=%u\n", static_cast<unsigned>(menuSelection - 1));
             menuPage = 3;
             menuSelection = 2;
           }
