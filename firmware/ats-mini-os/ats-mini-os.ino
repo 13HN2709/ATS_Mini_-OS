@@ -35,6 +35,8 @@ uint32_t encoderEventCount = 0;
 const char* lastEncoderEvent = "WAIT";
 bool menuOpen = false;
 bool sliderAdjustmentActive = false;
+bool bfoAdjustmentActive = false;
+bool bfoSavePending = false;
 uint8_t menuPage = 0;
 uint8_t menuSelection = 0;
 FileManager::Entry fmEntries[FileManager::MAX_ENTRIES];
@@ -63,6 +65,15 @@ void saveThemeIfPending() {
     Serial.println("[SETTINGS] display theme save failed; current session remains active.");
   }
   themeSavePending = false;
+}
+void closeMenuToRadio(const char* reason) {
+  saveBrightnessIfPending();
+  saveThemeIfPending();
+  menuOpen = false;
+  sliderAdjustmentActive = false;
+  menuPage = 0;
+  menuSelection = 0;
+  Serial.printf("[MENU] returned to radio: %s\\n", reason);
 }
 void fmRefresh(){ fmCount=0; if(!FileManager::list(fmPath,fmEntries,FileManager::MAX_ENTRIES,fmCount)) snprintf(fmMessage,sizeof(fmMessage),"Ordner nicht lesbar"); }
 void fmMessageSet(const char* m){ strncpy(fmMessage,m,sizeof(fmMessage)-1); fmMessage[sizeof(fmMessage)-1]=0; }
@@ -153,6 +164,13 @@ void loop() {
             if (next < 0) next += itemCount;
             menuSelection = static_cast<uint8_t>(next);
           }
+        } else if (bfoAdjustmentActive) {
+          const int32_t requested = static_cast<int32_t>(radio.bfoOffsetHz()) + inputEvent.delta * 10;
+          const int16_t nextBfo = static_cast<int16_t>(constrain(requested, -16000, 16000));
+          if (radio.setBfoOffsetHz(nextBfo)) {
+            bfoSavePending = true;
+            Serial.printf("[BFO] offset=%d Hz\\n", static_cast<int>(radio.bfoOffsetHz()));
+          }
         } else if (radio.nextChannel(inputEvent.delta)) {
           display.notifyTuning();
           Serial.printf("[INPUT] tune step %s -> %.1f MHz\n",
@@ -162,7 +180,15 @@ void loop() {
         break;
       case EncoderEventType::ShortPress:
         lastEncoderEvent = "SHORT";
-        if (!menuOpen) {
+        if (bfoAdjustmentActive) {
+          bfoAdjustmentActive = false;
+          if (bfoSavePending) {
+            const bool saved = settingsStore.saveBfoOffsetHz(radio.bfoOffsetHz());
+            Serial.printf("[SETTINGS] BFO=%d Hz %s\\n", static_cast<int>(radio.bfoOffsetHz()), saved ? "saved" : "save failed");
+            bfoSavePending = false;
+          }
+          Serial.println("[BFO] adjustment finished; encoder returned to tuning");
+        } else if (!menuOpen) {
           menuOpen = true;
           sliderAdjustmentActive = false;
           menuPage = 0;
@@ -175,11 +201,7 @@ void loop() {
             Serial.printf("[MENU] %s adjustment activated; turn to change, click to finish\n",
               menuPage == 1 ? "volume" : "brightness");
           } else {
-            sliderAdjustmentActive = false;
-            saveBrightnessIfPending();
-            if (menuPage == 1) { menuPage = 0; menuSelection = 1; }
-            else { menuPage = 0; menuSelection = 7; }
-            Serial.println("[MENU] slider adjustment finished");
+            closeMenuToRadio("slider adjustment finished");
           }
         } else if ((menuPage==5 && menuSelection==3) || (menuPage==0 && menuSelection==11)) {fmOpen();
         } else if (menuPage == 0) {
@@ -233,9 +255,14 @@ void loop() {
         } else if (menuPage == 10 && menuSelection > 0) {
           display.setTheme(static_cast<uint8_t>(menuSelection - 1));
           themeSavePending = true;
+          closeMenuToRadio("theme selected");
         } else if (menuPage == 3 && menuSelection == 5) {
-          menuPage = MenuSSB::kPage;
+          menuOpen = false;
+          bfoAdjustmentActive = true;
+          bfoSavePending = false;
+          menuPage = 0;
           menuSelection = 0;
+          Serial.printf("[BFO] adjustment active at %d Hz; rotate to change, click to finish\\n", static_cast<int>(radio.bfoOffsetHz()));
         } else if (menuPage == MenuSSB::kPage && menuSelection == 0) {
           menuPage = 0;
           menuSelection = 6;
@@ -263,14 +290,14 @@ void loop() {
             const bool indexSaved = settingsStore.saveAgcGainIndex(index);
             Serial.printf("[SETTINGS] AGC manual index=%u %s\n",
               static_cast<unsigned>(index), modeSaved && indexSaved ? "saved" : "save failed");
-          }
+            closeMenuToRadio("AGC gain selected");          }
         } else if (menuPage == 11 && menuSelection >= 6 && menuSelection <= 9) {
           const uint8_t attenuation = static_cast<uint8_t>((menuSelection - 6) * 4);
           if (radio.setSoftMuteAttenuation(attenuation)) {
             const bool saved = settingsStore.saveSoftMuteAttenuationDb(attenuation);
             Serial.printf("[SETTINGS] Soft Mute=%u dB %s\n",
               static_cast<unsigned>(attenuation), saved ? "saved" : "save failed");
-          }
+            closeMenuToRadio("Soft Mute selected");          }
         } else if (menuPage == 11 && menuSelection >= 10 && menuSelection <= 13) {
           static const uint8_t avcGains[] = {12, 30, 60, 90};
           const uint8_t gain = avcGains[menuSelection - 10];
