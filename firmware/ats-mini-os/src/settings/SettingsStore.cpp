@@ -58,15 +58,26 @@ bool SettingsStore::saveDisplayTheme(uint8_t theme) {
   return preferences_.putUChar(kDisplayThemeKey, theme) == sizeof(uint8_t);
 }
 
-uint8_t SettingsStore::displayLayout(uint8_t fallback) {
+uint8_t SettingsStore::displayFmLayout(uint8_t fallback) {
   if (!ready_) return fallback;
-  const uint8_t saved = preferences_.getUChar(kDisplayLayoutKey, fallback);
+  const uint8_t saved = preferences_.getUChar(kDisplayFmLayoutKey, fallback);
   return saved <= 1 ? saved : fallback;
 }
 
-bool SettingsStore::saveDisplayLayout(uint8_t layout) {
+bool SettingsStore::saveDisplayFmLayout(uint8_t layout) {
   return ready_ && layout <= 1 &&
-         preferences_.putUChar(kDisplayLayoutKey, layout) == sizeof(uint8_t);
+         preferences_.putUChar(kDisplayFmLayoutKey, layout) == sizeof(uint8_t);
+}
+
+uint8_t SettingsStore::displayAmLayout(uint8_t fallback) {
+  if (!ready_) return fallback;
+  const uint8_t saved = preferences_.getUChar(kDisplayAmLayoutKey, fallback);
+  return saved <= 1 ? saved : fallback;
+}
+
+bool SettingsStore::saveDisplayAmLayout(uint8_t layout) {
+  return ready_ && layout <= 1 &&
+         preferences_.putUChar(kDisplayAmLayoutKey, layout) == sizeof(uint8_t);
 }
 
 bool SettingsStore::agcAutomatic(bool fallback) {
