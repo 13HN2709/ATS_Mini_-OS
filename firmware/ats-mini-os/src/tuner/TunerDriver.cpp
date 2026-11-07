@@ -32,15 +32,13 @@ void formatRadioText(char* dst, size_t capacity, const char* src) {
   dst[0] = '\0';
   if (!src) return;
   size_t in = 0, out = 0;
+  // Match Dev: skip leading whitespace, stop at CR, and keep each displayed
+  // line to 32 characters, breaking at the next word boundary.
   while (in < 64 && src[in] && static_cast<unsigned char>(src[in]) <= ' ') ++in;
   uint8_t lineLength = 0;
-  while (in < 64 && src[in] && src[in] != '\r' && out + 2 < capacity) {
-    char ch = src[in++];
-    if (ch == '\n' || (ch == ' ' && lineLength >= 32)) {
-      if (out && dst[out - 1] != '\n') dst[out++] = '\n';
-      lineLength = 0;
-      continue;
-    }
+  while (in < 64 && src[in] && src[in] != '\r' && out + 1 < capacity) {
+    const char ch = src[in++];
+    if (ch == '\n' || (ch == ' ' && lineLength >= 32)) break;
     const unsigned char byte = static_cast<unsigned char>(ch);
     dst[out++] = (byte >= 0x20 && byte <= 0x7e) ? ch : ' ';
     ++lineLength;
