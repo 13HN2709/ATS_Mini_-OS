@@ -91,7 +91,7 @@ bool TunerDriver::setAgcAutomatic(bool automatic) {
   if (!ready_) return false;
   agcAutomatic_ = automatic;
   radio_.setAutomaticGainControl(automatic ? 0 : 1, agcGainIndex_);
-  Serial.printf("[TUNER] AGC %s (index=%u)\\n", automatic ? "AUTO" : "MANUAL", static_cast<unsigned>(agcGainIndex_));
+  Serial.printf("[TUNER] AGC %s (index=%u)\n", automatic ? "AUTO" : "MANUAL", static_cast<unsigned>(agcGainIndex_));
   return true;
 }
 
@@ -102,7 +102,7 @@ bool TunerDriver::setSoftMuteEnabled(bool enabled) {
   if (modulation_ == RadioModulation::FM) radio_.setFmSoftMuteMaxAttenuation(attenuation);
   else if (modulation_ == RadioModulation::AM) radio_.setAmSoftMuteMaxAttenuation(attenuation);
   else radio_.setSsbSoftMuteMaxAttenuation(attenuation);
-  Serial.printf("[TUNER] soft mute %s\\n", enabled ? "ON" : "OFF");
+  Serial.printf("[TUNER] soft mute %s\n", enabled ? "ON" : "OFF");
   return true;
 }
 
@@ -110,7 +110,7 @@ bool TunerDriver::setAvcGain(uint8_t gain) {
   if (!ready_ || modulation_ == RadioModulation::FM || gain < 12 || gain > 90) return false;
   avcGain_ = gain;
   radio_.setAvcAmMaxGain(gain);
-  Serial.printf("[TUNER] AVC max gain=%u\\n", static_cast<unsigned>(gain));
+  Serial.printf("[TUNER] AVC max gain=%u\n", static_cast<unsigned>(gain));
   return true;
 }
 
@@ -202,7 +202,8 @@ bool TunerDriver::setBand(const RadioBandDefinition& band) {
                            static_cast<uint16_t>(band.maximumKHz));
     radio_.setSeekAmRssiThreshold(10);
     radio_.setSeekAmSNRThreshold(3);
-    radio_.setBandwidth(2, 1);\n    radio_.setAutomaticGainControl(agcAutomatic_ ? 0 : 1, agcGainIndex_);\n    radio_.setAmSoftMuteMaxAttenuation(softMuteEnabled_ ? 8 : 0);\n    radio_.setAvcAmMaxGain(avcGain_);
+    radio_.setBandwidth(2, 1);
+    radio_.setAutomaticGainControl(agcAutomatic_ ? 0 : 1, agcGainIndex_);\n    radio_.setAmSoftMuteMaxAttenuation(softMuteEnabled_ ? 8 : 0);\n    radio_.setAvcAmMaxGain(avcGain_);
   } else {
     // The SI4735 requires the SSB DSP patch before sideband mode can be used.
     // Load it only when entering SSB; AM/FM transitions invalidate this state.
@@ -216,7 +217,8 @@ bool TunerDriver::setBand(const RadioBandDefinition& band) {
                   static_cast<uint16_t>(band.maximumKHz),
                   static_cast<uint16_t>(target), 0, mode);
     radio_.setSSBConfig(2, 1, 0, 1, 0, 1);
-    radio_.setSSBBfo(0);\n    radio_.setAutomaticGainControl(agcAutomatic_ ? 0 : 1, agcGainIndex_);\n    radio_.setSsbSoftMuteMaxAttenuation(softMuteEnabled_ ? 8 : 0);\n    radio_.setAvcAmMaxGain(avcGain_);
+    radio_.setSSBBfo(0);
+    radio_.setAutomaticGainControl(agcAutomatic_ ? 0 : 1, agcGainIndex_);\n    radio_.setSsbSoftMuteMaxAttenuation(softMuteEnabled_ ? 8 : 0);\n    radio_.setAvcAmMaxGain(avcGain_);
   }
   radio_.setVolume(volume_);
   return true;
