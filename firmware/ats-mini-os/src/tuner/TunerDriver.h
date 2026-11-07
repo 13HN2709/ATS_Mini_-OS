@@ -87,6 +87,9 @@ public:
   bool tune(uint32_t frequencyKHz, const RadioBandDefinition& band);
   RadioModulation modulation() const { return modulation_; }
   bool setVolume(uint8_t volume);
+  bool setAgcAutomatic(bool automatic);
+  bool setSoftMuteEnabled(bool enabled);
+  bool setAvcGain(uint8_t gain);
   bool setBandwidthChoice(uint8_t choice);
   bool setStepKHz(uint16_t stepKHz);
   uint16_t stepKHz() const { return stepKHz_; }
@@ -111,6 +114,10 @@ private:
   bool ready_ = false;
   bool ssbPatchLoaded_ = false;
   uint8_t volume_ = 25;
+  bool agcAutomatic_ = true;
+  uint8_t agcGainIndex_ = 20;
+  bool softMuteEnabled_ = true;
+  uint8_t avcGain_ = 90;
   uint8_t bandwidthChoice_ = 0;
   bool haveTextFlag_ = false;
   uint8_t lastTextFlag_ = 0;
