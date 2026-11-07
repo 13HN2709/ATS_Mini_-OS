@@ -159,7 +159,7 @@ void loop() {
             if (radio.setVolume(nextVolume))
               Serial.printf("[MENU] volume=%u/63\n", static_cast<unsigned>(radio.volume()));
           } else {
-            const int16_t itemCount = menuPage == 0 ? 12 : (menuPage==2 ? 4 : (menuPage==13 ? 3 : ((menuPage==14 || menuPage==15) ? 3 : (menuPage==10 ? 4 : (menuPage==11 ? (radio.snapshot().modulation==RadioModulation::FM ? 10 : 14) : (menuPage==5 ? 5 : (menuPage==3 ? 6 : (menuPage==12 ? MenuSSB::kItemCount : (menuPage==7 ? radio.bandwidthChoiceCount()+1 : (menuPage==8 ? radio.bandCount()+1 : (menuPage==9 ? radio.stepChoiceCount()+1 : 3)))))))))));
+            const int16_t itemCount = menuPage == 0 ? 12 : (menuPage==2 ? 4 : (menuPage==13 ? 3 : ((menuPage==14 || menuPage==15) ? 3 : (menuPage==10 ? 4 : (menuPage==11 ? (radio.snapshot().modulation==RadioModulation::FM ? 10 : 14) : (menuPage==5 ? 5 : (menuPage==3 ? 6 : (menuPage==12 ? 2 : (menuPage==7 ? radio.bandwidthChoiceCount()+1 : (menuPage==8 ? radio.bandCount()+1 : (menuPage==9 ? radio.stepChoiceCount()+1 : 3)))))))))));
             int16_t next = (static_cast<int16_t>(menuSelection) + inputEvent.delta) % itemCount;
             if (next < 0) next += itemCount;
             menuSelection = static_cast<uint8_t>(next);
@@ -254,7 +254,10 @@ void loop() {
           display.setTheme(static_cast<uint8_t>(menuSelection - 1));
           themeSavePending = true;
           closeMenuToRadio("theme selected");
-        } else if (menuPage == 3 && menuSelection == 5) {
+        } else if (menuPage == 12 && menuSelection == 0) {
+          menuPage = 0;
+          menuSelection = 6;
+        } else if (menuPage == 12 && menuSelection == 1) {
           menuOpen = false;
           bfoAdjustmentActive = true;
           bfoSavePending = false;
