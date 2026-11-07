@@ -190,6 +190,8 @@ bool TunerDriver::setBand(const RadioBandDefinition& band) {
     radio_.setSeekFmRssiThreshold(0);
     radio_.setSeekFmSNRThreshold(1);
     radio_.setFmBandwidth(0);
+    radio_.setAutomaticGainControl(agcAutomatic_ ? 0 : 1, agcGainIndex_);
+    radio_.setFmSoftMuteMaxAttenuation(softMuteEnabled_ ? 8 : 0);
     radio_.RdsInit();
     radio_.setRdsConfig(1, 2, 2, 2, 2);
   } else if (band.modulation == RadioModulation::AM) {
