@@ -358,13 +358,14 @@ void loop() {
         break;
       case EncoderEventType::LongPress:
         lastEncoderEvent = "LONG";
-        if (menuOpen) {
+        if (bfoAdjustmentActive) {
+          bfoAdjustmentActive = false;
+          if (bfoSavePending) settingsStore.saveBfoOffsetHz(radio.bfoOffsetHz());
+          bfoSavePending = false;
+          Serial.println("[BFO] adjustment finished with long press");
+        } else if (menuOpen) {
           if (sliderAdjustmentActive) {
-            sliderAdjustmentActive = false;
-            saveBrightnessIfPending();
-            if (menuPage == 1) { menuPage = 0; menuSelection = 1; }
-            else { menuPage = 0; menuSelection = 7; }
-            Serial.println("[MENU] slider adjustment cancelled with long press");
+            closeMenuToRadio("slider adjustment finished with long press");
           } else if (menuPage == 6 && fmMode == 4) {
             if (fmEditName[0]) {
               char dest[96];
