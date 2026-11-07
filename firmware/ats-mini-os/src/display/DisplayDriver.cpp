@@ -2,6 +2,7 @@
 #include "ThemeManager.h"
 #include "DisplayLayoutAM.h"
 #include "../radio/BandManager.h"
+#include "../menus/MenuSSB.h"
 #include <LittleFS.h>
 
 namespace {
@@ -169,7 +170,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
     "Zurueck", "Display-Helligkeit", "Farbschema"
   };
   static const char* const radioItems[] = {
-    "Zurueck", "Band waehlen", "Bandbreite", "Schrittweite", "Empfangseinstellungen"
+    "Zurueck", "Band waehlen", "Bandbreite", "Schrittweite", "Empfangseinstellungen", "SSB / BFO"
   };
   static const char* const fmBandwidthItems[] = { "Zurueck", "Auto", "110 kHz", "84 kHz", "60 kHz", "40 kHz" };
   static const char* const amBandwidthItems[] = { "Zurueck", "1.0 kHz", "1.8 kHz", "2.0 kHz", "2.5 kHz", "3.0 kHz", "4.0 kHz", "6.0 kHz" };
@@ -202,6 +203,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
       title="BANDBREITE"; break;
     case 8: count=static_cast<uint8_t>(BandManager::count()+1); title="BAND WAEHLEN"; break;
     case 11: items=radioSettingsItems; count=(modulation==RadioModulation::FM?10:14); title="EMPFANG"; break;
+    case 12: count=MenuSSB::kItemCount; title="SSB / BFO"; break;
     case 10: items=themeItems; count=sizeof(themeItems)/sizeof(themeItems[0]); title="FARBSCHEMA"; break;
     case 9:
       if (modulation == RadioModulation::FM) { items=fmStepItems; count=sizeof(fmStepItems)/sizeof(fmStepItems[0]); }
@@ -260,6 +262,8 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
       char selectedTheme[32];
       snprintf(selectedTheme, sizeof(selectedTheme), "* %s", items[index]);
       canvas.drawString(selectedTheme, 16, y+13);
+    } else if (page == MenuSSB::kPage) {
+      canvas.drawString(MenuSSB::itemLabel(index), 16, y+13);
     } else {
       canvas.drawString(items[index], 16, y+13);
     }
