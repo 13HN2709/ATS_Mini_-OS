@@ -176,7 +176,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
     "Zurueck", "Display-Helligkeit", "Layout", "Farbschema"
   };
   static const char* const layoutGroupItems[] = { "Zurueck", "UKW / FM", "LW / MW / KW" };
-  static const char* const fmLayoutItems[] = { "Zurueck", "DAB Style", "HJB", "TEF6686 - FM Version" };
+  static const char* const fmLayoutItems[] = { "Zurueck", "DAB Style", "HJB", "TEF6686 -FM Version" };
   static const char* const amLayoutItems[] = { "Zurueck", "Standard LW/MW/KW", "HJB" };
   static const char* const bfoItems[] = { "Zurueck", "BFO einstellen" };
   static const char* const radioItems[] = {
@@ -389,7 +389,7 @@ void DisplayDriver::setTheme(uint8_t index) {
 void DisplayDriver::setFmLayout(uint8_t mode) {
   fmLayout_ = mode <= 2 ? mode : 0;
   lastGeneration_ = UINT32_MAX;
-  Serial.printf("[DISPLAY] FM layout: %s\\n", fmLayout_ == 1 ? "HJB" : (fmLayout_ == 2 ? "TEF6686 - FM Version" : "DAB Style"));
+  Serial.printf("[DISPLAY] FM layout: %s\\n", fmLayout_ == 1 ? "HJB" : (fmLayout_ == 2 ? "TEF6686 -FM Version" : "DAB Style"));
 }
 
 void DisplayDriver::setAmLayout(uint8_t mode) {
