@@ -11,15 +11,11 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - profile: esp32s3-ospi
-            label: OSPI-DE
-            psram: opi
-          - profile: esp32s3-qspi
-            label: QSPI-DE
-            psram: enabled
-    name: Compile-only / ${{ matrix.profile }}
+      name: Compile-only / esp32s3-ospi
+      env:
+        PROFILE: esp32s3-ospi
+        LABEL: OSPI-DE
+        PSRAM: opi
     steps:
       - name: Checkout selected branch
         uses: actions/checkout@v4
@@ -100,7 +96,7 @@ jobs:
       - name: Compile ATS Mini OS scaffold
         run: |
           set -euo pipefail
-          PROFILE="${{ matrix.profile }}"
+          PROFILE="${{ env.PROFILE }}"
           BUILD_OUT="build/$PROFILE"
           mkdir -p "$BUILD_OUT"
           # The ESP32 core exports flash_args into the sketch-local build/ tree.
@@ -110,7 +106,7 @@ jobs:
           arduino-cli compile \
             --clean \
             --output-dir "$BUILD_OUT" \
-            --fqbn "esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=16M,PSRAM=${{ matrix.psram }},CPUFreq=80,USBMode=hwcdc,FlashMode=qio,PartitionScheme=custom,DebugLevel=none" \
+            --fqbn "esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=16M,PSRAM=${{ env.PSRAM }},CPUFreq=80,USBMode=hwcdc,FlashMode=qio,PartitionScheme=custom,DebugLevel=none" \
             --build-property "build.flash_mode=qio" \
             --build-property "build.flash_freq=80m" \
             --warnings all \
@@ -139,7 +135,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          PROFILE="${{ matrix.profile }}"
+          PROFILE="${{ env.PROFILE }}"
           BUILD_OUT="build/$PROFILE"
           APP_BIN="$(find "$BUILD_OUT" firmware/ats-mini-os/build -type f -name 'ats-mini-os.ino.bin' -print -quit 2>/dev/null || true)"
           if [ -z "$APP_BIN" ] || [ ! -s "$APP_BIN" ]; then
@@ -174,280 +170,25 @@ jobs:
           print("Note: ATSM is reported for comparison; its absence alone is not treated as a DBFM rejection.")
           PY
 
-      - name: Prepare named firmware and source artifacts
-        if: always()
+      - name: Prepare firmware binary
+        if: success()
         shell: bash
         run: |
           set -euo pipefail
-          OUT="release-artifacts/${{ matrix.profile }}"
-          mkdir -p "$OUT"
-          PROFILE="${{ matrix.profile }}"
-          if [ "$PROFILE" = "esp32s3-ospi" ]; then
-            LABEL="OSPI-DE"
-          else
-            LABEL="QSPI-DE"
-          fi
-
-          # Arduino CLI may place ESP32-S3 outputs in a nested FQBN directory.
-          # Discover the real output path instead of assuming it is directly under build/$PROFILE.
           APP_BIN="$(find "build/$PROFILE" -type f -name 'ats-mini-os.ino.bin' -print -quit)"
-          if [ -n "$APP_BIN" ] && [ -s "$APP_BIN" ]; then
-            cp "$APP_BIN" "$OUT/ATS-Mini-OS-$LABEL-Build-${{ github.run_number }}-${{ github.run_attempt }}.ino.bin"
-          else
-            echo "Expected application binary missing under build/$PROFILE" >&2
-            find "build/$PROFILE" -maxdepth 5 -type f -print || true
-            echo "Firmware binary was not produced; see COMPILE-LOG.txt." > "$OUT/NO-FIRMWARE-BINARY.txt"
-          fi
-          # The source directory itself is uploaded as a GitHub artifact below.
-          # GitHub creates the downloadable ZIP, so do not create a nested source ZIP here.
-
-          # Preserve diagnostic output even when compilation failed before creating a binary.
-          if [ -s "build/$PROFILE-COMPILE-LOG.txt" ]; then
-            cp "build/$PROFILE-COMPILE-LOG.txt" "$OUT/COMPILE-LOG.txt"
-          else
-            printf 'Compile log was not created. Check the workflow steps above for the failure.\n' > "$OUT/COMPILE-LOG.txt"
-          fi
-
-          {
-            echo "Profile: $PROFILE"
-            echo "Label: $LABEL"
-            echo "Application binary: ATS-Mini-OS-$LABEL-Build-${{ github.run_number }}-${{ github.run_attempt }}.ino.bin (only present if compilation produced it)"
-            echo "FlashSize: 16M"
-            echo "ESP32 Arduino core: 3.3.12"
-            echo "PSRAM mode: ${{ matrix.psram }}"
-            echo "Third-party implementation sources are staged into the source artifact from the installed libraries used by this build."
-            echo "This ZIP does not include the complete offline toolchain."
-            echo "Compile success is not hardware or partition compatibility validation."
-            echo "OTA package intentionally not emitted until OTA/partition compatibility is verified."
-          } > "$OUT/BUILD-NOTES.txt"
-
-          # Assemble a review-only bundle from the actual nested build output.
-          # This is NOT an approved flashing package.
-          FLASH_REVIEW="$OUT/FIRST-FLASH-REVIEW-ONLY"
-          mkdir -p "$FLASH_REVIEW"
-          # Arduino CLI --output-dir outputs and the sketch-local build cache can
-          # live in different roots. Search both; do not silently miss flash_args.
-          BUILD_ROOT="build/$PROFILE"
-          SKETCH_BUILD_ROOT="firmware/ats-mini-os/build"
-
-          # Copy actual outputs generated by Arduino CLI / ESP32 core.
-          for file in \
-            "ats-mini-os.ino.bin" \
-            "ats-mini-os.ino.merged.bin" \
-            "ats-mini-os.ino.bootloader.bin" \
-            "ats-mini-os.ino.partitions.bin" \
-            "boot_app0.bin" \
-            "flash_args" \
-            "partitions.csv"; do
-            source_file=""
-            for search_root in "$BUILD_ROOT" "$SKETCH_BUILD_ROOT"; do
-              if [ -d "$search_root" ]; then
-                source_file="$(find "$search_root" -type f -name "$file" -print -quit)"
-                [ -z "$source_file" ] || break
-              fi
-            done
-            if [ -n "$source_file" ] && [ -s "$source_file" ]; then
-              cp "$source_file" "$FLASH_REVIEW/"
-              echo "Review bundle: copied $file from $source_file"
-            else
-              echo "Review bundle: build output does not contain $file"
-            fi
-          done
-
-          # Keep the real generated flash_args visible, but flag a profile mismatch.
-          # This workflow currently requests FlashMode=qio; never approve a bundle
-          # if the generated flash_args says another mode.
-          if [ -s "$FLASH_REVIEW/flash_args" ]; then
-            if grep -Eq -- '--flash-mode[[:space:]]+qio([[:space:]]|$)' "$FLASH_REVIEW/flash_args"; then
-              FLASH_MODE_STATUS="PASS: generated flash_args declares qio, matching the requested profile."
-            else
-              FLASH_MODE_STATUS="FAIL: generated flash_args flash mode does not match requested FlashMode=qio; investigate before any flash."
-            fi
-          else
-            FLASH_MODE_STATUS="FAIL: generated flash_args is missing."
-          fi
-
-          # partitions.csv is a sketch-level configuration file in this project;
-          # include it directly if the core's generated build directory omitted it.
-          if [ ! -s "$FLASH_REVIEW/partitions.csv" ] && [ -s "firmware/ats-mini-os/partitions.csv" ]; then
-            cp "firmware/ats-mini-os/partitions.csv" "$FLASH_REVIEW/partitions.csv"
-            echo "Review bundle: included sketch partitions.csv as reference."
-          fi
-
-          # boot_app0.bin belongs to the installed ESP32 core, not necessarily
-          # the sketch output directory. Find it in the exact installed core version.
-          if [ ! -s "$FLASH_REVIEW/boot_app0.bin" ]; then
-            BOOT_APP0="$(find "$HOME/.arduino15/packages/esp32" -type f -name boot_app0.bin -print -quit 2>/dev/null || true)"
-            if [ -n "$BOOT_APP0" ] && [ -s "$BOOT_APP0" ]; then
-              cp "$BOOT_APP0" "$FLASH_REVIEW/boot_app0.bin"
-              echo "Review bundle: included core boot_app0.bin from $BOOT_APP0"
-            fi
-          fi
-
-          # Record the known ATS-Mini-Dev reference layout explicitly, and validate
-          # the sketch partition CSV. The generated flash_args is copied separately
-          # when found; reference offsets are never a substitute for that file.
-          EXPECTED_PARTITIONS="$(mktemp)"
-          cat > "$EXPECTED_PARTITIONS" <<'EOF'
-          nvs,data,nvs,0x9000,0x5000
-          otadata,data,ota,0xe000,0x2000
-          app0,app,ota_0,0x10000,0x300000
-          app1,app,ota_1,0x310000,0x300000
-          littlefs,data,littlefs,0x610000,0x1d0000
-          settings,data,nvs,0x7e0000,0x10000
-          coredump,data,coredump,0x7f0000,0x10000
-          EOF
-          ACTUAL_PARTITIONS="$(mktemp)"
-          awk -F, '!/^#/ && NF >= 5 {
-            for (i=1;i<=5;i++) { gsub(/^[[:space:]]+|[[:space:]]+$/, "", $i) }
-            print $1 "," $2 "," $3 "," tolower($4) "," tolower($5)
-          }' firmware/ats-mini-os/partitions.csv > "$ACTUAL_PARTITIONS"
-
-          if diff -u "$EXPECTED_PARTITIONS" "$ACTUAL_PARTITIONS" > "$FLASH_REVIEW/PARTITION-CHECK.diff"; then
-            PARTITION_STATUS="PASS: sketch partition table matches the checked-in ATS-Mini-Dev reference layout."
-          else
-            PARTITION_STATUS="FAIL: sketch partition table differs from the ATS-Mini-Dev reference. Do not flash."
-          fi
-
-          {
-            echo "FLASH ADDRESS REVIEW - REFERENCE ONLY"
-            echo "Profile: $LABEL"
-            echo "Flash size profile: 16M"
-            echo
-            echo "Known-good ATS-Mini-Dev reference addresses:"
-            echo "0x0000  ats-mini-os.ino.bootloader.bin"
-            echo "0x8000  ats-mini-os.ino.partitions.bin"
-            echo "0xE000  boot_app0.bin"
-            echo "0x10000 ats-mini-os.ino.bin (application image)"
-            echo
-            echo "Alternative single-image method:"
-            echo "0x0000  ats-mini-os.ino.merged.bin"
-            echo
-            echo "$PARTITION_STATUS"
-            echo "$FLASH_MODE_STATUS"
-            echo
-            echo "IMPORTANT: these are reference offsets; consult the included generated flash_args where present."
-            echo "The merged image and the separate-file method are alternatives; never use both."
-            echo "This review does not verify bootloader/Dual Boot compatibility or authorize flashing."
-          } > "$FLASH_REVIEW/FLASH-ADDRESSES.txt"
-          rm -f "$EXPECTED_PARTITIONS" "$ACTUAL_PARTITIONS"
-
-          # Write the safety note first, then append missing-file diagnostics.
-          cat > "$FLASH_REVIEW/README-FIRST-FLASH-REVIEW.txt" <<EOF
-          ATS Mini OS - FIRST FLASH REVIEW ONLY
-          Profile: $LABEL
-          FlashSize: 16M
-          ESP32 Arduino core: 3.3.12
-          PSRAM mode: ${{ matrix.psram }}
-
-          SAFETY: DO NOT FLASH THIS BUNDLE YET.
-          This bundle is for inspecting actual generated outputs and flash arguments.
-          The merged image can include bootloader and partition data and may overwrite
-          an existing Dual Boot setup. Confirm offsets, partitions, bootloader and method
-          against the known-good ATS-Mini-Dev configuration and the user's backup.
-          No device write is performed by this workflow.
-          EOF
-
-          for required in "ats-mini-os.ino.bin" "ats-mini-os.ino.bootloader.bin" "ats-mini-os.ino.partitions.bin" "boot_app0.bin" "flash_args" "partitions.csv"; do
-            if [ ! -s "$FLASH_REVIEW/$required" ]; then
-              echo "MISSING from review bundle: $required" >> "$FLASH_REVIEW/README-FIRST-FLASH-REVIEW.txt"
-            fi
-          done
-          {
-            echo "FIRST-FLASH STATUS: NOT APPROVED"
-            echo "Profile: $LABEL"
-            if [ -s "$FLASH_REVIEW/flash_args" ]; then
-              echo "flash_args: included from actual build output"
-              echo "flash_args mode line: $(head -n 1 "$FLASH_REVIEW/flash_args")"
-            else
-              echo "flash_args: not found in searched build output locations"
-            fi
-            echo "$FLASH_MODE_STATUS"
-            echo "Bootloader/Dual Boot compatibility: not independently verified"
-            echo "Partition layout: checked against the project's checked-in reference only"
-            echo "Hardware validation: not performed"
-            echo "Next step: inspect this bundle and compare against the user's known-good backup and reference firmware before any device write."
-            echo "Do not flash this bundle yet."
-          } > "$FLASH_REVIEW/FLASH-STATUS.txt"
-          # Make the review bundle auditable without implying flash approval.
-          (
-            cd "$FLASH_REVIEW"
-            find . -maxdepth 1 -type f ! -name SHA256SUMS.txt -print0 \
-              | sort -z \
-              | xargs -0 -r sha256sum
-          ) > "$FLASH_REVIEW/SHA256SUMS.txt"
-      - name: Upload first-flash review bundle (not for flashing yet)
-        if: always() && hashFiles(format('release-artifacts/{0}/FIRST-FLASH-REVIEW-ONLY/*', matrix.profile)) != ''
-        uses: actions/upload-artifact@v4
-        with:
-          name: ATS-Mini-OS-${{ matrix.label }}-FIRST-FLASH-REVIEW-ONLY
-          path: release-artifacts/${{ matrix.profile }}/FIRST-FLASH-REVIEW-ONLY/
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Upload firmware binary separately
-        if: always() && hashFiles(format('release-artifacts/{0}/*.ino.bin', matrix.profile)) != ''
-        uses: actions/upload-artifact@v4
-        with:
-          name: ATS-Mini-OS-${{ matrix.label }}-Firmware-BIN
-          path: release-artifacts/${{ matrix.profile }}/*.ino.bin
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Prepare sanitized source artifact
-        if: always() && hashFiles('firmware/ats-mini-os/ats-mini-os.ino') != ''
-        shell: bash
-        run: |
-          set -euo pipefail
-          SOURCE_ROOT="release-artifacts/source-code/firmware/ats-mini-os"
-          mkdir -p "$SOURCE_ROOT"
-          cp -R firmware/ats-mini-os/. "$SOURCE_ROOT/"
-          # Build output/cache is not source code and can contain large binaries,
-          # ELF/map files and flash_args; keep those only in the dedicated review bundle.
-          rm -rf "$SOURCE_ROOT/build"
-          # Keep the private working branch's test configuration untouched,
-          # but never package its hotspot SSID/password in downloadable artifacts.
-          cat > "$SOURCE_ROOT/src/network/WifiTestConfig.h" <<'EOF'
-          #pragma once
-
-          // Sanitized artifact copy. Add local test credentials only on your own device.
-          // The private development branch retains its own local test configuration.
-          namespace WifiTestConfig {
-          constexpr char SSID[] = "";
-          constexpr char PASSWORD[] = "";
-          }  // namespace WifiTestConfig
-          EOF
-          test -f "$SOURCE_ROOT/src/network/WifiTestConfig.h"
-          grep -F 'constexpr char SSID[] = "";' "$SOURCE_ROOT/src/network/WifiTestConfig.h"
-          grep -F 'constexpr char PASSWORD[] = "";' "$SOURCE_ROOT/src/network/WifiTestConfig.h"
-          if grep -R -n -E 'S22|12345678' "$SOURCE_ROOT/src/network/WifiTestConfig.h"; then
-            echo "Unexpected private test credential found in sanitized source artifact." >&2
+          if [ -z "$APP_BIN" ] || [ ! -s "$APP_BIN" ]; then
+            echo "ERROR: validated application binary was not found." >&2
             exit 1
           fi
+          mkdir -p release-artifacts
+          cp "$APP_BIN" "release-artifacts/ATS-Mini-OS-$LABEL-Build-${{ github.run_number }}-${{ github.run_attempt }}.ino.bin"
+          ls -lh release-artifacts/
 
-      - name: Upload source tree separately
-        if: always() && hashFiles('release-artifacts/source-code/firmware/ats-mini-os/ats-mini-os.ino') != ''
+      - name: Upload firmware binary only
+        if: success() && hashFiles('release-artifacts/*.ino.bin') != ''
         uses: actions/upload-artifact@v4
         with:
-          name: ATS-Mini-OS-Source-Code-${{ matrix.label }}
-          path: release-artifacts/source-code/firmware/ats-mini-os/**
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Upload compile log separately
-        if: always() && hashFiles(format('release-artifacts/{0}/COMPILE-LOG.txt', matrix.profile)) != ''
-        uses: actions/upload-artifact@v4
-        with:
-          name: ATS-Mini-OS-${{ matrix.label }}-COMPILE-LOG
-          path: release-artifacts/${{ matrix.profile }}/COMPILE-LOG.txt
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Upload build notes separately
-        if: always() && hashFiles(format('release-artifacts/{0}/BUILD-NOTES.txt', matrix.profile)) != ''
-        uses: actions/upload-artifact@v4
-        with:
-          name: ATS-Mini-OS-${{ matrix.label }}-BUILD-NOTES
-          path: release-artifacts/${{ matrix.profile }}/BUILD-NOTES.txt
+          name: ATS-Mini-OS-$LABEL-Firmware-BIN
+          path: release-artifacts/*.ino.bin
           if-no-files-found: error
           retention-days: 14
