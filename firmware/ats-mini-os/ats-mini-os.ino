@@ -160,7 +160,7 @@ void loop() {
               Serial.printf("[MENU] volume=%u/63\n", static_cast<unsigned>(radio.volume()));
           } else {
             const int16_t itemCount = menuPage == 0 ? 20 :
-              menuPage == 2 ? 4 : menuPage == 13 ? 3 :
+              menuPage == 2 ? 4 : menuPage == 5 ? 7 : menuPage == 13 ? 3 :
               ((menuPage == 14) ? 3 : (menuPage == 15) ? 2 :
               menuPage == 10 ? 4 : menuPage == 11 ?
               (radio.snapshot().modulation == RadioModulation::FM ? 10 : 14) :
@@ -246,9 +246,9 @@ void loop() {
           menuPage = 15;
           menuSelection = 1;
         } else if ((menuPage == 14 || menuPage == 15) && menuSelection == 0) {
-          const uint8_t returnSelection = menuPage == 14 ? 1 : 2;
-          menuPage = 13;
-          menuSelection = returnSelection;
+          const bool returningFromFm = menuPage == 14;
+          menuPage = 5;
+          menuSelection = returningFromFm ? 5 : 6;
         } else if (menuPage == 14 && menuSelection > 0) {
           const uint8_t layout = menuSelection == 1 ? 0 : 2;
           display.setFmLayout(layout);
@@ -263,6 +263,12 @@ void loop() {
           Serial.printf("[SETTINGS] LW/MW/KW layout=%s %s\\n",
             "HJB", saved ? "saved" : "save failed");
           closeMenuToRadio("LW/MW/KW layout selected");
+        } else if (menuPage == 5 && menuSelection == 5) {
+          menuPage = 14;
+          menuSelection = display.fmLayout() == 2 ? 2 : 1;
+        } else if (menuPage == 5 && menuSelection == 6) {
+          menuPage = 15;
+          menuSelection = 1;
         } else if (menuPage == 2 && menuSelection == 3) {
           menuPage = 10;
           menuSelection = static_cast<uint8_t>(display.themeIndex() + 1);
