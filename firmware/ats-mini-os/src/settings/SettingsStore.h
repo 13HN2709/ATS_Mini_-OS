@@ -13,11 +13,15 @@ public:
 
   uint32_t lastFmFrequencyKHz(uint32_t fallbackKHz);
   bool saveLastFmFrequencyKHz(uint32_t frequencyKHz);
+
+  uint8_t displayBrightness(uint8_t fallback = 180);
+  bool saveDisplayBrightness(uint8_t brightness);
   bool isReady() const { return ready_; }
 
 private:
   static constexpr char kNamespace[] = "atsmini_os";
   static constexpr char kFrequencyKey[] = "fm_freq";
+  static constexpr char kDisplayBrightnessKey[] = "disp_bri";
 
   Preferences preferences_;
   bool ready_ = false;
