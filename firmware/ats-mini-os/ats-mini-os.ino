@@ -236,7 +236,6 @@ void loop() {
               else menuSelection = 0;
               Serial.printf("[MENU] opened selection page %u\n", static_cast<unsigned>(menuPage));
             }
-          }
         } else if (menuPage == 13 && menuSelection == 0) {
           menuPage = 0;
           menuSelection = 8;
