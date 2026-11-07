@@ -175,6 +175,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
   static const char* const layoutGroupItems[] = { "Zurueck", "UKW / FM", "LW / MW / KW" };
   static const char* const fmLayoutItems[] = { "Zurueck", "DAB Style", "HJB" };
   static const char* const amLayoutItems[] = { "Zurueck", "Standard LW/MW/KW", "HJB" };
+  static const char* const bfoItems[] = { "Zurueck", "BFO einstellen" };
   static const char* const radioItems[] = {
     "Zurueck", "Band waehlen", "Bandbreite", "Schrittweite", "Empfangseinstellungen", "SSB / BFO"
   };
@@ -211,7 +212,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
       title="BANDBREITE"; break;
     case 8: count=static_cast<uint8_t>(BandManager::count()+1); title="BAND WAEHLEN"; break;
     case 11: items=radioSettingsItems; count=(modulation==RadioModulation::FM?10:14); title="EMPFANG"; break;
-    case 12: count=MenuSSB::kItemCount; title="SSB / BFO"; break;
+    case 12: items=bfoItems; count=sizeof(bfoItems)/sizeof(bfoItems[0]); title="SSB / BFO"; break;
     case 10: items=themeItems; count=sizeof(themeItems)/sizeof(themeItems[0]); title="FARBSCHEMA"; break;
     case 9:
       if (modulation == RadioModulation::FM) { items=fmStepItems; count=sizeof(fmStepItems)/sizeof(fmStepItems[0]); }
@@ -276,7 +277,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
       snprintf(selectedTheme, sizeof(selectedTheme), "* %s", items[index]);
       canvas.drawString(selectedTheme, 42, y+13);
     } else if (page == MenuSSB::kPage) {
-      canvas.drawString(MenuSSB::itemLabel(index), 42, y+13);
+      canvas.drawString(items[index], 42, y+13);
     } else {
       canvas.drawString(items[index], 42, y+13);
     }
@@ -376,7 +377,7 @@ void DisplayDriver::setFmLayout(uint8_t mode) {
 void DisplayDriver::setAmLayout(uint8_t mode) {
   amLayout_ = mode <= 1 ? mode : 0;
   lastGeneration_ = UINT32_MAX;
-  Serial.printf("[DISPLAY] AM/USB/LSB layout: %s\\n", amLayout_ == 1 ? "HJB" : "AM Layout");
+  Serial.printf("[DISPLAY] LW/MW/KW layout: %s\\n", amLayout_ == 1 ? "HJB" : "Standard LW/MW/KW");
 }
 
 void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConnected,
