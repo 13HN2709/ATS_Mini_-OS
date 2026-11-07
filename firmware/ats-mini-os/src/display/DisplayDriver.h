@@ -2,7 +2,6 @@
 #define ATS_MINI_OS_DISPLAY_DRIVER_H
 
 #include <LittleFS.h>
-#include <Preferences.h>
 #include <LovyanGFX.hpp>
 #include <Arduino.h>
 #include "../radio/RadioSnapshot.h"
