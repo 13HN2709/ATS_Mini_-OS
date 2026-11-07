@@ -162,7 +162,9 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
   const int w = canvas.width();
   const int h = canvas.height();
   static const char* const mainItems[] = {
-    "Zurueck", "Lautstaerke", "Anzeige", "Radio", "WLAN", "System"
+    "Zurueck", "Lautstaerke", "Band waehlen", "Bandbreite", "Schrittweite",
+    "Empfang (AGC / Soft Mute / AVC)", "SSB / BFO", "Display-Helligkeit",
+    "Layout", "Farbschema", "Dateimanager", "UTC+01:00 *"
   };
   static const char* const volumeItems[] = {
     "Zurueck", "Lautstaerke", "Stumm (spaeter)"
@@ -220,11 +222,12 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
   canvas.fillScreen(BLACK);
   canvas.setTextColor(WHITE, BLACK);
   canvas.setFont(&lgfx::fonts::FreeSansBold9pt7b);
-  canvas.drawString("ATS MINI OS", 8, 3);
-  canvas.drawRightString(title, w-8, 3);
-  canvas.drawFastHLine(8, 27, w-16, WHITE);
+  canvas.drawString("ATS MINI OS", 20, 3);
+  canvas.drawRightString(title, w-20, 3);
+  canvas.drawFastHLine(20, 27, w-40, WHITE);
 
-  // Larger rows intentionally show only two entries at a time on the 320x170 panel.
+  // Keep the two-row list, but use a safe inset on the ATS Mini V4 panel.
+  // The extra left margin prevents the first glyphs from being clipped.
   const int rowTop = 34;
   const int rowHeight = 54;
   const int visibleRows = (h - 58) / rowHeight;
@@ -234,13 +237,13 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
     const uint8_t index = static_cast<uint8_t>(first+row);
     const int y = rowTop + row*rowHeight;
     const bool selected = index == selection;
-    if (selected) canvas.drawRoundRect(7, y+1, w-14, 48, 3, WHITE);
+    if (selected) canvas.drawRect(12, y+1, w-24, 48, WHITE);
 
     canvas.setTextColor(WHITE, BLACK);
     canvas.setFont(&lgfx::fonts::FreeSansBold9pt7b);
     if (page == 8) {
       if (index == 0) {
-        canvas.drawString("Zurueck", 16, y+13);
+        canvas.drawString("Zurueck", 24, y+13);
       } else {
         const RadioBandDefinition& band = BandManager::at(static_cast<uint8_t>(index-1));
         char bandLabel[40];
@@ -256,19 +259,19 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
         if (index-1 == BandManager::currentIndex()) {
           char currentLabel[44];
           snprintf(currentLabel, sizeof(currentLabel), "* %s", bandLabel);
-          canvas.drawString(currentLabel, 16, y+13);
+          canvas.drawString(currentLabel, 24, y+13);
         } else {
-          canvas.drawString(bandLabel, 16, y+13);
+          canvas.drawString(bandLabel, 24, y+13);
         }
       }
     } else if (page == 10 && index > 0 && index - 1 == ThemeManager::normalize(themeIndex)) {
       char selectedTheme[32];
       snprintf(selectedTheme, sizeof(selectedTheme), "* %s", items[index]);
-      canvas.drawString(selectedTheme, 16, y+13);
+      canvas.drawString(selectedTheme, 24, y+13);
     } else if (page == MenuSSB::kPage) {
-      canvas.drawString(MenuSSB::itemLabel(index), 16, y+13);
+      canvas.drawString(MenuSSB::itemLabel(index), 24, y+13);
     } else {
-      canvas.drawString(items[index], 16, y+13);
+      canvas.drawString(items[index], 24, y+13);
     }
 
     if ((page==1 || page==2) && index==1) {
@@ -278,17 +281,17 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
       if (page==1) snprintf(value,sizeof(value),"%u/63",static_cast<unsigned>(level));
       else snprintf(value,sizeof(value),"%u%%",static_cast<unsigned>((static_cast<uint16_t>(level)*100U)/255U));
       canvas.drawRightString(value,w-17,y+13);
-      const int barX=16, barY=y+36, barW=w-33;
+      const int barX=24, barY=y+36, barW=w-48;
       canvas.drawRect(barX,barY,barW,5,WHITE);
       const int fillW=(barW-2)*level/maximum;
       if(fillW>0) canvas.fillRect(barX+1,barY+1,fillW,3,WHITE);
     }
   }
 
-  canvas.drawFastHLine(8,h-23,w-16,WHITE);
+  canvas.drawFastHLine(20,h-23,w-40,WHITE);
   canvas.setTextColor(WHITE,BLACK);
   canvas.setFont(&lgfx::fonts::FreeSansBold9pt7b);
-  canvas.drawString(page==1?"Drehen: Lautstaerke":(page==2?"Drehen: Helligkeit":"Drehen: Auswahl"),10,h-19);
+  canvas.drawString(page==1?"Drehen: Lautstaerke":((page==0 && selection==7)?"Drehen: Helligkeit":"Drehen: Auswahl"),24,h-19);
 }
 
 }
