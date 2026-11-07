@@ -23,6 +23,31 @@ void copyRdsText(char* dst, size_t capacity, const char* src) {
   }
   dst[i] = '\0';
 }
+
+// Match ATS Mini Dev's RT preparation: skip leading whitespace, stop at CR,
+// preserve line breaks, wrap at word boundaries after 32 characters and trim
+// trailing whitespace. The destination is bounded to the OS snapshot capacity.
+void formatRadioText(char* dst, size_t capacity, const char* src) {
+  if (!capacity) return;
+  dst[0] = '\0';
+  if (!src) return;
+  size_t in = 0, out = 0;
+  while (in < 64 && src[in] && static_cast<unsigned char>(src[in]) <= ' ') ++in;
+  uint8_t lineLength = 0;
+  while (in < 64 && src[in] && src[in] != '\r' && out + 2 < capacity) {
+    char ch = src[in++];
+    if (ch == '\n' || (ch == ' ' && lineLength >= 32)) {
+      if (out && dst[out - 1] != '\n') dst[out++] = '\n';
+      lineLength = 0;
+      continue;
+    }
+    const unsigned char byte = static_cast<unsigned char>(ch);
+    dst[out++] = (byte >= 0x20 && byte <= 0x7e) ? ch : ' ';
+    ++lineLength;
+  }
+  while (out && static_cast<unsigned char>(dst[out - 1]) <= ' ') --out;
+  dst[out] = '\0';
+}
 }
 
 bool TunerDriver::begin(uint32_t initialFrequencyKHz) {
@@ -321,66 +346,66 @@ void TunerDriver::refreshSignalQuality() {
 bool TunerDriver::pollRds(TunerRdsData& out) {
   out = TunerRdsData{};
   if (!ready_) return false;
-  // One status query per call; application-side processing is deliberately bounded.
-  radio_.getRdsStatus(0, 0, 0);
-  if (!radio_.getRdsReceived()) return false;
-  out.received = true;
-  const uint8_t group = radio_.getRdsGroupType();
 
-  // RDS Clock-Time is transmitted in group 4A. Only publish validated times.
-  if (group == 4 && radio_.currentRdsClock(out.clockHour, out.clockMinute))
-    out.clockValid = true;
+  // ATS Mini Dev drains up to one SI4735 RDS FIFO capacity per 250 ms cycle.
+  // This reconstructs PS/RT much faster than reading just one group each time.
+  static constexpr uint8_t kMaxGroupsPerPoll = 25;
+  bool receivedAny = false;
+  for (uint8_t i = 0; i < kMaxGroupsPerPoll; ++i) {
+    radio_.getRdsStatus(0, 0, 0);
+    const uint8_t fifoCount = radio_.getNumRdsFifoUsed();
+    if (!fifoCount) break;
+    receivedAny = true;
+    const uint8_t group = radio_.getRdsGroupType();
 
-  if (radio_.getRdsNewBlockA()) {
-    const uint16_t pi = radio_.currentPiCode();
-    if (pi != 0) { out.piValid = true; out.piCode = pi; }
-  }
+    if (group == 4 && radio_.currentRdsClock(out.clockHour, out.clockMinute))
+      out.clockValid = true;
 
-  // ECC is transmitted in block C of group 1A, variant 0.
-  // Accept corrected blocks, but never use an uncorrectable block as identity data.
-  if (group == 1 && radio_.getRdsVersionCode() == 0 &&
-      radio_.getRdsNewBlockB() && radio_.currentBlockCError() < 3) {
-    const uint16_t blockC = radio_.currentBlockC();
-    const uint8_t ecc = static_cast<uint8_t>(blockC & 0xFF);
-    if (ecc != 0) {
-      out.eccValid = true;
-      out.eccCode = ecc;
+    if (radio_.getRdsNewBlockA()) {
+      const uint16_t pi = radio_.currentPiCode();
+      if (pi != 0) { out.piValid = true; out.piCode = pi; }
     }
-  }
-  if (radio_.getRdsNewBlockB()) {
-    out.ptyValid = true;
-    out.pty = radio_.getRdsProgramType();
-  }
 
-  if (group == 0) {
-    const char* ps = radio_.getRdsText0A();
-    if (ps) {
-      copyRdsText(out.stationName, sizeof(out.stationName), ps);
-      out.stationNameUpdated = true;
+    if (group == 1 && radio_.getRdsVersionCode() == 0 &&
+        radio_.getRdsNewBlockB() && radio_.currentBlockCError() < 3) {
+      const uint16_t blockC = radio_.currentBlockC();
+      const uint8_t ecc = static_cast<uint8_t>(blockC & 0xFF);
+      if (ecc != 0) { out.eccValid = true; out.eccCode = ecc; }
     }
-  } else if (group == 2) {
-    const uint8_t flag = radio_.getRdsFlagAB();
-    const bool textChanged = !haveTextFlag_ || flag != lastTextFlag_;
-    if (textChanged) {
-      haveTextFlag_ = true;
-      lastTextFlag_ = flag;
-      // PU2CLR 2.1.8 does not automatically clear the RT buffers when the
-      // A/B flag changes. Clear both before accepting segments from the new text.
-      radio_.clearRadioTextBuffers();
+    if (radio_.getRdsNewBlockB()) {
+      out.ptyValid = true;
+      out.pty = radio_.getRdsProgramType();
     }
-    const char* rt = radio_.getRdsVersionCode() == 0
-                         ? radio_.getRdsText2A()
-                         : radio_.getRdsText2B();
-    if (textChanged) {
-      // Publish the freshly cleared/rebuilt buffer, never the previous message.
-      copyRdsText(out.radioText, sizeof(out.radioText), rt);
-      out.radioTextUpdated = true;
-    } else if (rt) {
-      copyRdsText(out.radioText, sizeof(out.radioText), rt);
+
+    if (group == 0) {
+      const char* ps = radio_.getRdsText0A();
+      if (ps) {
+        copyRdsText(out.stationName, sizeof(out.stationName), ps);
+        out.stationNameUpdated = true;
+      }
+    } else if (group == 2) {
+      const uint8_t flag = radio_.getRdsFlagAB();
+      const bool textChanged = !haveTextFlag_ || flag != lastTextFlag_;
+      if (textChanged) {
+        haveTextFlag_ = true;
+        lastTextFlag_ = flag;
+        // PU2CLR 2.1.8 does not clear the RT buffers on A/B changes.
+        radio_.clearRadioTextBuffers();
+      }
+      const char* rt = radio_.getRdsVersionCode() == 0
+                           ? radio_.getRdsText2A()
+                           : radio_.getRdsText2B();
+      // Publish even an empty freshly-cleared buffer. This prevents old RT
+      // from remaining visible while the new A/B text is being assembled.
+      formatRadioText(out.radioText, sizeof(out.radioText), rt);
       out.radioTextUpdated = true;
     }
+
+    // The count includes the group just read (AN332), as in ATS Mini Dev.
+    if (fifoCount == 1) break;
   }
-  return true;
+  out.received = receivedAny;
+  return receivedAny;
 }
 
 int16_t TunerDriver::rssi() const {
