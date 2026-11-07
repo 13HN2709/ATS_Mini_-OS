@@ -1,10 +1,12 @@
 #include "DisplayDriver.h"
+#include "ThemeManager.h"
 #include "DisplayLayoutAM.h"
 #include "../radio/BandManager.h"
 #include <LittleFS.h>
 
 namespace {
-constexpr uint16_t BLACK=0x0000, WHITE=0xFFFF, GREEN=0x07E0, CYAN=0x07FF, DARK_GREEN=0x0320, YELLOW=0xFFE0;
+uint16_t BLACK=0x0000, WHITE=0xFFFF, GREEN=0x07E0, CYAN=0x07FF, DARK_GREEN=0x0320, YELLOW=0xFFE0, MUTED=0x7BEF;
+void applyThemePalette(uint8_t index) { const ThemePalette& p=ThemeManager::at(index); BLACK=p.background; WHITE=p.text; GREEN=p.accent; CYAN=p.secondary; DARK_GREEN=p.divider; YELLOW=p.warning; MUTED=p.muted; }
 
 template <typename Canvas>
 void text(Canvas& d,const char* s,int x,int y,uint16_t c,const lgfx::IFont* f) {
@@ -154,7 +156,7 @@ void drawFileMenu(Canvas& c,const char* path,FileManager::Entry* entries,uint8_t
 }
 
 template <typename Canvas>
-void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, uint8_t brightness, uint8_t layoutMode, RadioModulation modulation) {
+void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, uint8_t brightness, uint8_t layoutMode, RadioModulation modulation, uint8_t themeIndex) {
   const int w = canvas.width();
   const int h = canvas.height();
   static const char* const mainItems[] = {
@@ -164,7 +166,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
     "Zurueck", "Lautstaerke", "Stumm (spaeter)"
   };
   static const char* const displayItems[] = {
-    "Zurueck", "Display-Helligkeit"
+    "Zurueck", "Display-Helligkeit", "Farbschema"
   };
   static const char* const radioItems[] = {
     "Zurueck", "Band waehlen", "Bandbreite", "Schrittweite", "Bandplan (spaeter)"
@@ -172,6 +174,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
   static const char* const fmBandwidthItems[] = { "Zurueck", "Auto", "110 kHz", "84 kHz", "60 kHz", "40 kHz" };
   static const char* const amBandwidthItems[] = { "Zurueck", "1.0 kHz", "1.8 kHz", "2.0 kHz", "2.5 kHz", "3.0 kHz", "4.0 kHz", "6.0 kHz" };
   static const char* const ssbBandwidthItems[] = { "Zurueck", "0.5 kHz", "1.0 kHz", "1.2 kHz", "2.2 kHz", "3.0 kHz", "4.0 kHz" };
+  static const char* const themeItems[] = { "Zurueck", "Classic", "TEF Blue", "Amber" };
   static const char* const fmStepItems[] = { "Zurueck", "10 kHz (DX)", "50 kHz", "100 kHz", "200 kHz", "1 MHz" };
   static const char* const amStepItems[] = { "Zurueck", "1 kHz", "5 kHz", "9 kHz", "10 kHz" };
   static const char* const wifiItems[] = {
@@ -197,6 +200,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
       else { items=ssbBandwidthItems; count=sizeof(ssbBandwidthItems)/sizeof(ssbBandwidthItems[0]); }
       title="BANDBREITE"; break;
     case 8: count=static_cast<uint8_t>(BandManager::count()+1); title="BAND WAEHLEN"; break;
+    case 10: items=themeItems; count=sizeof(themeItems)/sizeof(themeItems[0]); title="FARBSHEMA"; break;
     case 9:
       if (modulation == RadioModulation::FM) { items=fmStepItems; count=sizeof(fmStepItems)/sizeof(fmStepItems[0]); }
       else { items=amStepItems; count=sizeof(amStepItems)/sizeof(amStepItems[0]); }
@@ -250,6 +254,10 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
           canvas.drawString(bandLabel, 16, y+13);
         }
       }
+    } else if (page == 10 && index > 0 && index - 1 == ThemeManager::normalize(themeIndex)) {
+      char selectedTheme[32];
+      snprintf(selectedTheme, sizeof(selectedTheme), "* %s", items[index]);
+      canvas.drawString(selectedTheme, 16, y+13);
     } else {
       canvas.drawString(items[index], 16, y+13);
     }
@@ -291,6 +299,7 @@ bool DisplayDriver::begin(uint8_t initialBrightness) {
   // Match ATS Mini Dev: the ATS Mini V4 panel is correctly oriented at rotation 3.
   device_.setRotation(3);
   brightness_ = initialBrightness < 10 ? 180 : initialBrightness;
+  applyThemePalette(themeIndex_);
   device_.setBrightness(brightness_);
 #if !defined(LILYGO_SI473X)
   ledcWrite(38, brightness_);
@@ -322,6 +331,13 @@ void DisplayDriver::setBrightness(uint8_t value) {
 #endif
 }
 
+void DisplayDriver::setTheme(uint8_t index) {
+  themeIndex_ = ThemeManager::normalize(index);
+  applyThemePalette(themeIndex_);
+  lastGeneration_ = UINT32_MAX;
+  Serial.printf("[DISPLAY] theme=%s\\n", ThemeManager::at(themeIndex_).name);
+}
+
 void DisplayDriver::setLayoutMode(uint8_t mode) {
   (void)mode;
   layoutMode_ = 0;
@@ -336,7 +352,7 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
   if(!ready_)return;
   const uint32_t now=millis();
   const bool menuStateChanged = menuOpen != lastMenuOpen_ || menuPage != lastMenuPage_ ||
-      menuSelection != lastMenuSelection_ || volume != lastMenuVolume_ || layoutMode_ != lastMenuLayout_ || brightness_ != lastMenuBrightness_;
+      menuSelection != lastMenuSelection_ || volume != lastMenuVolume_ || layoutMode_ != lastMenuLayout_ || brightness_ != lastMenuBrightness_ || themeIndex_ != lastMenuTheme_;
   // Redraw the file manager promptly while the encoder is moving; this also
   // keeps the selection frame visually attached to the active row.
   const uint32_t redrawInterval = menuOpen ? ((menuPage==6) ? 20 : 500) : 40;
@@ -349,15 +365,16 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
   lastMenuVolume_=volume;
   lastMenuLayout_=layoutMode_;
   lastMenuBrightness_=brightness_;
+  lastMenuTheme_=themeIndex_;
   if (menuOpen) {
     if(menuPage==6){if(useSprite_){sprite_.fillSprite(BLACK);drawFileMenu(sprite_,filePath,fileEntries,fileCount,fileSelection,fileMode,fileActionSelection,fileSelectedName,fileMessage);sprite_.pushSprite(0,0);}else{device_.fillScreen(BLACK);drawFileMenu(device_,filePath,fileEntries,fileCount,fileSelection,fileMode,fileActionSelection,fileSelectedName,fileMessage);}return;}
     if (useSprite_) {
       sprite_.fillSprite(BLACK);
-      drawMenu(sprite_, menuPage, menuSelection, volume, brightness_, layoutMode_, s.modulation);
+      drawMenu(sprite_, menuPage, menuSelection, volume, brightness_, layoutMode_, s.modulation, themeIndex_);
       sprite_.pushSprite(0,0);
     } else {
       device_.fillScreen(BLACK);
-      drawMenu(device_, menuPage, menuSelection, volume, brightness_, layoutMode_, s.modulation);
+      drawMenu(device_, menuPage, menuSelection, volume, brightness_, layoutMode_, s.modulation, themeIndex_);
     }
     return;
   }
@@ -432,7 +449,7 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
       static_cast<unsigned>(s.rdsClockMinute));
     centered(canvas,clockText,w/2,5,WHITE,&lgfx::fonts::Font2);
   }
-  text(canvas,wifiConnected?"WLAN+":"WLAN-",w-91,7,wifiConnected?CYAN:0x7BEF,&lgfx::fonts::Font0);
+  text(canvas,wifiConnected?"WLAN+":"WLAN-",w-91,7,wifiConnected?CYAN:MUTED,&lgfx::fonts::Font0);
 
   uint32_t adcTotal=0;
   for(uint8_t i=0;i<10;++i) adcTotal+=analogRead(4);
