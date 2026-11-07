@@ -150,3 +150,5 @@ bool RadioCore::setAgcManualGain(uint8_t index) { return ready_ && tuner_.setAgc
 bool RadioCore::setSoftMuteEnabled(bool enabled) { return ready_ && tuner_.setSoftMuteEnabled(enabled); }
 bool RadioCore::setSoftMuteAttenuation(uint8_t attenuationDb) { return ready_ && tuner_.setSoftMuteAttenuation(attenuationDb); }
 bool RadioCore::setAvcGain(uint8_t gain) { return ready_ && tuner_.setAvcGain(gain); }
+bool RadioCore::setBfoOffsetHz(int16_t offsetHz) { return ready_ && tuner_.setBfoOffsetHz(offsetHz); }
+bool RadioCore::setSsbBandwidthChoice(uint8_t choice) { return tuner_.setSsbBandwidthChoice(choice); }
