@@ -13,6 +13,9 @@ public:
   uint8_t currentBandIndex() const { return BandManager::currentIndex(); }
   bool nextBand(int8_t direction);
   bool setVolume(uint8_t volume);
+  bool setAgcAutomatic(bool automatic);
+  bool setSoftMuteEnabled(bool enabled);
+  bool setAvcGain(uint8_t gain);
   bool setBandwidthChoice(uint8_t choice);
   bool setStepChoice(uint8_t choice);
   uint8_t stepChoice() const { return tuner_.stepChoice(); }
