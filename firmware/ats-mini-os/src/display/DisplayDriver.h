@@ -239,8 +239,10 @@ public:
   bool begin(uint8_t initialBrightness = 180);
   void render(const RadioSnapshot& state, bool radioReady, bool wifiConnected, const char* lastInputEvent, uint32_t inputEventCount, StationLogoClient* logoClient = nullptr, bool menuOpen = false, uint8_t menuPage = 0, uint8_t menuSelection = 0, uint8_t volume = 25, const char* filePath = "/", FileManager::Entry* fileEntries = nullptr, uint8_t fileCount = 0, uint8_t fileSelection = 0, uint8_t fileMode = 0, uint8_t fileActionSelection = 0, const char* fileSelectedName = "", const char* fileMessage = "");
   bool isReady() const { return ready_; }
-  uint8_t layoutMode() const { return layoutMode_; }
-  void setLayoutMode(uint8_t mode);
+  uint8_t fmLayout() const { return fmLayout_; }
+  void setFmLayout(uint8_t mode);
+  uint8_t amLayout() const { return amLayout_; }
+  void setAmLayout(uint8_t mode);
   uint8_t brightness() const { return brightness_; }
   void setBrightness(uint8_t value);
   uint8_t themeIndex() const { return themeIndex_; }
@@ -249,7 +251,8 @@ public:
   uint32_t detectedPanelId() const { return device_.getDisplayId(); }
 private:
   Device device_;
-  uint8_t layoutMode_ = 0; // 0 = FM main layout, 1 = diagnostic/test layout
+  uint8_t fmLayout_ = 0; // 0 = DAB Style, 1 = HJB
+  uint8_t amLayout_ = 0; // 0 = AM layout, 1 = HJB
   uint8_t brightness_ = 180;
   uint8_t themeIndex_ = 0;
   lgfx::LGFX_Sprite sprite_{&device_};
