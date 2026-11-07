@@ -276,7 +276,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
 
 }
 
-bool DisplayDriver::begin() {
+bool DisplayDriver::begin(uint8_t initialBrightness) {
 #if !defined(LILYGO_SI473X)
   // ATS Mini V4 has a separate backlight MOSFET on GPIO38; panel brightness
   // alone does not drive this external backlight pin.
@@ -290,7 +290,7 @@ bool DisplayDriver::begin() {
   }
   // Match ATS Mini Dev: the ATS Mini V4 panel is correctly oriented at rotation 3.
   device_.setRotation(3);
-  brightness_ = 180;
+  brightness_ = initialBrightness < 10 ? 180 : initialBrightness;
   device_.setBrightness(brightness_);
 #if !defined(LILYGO_SI473X)
   ledcWrite(38, brightness_);
