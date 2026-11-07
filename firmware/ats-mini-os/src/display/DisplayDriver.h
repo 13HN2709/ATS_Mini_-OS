@@ -237,7 +237,7 @@ public:
 class DisplayDriver {
 public:
   bool begin(uint8_t initialBrightness = 180);
-  void render(const RadioSnapshot& state, bool radioReady, bool wifiConnected, const char* lastInputEvent, uint32_t inputEventCount, StationLogoClient* logoClient = nullptr, bool menuOpen = false, uint8_t menuPage = 0, uint8_t menuSelection = 0, uint8_t volume = 25, const char* filePath = "/", FileManager::Entry* fileEntries = nullptr, uint8_t fileCount = 0, uint8_t fileSelection = 0, uint8_t fileMode = 0, uint8_t fileActionSelection = 0, const char* fileSelectedName = "", const char* fileMessage = "");
+  void render(const RadioSnapshot& state, bool radioReady, bool wifiConnected, const char* lastInputEvent, uint32_t inputEventCount, StationLogoClient* logoClient = nullptr, bool menuOpen = false, uint8_t menuPage = 0, uint8_t menuSelection = 0, uint8_t volume = 25, const char* filePath = "/", FileManager::Entry* fileEntries = nullptr, uint8_t fileCount = 0, uint8_t fileSelection = 0, uint8_t fileMode = 0, uint8_t fileActionSelection = 0, const char* fileSelectedName = "", const char* fileMessage = "", bool sliderAdjustmentActive = false);
   bool isReady() const { return ready_; }
   uint8_t fmLayout() const { return fmLayout_; }
   void setFmLayout(uint8_t mode);
