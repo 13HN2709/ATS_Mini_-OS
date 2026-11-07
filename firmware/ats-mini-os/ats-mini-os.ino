@@ -84,8 +84,10 @@ void setup() {
   Serial.printf("[SETTINGS] dedicated NVS %s\n", settingsReady ? "ready" : "unavailable; using defaults");
   const uint8_t savedBrightness = settingsStore.displayBrightness(180);
   const uint8_t savedTheme = settingsStore.displayTheme(0);
+  const uint8_t savedLayout = settingsStore.displayLayout(0);
   if (display.begin(savedBrightness)) {
     display.setTheme(savedTheme);
+    display.setLayoutMode(savedLayout);
     Serial.printf("[DISPLAY] first UI initialized; brightness=%u/255\n",
       static_cast<unsigned>(display.brightness()));
   }
@@ -143,7 +145,7 @@ void loop() {
             if (radio.setVolume(nextVolume))
               Serial.printf("[MENU] volume=%u/63\n", static_cast<unsigned>(radio.volume()));
           } else {
-            const int16_t itemCount = menuPage == 0 ? 6 : (menuPage==2 ? 3 : (menuPage==10 ? 4 : (menuPage==11 ? (radio.snapshot().modulation==RadioModulation::FM ? 10 : 14) : (menuPage==5 ? 5 : (menuPage==3 ? 6 : (menuPage==12 ? MenuSSB::kItemCount : (menuPage==7 ? radio.bandwidthChoiceCount()+1 : (menuPage==8 ? radio.bandCount()+1 : (menuPage==9 ? radio.stepChoiceCount()+1 : 3)))))))));
+            const int16_t itemCount = menuPage == 0 ? 6 : (menuPage==2 ? 4 : (menuPage==13 ? 3 : (menuPage==10 ? 4 : (menuPage==11 ? (radio.snapshot().modulation==RadioModulation::FM ? 10 : 14) : (menuPage==5 ? 5 : (menuPage==3 ? 6 : (menuPage==12 ? MenuSSB::kItemCount : (menuPage==7 ? radio.bandwidthChoiceCount()+1 : (menuPage==8 ? radio.bandCount()+1 : (menuPage==9 ? radio.stepChoiceCount()+1 : 3))))))))));
             int16_t next = (static_cast<int16_t>(menuSelection) + inputEvent.delta) % itemCount;
             if (next < 0) next += itemCount;
             menuSelection = static_cast<uint8_t>(next);
@@ -174,11 +176,25 @@ void loop() {
             Serial.printf("[MENU] opened submenu %u\n", static_cast<unsigned>(menuPage));
           }
         } else if (menuPage == 2 && menuSelection == 2) {
+          menuPage = 13;
+          menuSelection = static_cast<uint8_t>(display.layoutMode() + 1);
+        } else if (menuPage == 13 && menuSelection == 0) {
+          menuPage = 2;
+          menuSelection = 2;
+        } else if (menuPage == 13 && menuSelection > 0) {
+          const uint8_t layout = static_cast<uint8_t>(menuSelection - 1);
+          display.setLayoutMode(layout);
+          const bool saved = settingsStore.saveDisplayLayout(layout);
+          Serial.printf("[SETTINGS] display layout=%s %s\\n",
+            layout == 1 ? "HJB" : "FM Standard", saved ? "saved" : "save failed");
+          menuPage = 2;
+          menuSelection = 2;
+        } else if (menuPage == 2 && menuSelection == 3) {
           menuPage = 10;
           menuSelection = static_cast<uint8_t>(display.themeIndex() + 1);
         } else if (menuPage == 10 && menuSelection == 0) {
           menuPage = 2;
-          menuSelection = 0;
+          menuSelection = 3;
         } else if (menuPage == 10 && menuSelection > 0) {
           display.setTheme(static_cast<uint8_t>(menuSelection - 1));
           themeSavePending = true;
