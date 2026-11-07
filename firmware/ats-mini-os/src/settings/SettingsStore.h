@@ -18,6 +18,8 @@ public:
   bool saveDisplayBrightness(uint8_t brightness);
   uint8_t displayTheme(uint8_t fallback = 0);
   bool saveDisplayTheme(uint8_t theme);
+  uint8_t displayLayout(uint8_t fallback = 0);
+  bool saveDisplayLayout(uint8_t layout);
   bool agcAutomatic(bool fallback = true);
   bool saveAgcAutomatic(bool automatic);
   uint8_t agcGainIndex(uint8_t fallback = 20);
@@ -37,6 +39,7 @@ private:
   static constexpr char kFrequencyKey[] = "fm_freq";
   static constexpr char kDisplayBrightnessKey[] = "disp_bri";
   static constexpr char kDisplayThemeKey[] = "disp_theme";
+  static constexpr char kDisplayLayoutKey[] = "disp_layout";
   static constexpr char kAgcAutomaticKey[] = "rx_agc_auto";
   static constexpr char kAgcGainIndexKey[] = "rx_agc_idx";
   static constexpr char kSoftMuteKey[] = "rx_softmute";
