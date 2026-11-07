@@ -1510,3 +1510,18 @@ Zuerst die vorhandene Menü-Engine, TunerDriver-/RadioCore-Schnittstellen und di
 - **Status:** Korrektur committed, aber noch nicht kompiliert. Build #115 zählt ausdrücklich nicht als erfolgreicher Build.
 - Nächster Schritt: Nutzer startet den nächsten manuellen Compile-only-Build. Beide Profile QSPI und OSPI müssen erfolgreich sein.
 - Unverändert: keine Workflow-Neustarts durch den Assistenten, kein Flashen, keine Änderungen an Partitionen/Offsets, FM-Layout und Radiofunktionen bleiben unangetastet.
+
+
+### Build #116 – Display-Helligkeit mit NVS-Persistenz erfolgreich kompiliert (2026-11-07)
+
+- Run: https://github.com/13HN2709/ATS_Mini_-OS/actions/runs/42352366602
+- Branch: `dev/first-build-preparation`
+- Getesteter Commit: `036502d46ecdb327daacfcf136513df779d5017c`
+- Ergebnis: `completed / success`; beide Compile-only-Jobs erfolgreich:
+  - `Compile-only / esp32s3-qspi`
+  - `Compile-only / esp32s3-ospi`
+- Der Schritt „Compile ATS Mini OS scaffold“ war in beiden Profilen erfolgreich. Ebenso erfolgreich waren die read-only Prüfung der App-Image-Grenzen sowie die Erstellung und der Upload der Firmware-, Source-, Compile-Log- und Build-Notes-Artefakte.
+- Build #115 war zuvor wegen des veralteten, ungenutzten Members `Preferences preferences_;` in `DisplayDriver.h` fehlgeschlagen. Die Entfernung dieses Members ist mit dem erfolgreichen Build #116 jetzt compile-verifiziert.
+- **Damit ist die Display-Helligkeit einschließlich NVS-Lade-/Speicherintegration für QSPI und OSPI compile-verifiziert.** Der ATS Mini V4 wurde nicht geflasht; die Persistenz nach Neustart ist noch nicht hardwareseitig getestet.
+- Keine Partitionsgrößen/-Offsets geändert. Kein Bootloader-/OTA-Schritt und kein Flashen durchgeführt. Der Workflow wurde vom Nutzer manuell gestartet; keine Actions durch den Assistenten ausgelöst.
+- Nächster Schritt: Bei einem später ausdrücklich freigegebenen Gerätetest prüfen, ob eine geänderte Helligkeit nach Verlassen des Menüs und anschließendem Neustart erhalten bleibt.
