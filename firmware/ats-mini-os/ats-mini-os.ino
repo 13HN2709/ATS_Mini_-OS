@@ -22,7 +22,6 @@ ClockService systemClock;
 RadioCore radio;
 DisplayDriver display;
 SettingsStore settingsStore;
-uint32_t lastBrightnessChangeMs = 0;
 bool brightnessSavePending = false;
 EncoderInput encoder;
 WifiClient wifi;
@@ -43,6 +42,16 @@ char fmSelectedName[48] = "";
 uint8_t fmCount = 0, fmSelection = 0, fmActionSelection = 0, fmMode = 0;
 uint8_t fmPendingAction = 0, fmEditCursor = 0;
 char fmEditName[48] = "";
+void saveBrightnessIfPending() {
+  if (!brightnessSavePending) return;
+  if (settingsStore.saveDisplayBrightness(display.brightness())) {
+    Serial.printf("[SETTINGS] display brightness saved: %u/255\\n",
+      static_cast<unsigned>(display.brightness()));
+  } else {
+    Serial.println("[SETTINGS] display brightness save failed; current session remains active.");
+  }
+  brightnessSavePending = false;
+}
 void fmRefresh(){ fmCount=0; if(!FileManager::list(fmPath,fmEntries,FileManager::MAX_ENTRIES,fmCount)) snprintf(fmMessage,sizeof(fmMessage),"Ordner nicht lesbar"); }
 void fmMessageSet(const char* m){ strncpy(fmMessage,m,sizeof(fmMessage)-1); fmMessage[sizeof(fmMessage)-1]=0; }
 void fmParent(){ if(strcmp(fmPath,"/")==0)return; char* p=strrchr(fmPath,47); if(p==fmPath)fmPath[1]=0; else if(p)*p=0; fmSelection=0; fmRefresh(); }
@@ -97,7 +106,6 @@ void loop() {
             const int16_t requested = static_cast<int16_t>(display.brightness()) + inputEvent.delta * 5;
             const uint8_t nextBrightness = static_cast<uint8_t>(constrain(requested, 10, 255));
             display.setBrightness(nextBrightness);
-            lastBrightnessChangeMs = millis();
             brightnessSavePending = true;
             Serial.printf("[MENU] display brightness=%u/255 (pending save)\\n",
               static_cast<unsigned>(display.brightness()));
@@ -177,6 +185,10 @@ void loop() {
         } else if (menuPage == 2 && menuSelection == 2) {
           display.setLayoutMode(display.layoutMode() == 0 ? 1 : 0);
           Serial.println("[MENU] display layout toggled");
+        } else if (menuPage == 2 && menuSelection == 0) {
+          saveBrightnessIfPending();
+          menuPage = 0;
+          menuSelection = 0;
         } else if (menuSelection == 0) {
           menuPage = 0;
           menuSelection = 0;
@@ -208,6 +220,7 @@ void loop() {
             fmMode = 0;
             fmMessageSet("Abgebrochen");
           } else {
+            saveBrightnessIfPending();
             menuOpen = false;
             menuPage = 0;
             menuSelection = 0;
@@ -223,15 +236,6 @@ void loop() {
     }
   }
   radio.update();
-  if (brightnessSavePending && millis() - lastBrightnessChangeMs >= 900) {
-    if (settingsStore.saveDisplayBrightness(display.brightness())) {
-      Serial.printf("[SETTINGS] display brightness saved: %u/255\\n",
-        static_cast<unsigned>(display.brightness()));
-    } else {
-      Serial.println("[SETTINGS] display brightness save failed; current session remains active.");
-    }
-    brightnessSavePending = false;
-  }
   stationLogoClient.update(radio.snapshot(), wifi.connected());
   display.render(radio.snapshot(),radio.isReady(),wifi.connected(),lastEncoderEvent,encoderEventCount,&stationLogoClient,menuOpen,menuPage,menuSelection,radio.volume(),fmPath,fmEntries,fmCount,fmSelection,fmMode,fmActionSelection,(fmMode==4?fmEditName:fmSelectedName),fmMessage);
   const uint32_t now=millis();
