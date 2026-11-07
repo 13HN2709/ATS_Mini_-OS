@@ -130,7 +130,7 @@ void drawFileMenu(Canvas& c,const char* path,FileManager::Entry* entries,uint8_t
   c.drawFastHLine(8,40,w-16,DARK_GREEN);
 
   if(mode==1){
-    const char* items[]={"Zurück","Kopieren","Verschieben","Umbenennen","Loeschen","Neuer Ordner"};
+    const char* items[]={"Zurück","Kopieren","Verschieben","Umbenennen","Löschen","Neuer Ordner"};
     text(c,selected,8,45,YELLOW,&lgfx::fonts::Font2);
     const int actionFirstY = 68;
     const int actionRowHeight = 25;
@@ -147,7 +147,7 @@ void drawFileMenu(Canvas& c,const char* path,FileManager::Entry* entries,uint8_t
       if(n==action){c.fillRoundRect(5,y-2,w-10,22,3,0x0320);c.drawRoundRect(5,y-2,w-10,22,3,GREEN);}
       text(c,items[n],13,y,n==action?GREEN:WHITE,&lgfx::fonts::Font2);
     }
-    text(c,"Drehen: Menue  |  Klick: Auswaehlen",8,h-18,YELLOW,&lgfx::fonts::Font0);
+    text(c,"Drehen: Menü  |  Klick: Auswählen",8,h-18,YELLOW,&lgfx::fonts::Font0);
   } else if(mode==2){
     centered(c,"DATEI LOESCHEN?",w/2,54,YELLOW,&lgfx::fonts::Font2);
     centered(c,selected,w/2,83,WHITE,&lgfx::fonts::Font2);
@@ -160,7 +160,7 @@ void drawFileMenu(Canvas& c,const char* path,FileManager::Entry* entries,uint8_t
     text(c,"Kurz: Naechstes Zeichen",8,146,WHITE,&lgfx::fonts::Font2);
     text(c,"Lang: Speichern",8,173,YELLOW,&lgfx::fonts::Font2);
   } else {
-    text(c,mode==3?"ZIELORDNER: Klick waehlt":"Klick: Ordner oeffnen / Datei-Menue",8,44,YELLOW,&lgfx::fonts::Font0);
+    text(c,mode==3?"ZIELORDNER: Klick waehlt":"Klick: Ordner oeffnen / Datei-Menü",8,44,YELLOW,&lgfx::fonts::Font0);
     const uint8_t total=static_cast<uint8_t>(count+(mode==0?3:1));
     // The ATS Mini V4 panel is only 170 px high. Keep list rows above
     // the two-line footer and calculate the visible window from real height.
@@ -178,7 +178,7 @@ void drawFileMenu(Canvas& c,const char* path,FileManager::Entry* entries,uint8_t
       const int y=64+row*27;
       char line[48];
       const char* label=nullptr;
-      if(ix==0) label=mode==3?"[DIESEN ORDNER WAEHLEN]":"[..] Ordner hoch";
+      if(ix==0) label=mode==3?"[DIESEN ORDNER WÄHLEN]":"[..] Ordner hoch";
       else if(mode==0 && ix==count+1) label="[+] NEUER ORDNER";
       else if(mode==0 && ix==count+2) label="[X] DATEIMANAGER BEENDEN";
       else {
@@ -194,7 +194,7 @@ void drawFileMenu(Canvas& c,const char* path,FileManager::Entry* entries,uint8_t
       if(ix==selection){c.fillRoundRect(4,y-3,w-8,24,3,0x0320);c.drawRoundRect(4,y-3,w-8,24,3,GREEN);}
       text(c,label,10,y,ix==selection?GREEN:WHITE,&lgfx::fonts::Font2);
     }
-    if(mode==3) text(c,"Drehen: Zielordner  |  Lang: Zurueck",8,h-18,YELLOW,&lgfx::fonts::Font0);
+    if(mode==3) text(c,"Drehen: Zielordner  |  Lang: Zurück",8,h-18,YELLOW,&lgfx::fonts::Font0);
     else {
       text(c,"Drehen: Blaettern  |  Kurz: Oeffnen",8,h-30,WHITE,&lgfx::fonts::Font0);
       if(mode==0) text(c,"Lang druecken: Dateimanager beenden",8,h-16,YELLOW,&lgfx::fonts::Font0);
@@ -216,7 +216,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
     "VHF Spektrum*", "Gesamtes Bandspektrum*"
   };
   static const char* const volumeItems[] = {
-    "Zurueck", "Lautstärke", "Stumm (später)"
+    "Zurück", "Lautstärke", "Stumm (später)"
   };
   static const char* const displayItems[] = {
     "Zurück", "Display-Helligkeit", "Layout", "Farbschema"
