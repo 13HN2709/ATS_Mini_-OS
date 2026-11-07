@@ -1645,3 +1645,22 @@ Zuerst die vorhandene Menü-Engine, TunerDriver-/RadioCore-Schnittstellen und di
 - Wichtig: Die drei angezeigten Nachkommastellen sind eine Darstellungsformatierung. Der BFO ist ein separater Audio-Offset und wird dadurch nicht in die RF-Frequenz eingerechnet; es wird keine 1-Hz-Abstimmauflösung behauptet.
 - Commit: `6cbfe6af13cfda920879ca6a10a485f9b46e433f`.
 - Noch nicht kompiliert oder auf Hardware getestet. Nächster Schritt: manueller QSPI- und OSPI-Compile-only-Lauf.
+
+
+## 2026-11-07 – HJB-Layout aus ATS Mini DEV portiert
+
+- Originalquelle: privates Repository `13HN2709/ats-mini-dev`, Branch `development`, Datei `ats-mini/Layout-HJB.cpp` (Originalblob `ecf44ab993873fba07a994b422d526b4d6414976`).
+- Neue OS-Datei: `src/display/DisplayLayoutHJB.h`. Das Layout ist eigenständig und verwendet ausschließlich den veröffentlichten `RadioSnapshot`; keine direkten SI4735-Aufrufe.
+- HJB ist für FM, AM, LW/MW/SW sowie USB/LSB auswählbar. Übernommen wurden die charakteristische Frequenzdarstellung, PTY/RDS-Clock, Stationsname/RT, RSSI-Verlauf, SNR-Referenz, Signalbalken und Frequenzskala.
+- Senderlogos sind vollständig außen vor: Im HJB-Modus wird weder ein Logo gezeichnet noch ein Logo-Lookup gestartet. Das vorhandene FM-Standardlayout inklusive Logo/RDS bleibt unverändert.
+- Auswahl: Hauptmenü → Anzeige → Layout → FM Standard / HJB - Alle Baender.
+- Auswahl wird unter dem OS-eigenen NVS-Key `disp_layout` im Namespace `atsmini_os` gespeichert und beim Start wiederhergestellt. Keine Änderung an Partitionstabelle, Bootmanager oder bestehenden NVS-Partitionen.
+- Portierungsanpassung: Der HJB-Originalcode las RSSI/SNR direkt aus dem SI4735-Objekt; OS verwendet stattdessen die bereits zyklisch erfassten Snapshot-Werte. RDS-Clock und PTY erscheinen nur bei gültigen FM-RDS-Daten.
+- Noch nicht kompiliert und nicht auf Hardware getestet. Nächster Schritt: manueller QSPI- und OSPI-Compile-only-Lauf; bei Fehlern beide Logs prüfen.
+- Commits:
+  - `ae5dc87760d9dd285bc368302222c39e39f63379` – HJB-Layoutmodul
+  - `d8359f50089d333af61309c6ff0256a5d02aaecb` – Layoutauswahl und Renderer
+  - `834ffff2c11456e1b27af61b2ca6a49e4ff48ba8` – SettingsStore API
+  - `c7c582e5e9967a36453398eeadd2b20d65ac0164` – NVS-Persistenz
+  - `05add0de6a15eb605e17542736782fddd283e18d` – Menü und Startwiederherstellung
+  - `f9684709412a6ebf941212d087cd130a4acacd82` – Logo-Lookups im HJB-Modus deaktiviert
