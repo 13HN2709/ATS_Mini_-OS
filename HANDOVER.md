@@ -1525,3 +1525,15 @@ Zuerst die vorhandene Menü-Engine, TunerDriver-/RadioCore-Schnittstellen und di
 - **Damit ist die Display-Helligkeit einschließlich NVS-Lade-/Speicherintegration für QSPI und OSPI compile-verifiziert.** Der ATS Mini V4 wurde nicht geflasht; die Persistenz nach Neustart ist noch nicht hardwareseitig getestet.
 - Keine Partitionsgrößen/-Offsets geändert. Kein Bootloader-/OTA-Schritt und kein Flashen durchgeführt. Der Workflow wurde vom Nutzer manuell gestartet; keine Actions durch den Assistenten ausgelöst.
 - Nächster Schritt: Bei einem später ausdrücklich freigegebenen Gerätetest prüfen, ob eine geänderte Helligkeit nach Verlassen des Menüs und anschließendem Neustart erhalten bleibt.
+
+
+## 2026-11-07 – DEV-Funktions-Roadmap angelegt
+
+- Referenz: `13HN2709/ats-mini-dev` (nur lesend geprüft).
+- Neue Datei: `FEATURE_ROADMAP.md` – vollständiger Funktionskatalog und gestufte Wiederintegrations-Reihenfolge.
+- Abgleich berücksichtigt vorhandene OS-Bausteine: ClockService (UTC/SNTP/Europe-Berlin), WifiClient (derzeit Testkonfiguration), SettingsStore (eigene OS-Keys auf vorhandener `settings`-NVS-Partition), LittleFS/Dateimanager, RadioCore/TunerDriver und vorhandene Band-/Bandbreitenfunktionen.
+- Explizit getrennt: **Themes (Farbschema) sind nicht Layouts (Anordnung)**.
+- Funktionsgruppen dokumentiert: Themes/Anzeige, Bluetooth BLE UART/HID, WLAN-Modi/Web/TCP/USB, EiBi Download/Index/UTC-Suche, Radiofunktionen, Speicher/VFO/Dual RX/DSP-Patches, Spectrum/Bandplan sowie Uhr/System.
+- **Nächster Code-Schritt:** OS-eigene Theme-Palette und persistente Theme-Einstellung modular ergänzen; danach Theme-Auswahl in die Anzeige-Menüs integrieren, ohne Layoutauswahl oder FM-Hauptlayout zu verändern.
+- Kein Firmware-Code in diesem Schritt geändert; kein Build gestartet; keine GitHub Action ausgelöst; nichts geflasht. Build #116 bleibt letzter erfolgreicher Compile-Stand (QSPI + OSPI).
+- Grenzen unverändert: keine Partitions-/Offset-/Bootloader-/Slotänderungen, FM-Logo/Frequenz/RDS unverändert, Nutzer startet manuelle Compile-only Builds.
