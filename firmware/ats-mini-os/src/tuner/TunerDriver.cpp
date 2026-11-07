@@ -275,6 +275,19 @@ bool TunerDriver::setBand(const RadioBandDefinition& band) {
   return true;
 }
 
+bool TunerDriver::setModulation(const RadioBandDefinition& band, RadioModulation modulation) {
+  if (!ready_ || (modulation == RadioModulation::FM && band.type != RadioBandType::FM) ||
+      (modulation != RadioModulation::FM && band.type == RadioBandType::FM)) return false;
+  RadioBandDefinition configured = band;
+  configured.modulation = modulation;
+  configured.startKHz = frequencyKHz();
+  if (modulation == RadioModulation::LSB || modulation == RadioModulation::USB) {
+    if (configured.startKHz < 1800 || configured.startKHz > 30000) return false;
+    if (configured.minimumKHz < 1800) configured.minimumKHz = 1800;
+    if (configured.maximumKHz > 30000) configured.maximumKHz = 30000;
+  }
+  return setBand(configured);
+}
 bool TunerDriver::tune(uint32_t frequencyKHz, const RadioBandDefinition& band) {
   if (!ready_ || frequencyKHz < band.minimumKHz || frequencyKHz > band.maximumKHz) return false;
   if (band.modulation == RadioModulation::FM)
