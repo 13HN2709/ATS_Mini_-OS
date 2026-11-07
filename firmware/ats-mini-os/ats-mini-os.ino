@@ -88,9 +88,20 @@ void setup() {
     Serial.printf("[DISPLAY] first UI initialized; brightness=%u/255\\n",
       static_cast<unsigned>(display.brightness()));
   }
-  if (radio.begin(DEFAULT_FM_FREQUENCY_KHZ))
-    Serial.printf("Radio ready: %.1f MHz\n",radio.snapshot().frequencyKHz/1000.0f);
-  else Serial.println("[TUNER] init failed; check I2C, radio power and GPIO configuration.");
+  if (radio.begin(DEFAULT_FM_FREQUENCY_KHZ)) {
+    const bool agcAuto = settingsStore.agcAutomatic(true);
+    const uint8_t agcIndex = settingsStore.agcGainIndex(20);
+    const uint8_t softMuteDb = settingsStore.softMuteAttenuationDb(8);
+    const uint8_t avcGain = settingsStore.avcGain(90);
+    if (agcAuto) radio.setAgcAutomatic(true);
+    else radio.setAgcManualGain(agcIndex);
+    radio.setSoftMuteAttenuation(softMuteDb);
+    radio.setAvcGain(avcGain); // Remembered in FM, applied automatically in AM/SSB.
+    Serial.printf("[SETTINGS] RX restored: AGC=%s/%u SoftMute=%u dB AVC=%u\\n",
+      agcAuto ? "AUTO" : "MANUAL", static_cast<unsigned>(agcIndex),
+      static_cast<unsigned>(softMuteDb), static_cast<unsigned>(avcGain));
+    Serial.printf("Radio ready: %.1f MHz\\n",radio.snapshot().frequencyKHz/1000.0f);
+  } else Serial.println("[TUNER] init failed; check I2C, radio power and GPIO configuration.");
   wifi.begin();
   Serial.printf("CPU profile: %s\n",performance.profileName());
 }
@@ -173,15 +184,34 @@ void loop() {
           menuPage = 3;
           menuSelection = 4;
         } else if (menuPage == 11 && menuSelection == 1) {
-          radio.setAgcAutomatic(true);
+          if (radio.setAgcAutomatic(true)) {
+            const bool saved = settingsStore.saveAgcAutomatic(true);
+            Serial.printf("[SETTINGS] AGC AUTO %s\\n", saved ? "saved" : "save failed");
+          }
         } else if (menuPage == 11 && menuSelection >= 2 && menuSelection <= 5) {
           static const uint8_t agcIndexes[] = {0, 8, 16, 24};
-          radio.setAgcManualGain(agcIndexes[menuSelection - 2]);
+          const uint8_t index = agcIndexes[menuSelection - 2];
+          if (radio.setAgcManualGain(index)) {
+            const bool modeSaved = settingsStore.saveAgcAutomatic(false);
+            const bool indexSaved = settingsStore.saveAgcGainIndex(index);
+            Serial.printf("[SETTINGS] AGC manual index=%u %s\\n",
+              static_cast<unsigned>(index), modeSaved && indexSaved ? "saved" : "save failed");
+          }
         } else if (menuPage == 11 && menuSelection >= 6 && menuSelection <= 9) {
-          radio.setSoftMuteAttenuation(static_cast<uint8_t>((menuSelection - 6) * 4));
+          const uint8_t attenuation = static_cast<uint8_t>((menuSelection - 6) * 4);
+          if (radio.setSoftMuteAttenuation(attenuation)) {
+            const bool saved = settingsStore.saveSoftMuteAttenuationDb(attenuation);
+            Serial.printf("[SETTINGS] Soft Mute=%u dB %s\\n",
+              static_cast<unsigned>(attenuation), saved ? "saved" : "save failed");
+          }
         } else if (menuPage == 11 && menuSelection >= 10 && menuSelection <= 13) {
           static const uint8_t avcGains[] = {12, 30, 60, 90};
-          radio.setAvcGain(avcGains[menuSelection - 10]);
+          const uint8_t gain = avcGains[menuSelection - 10];
+          if (radio.setAvcGain(gain)) {
+            const bool saved = settingsStore.saveAvcGain(gain);
+            Serial.printf("[SETTINGS] AVC=%u %s\\n",
+              static_cast<unsigned>(gain), saved ? "saved" : "save failed");
+          }
         } else if (menuPage == 3 && menuSelection == 1) {
           menuPage = 8;
           menuSelection = static_cast<uint8_t>(radio.currentBandIndex() + 1);
