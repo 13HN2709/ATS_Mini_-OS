@@ -162,7 +162,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
   const int w = canvas.width();
   const int h = canvas.height();
   static const char* const mainItems[] = {
-    "Zurueck", "Lautstaerke", "Band waehlen", "Bandbreite", "Schrittweite",
+    "Zurueck", "Lautstaerke", "Band waehlen", "Modulation", "Bandbreite", "Schrittweite",
     "Empfang (AGC / Soft Mute / AVC)", "SSB / BFO", "Display-Helligkeit",
     "Layout", "Farbschema", "System / UTC", "Dateimanager"
   };
@@ -297,7 +297,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
       canvas.drawString(items[index], 42, y+13);
     }
 
-    if ((page==1 && index==1) || (page==0 && index==7)) {
+    if ((page==1 && index==1) || (page==0 && index==8)) {
       const bool volumeControl = page == 1;
       const uint8_t level = volumeControl ? volume : brightness;
       const uint8_t maximum = volumeControl ? 63 : 255;
