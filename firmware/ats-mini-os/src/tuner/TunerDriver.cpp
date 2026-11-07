@@ -83,6 +83,8 @@ bool TunerDriver::begin(uint32_t initialFrequencyKHz) {
   modulation_ = RadioModulation::FM;
   bandwidthChoice_ = 0;
   radio_.setFmBandwidth(0);
+  radio_.setAutomaticGainControl(agcAutomatic_ ? 0 : 1, agcGainIndex_);
+  radio_.setFmSoftMuteMaxAttenuation(softMuteAttenuationDb_);
   ready_ = true;
   return true;
 }
@@ -95,14 +97,35 @@ bool TunerDriver::setAgcAutomatic(bool automatic) {
   return true;
 }
 
+bool TunerDriver::setAgcManualGain(uint8_t index) {
+  if (!ready_ || index > 24 || (index % 8) != 0) return false;
+  agcAutomatic_ = false;
+  agcGainIndex_ = index;
+  radio_.setAutomaticGainControl(1, agcGainIndex_);
+  Serial.printf("[TUNER] AGC manual index=%u\\n", static_cast<unsigned>(agcGainIndex_));
+  return true;
+}
+
 bool TunerDriver::setSoftMuteEnabled(bool enabled) {
   if (!ready_) return false;
   softMuteEnabled_ = enabled;
-  const uint8_t attenuation = enabled ? 8 : 0;
+  softMuteAttenuationDb_ = enabled ? 8 : 0;
+  const uint8_t attenuation = softMuteAttenuationDb_;
   if (modulation_ == RadioModulation::FM) radio_.setFmSoftMuteMaxAttenuation(attenuation);
   else if (modulation_ == RadioModulation::AM) radio_.setAmSoftMuteMaxAttenuation(attenuation);
   else radio_.setSsbSoftMuteMaxAttenuation(attenuation);
   Serial.printf("[TUNER] soft mute %s\n", enabled ? "ON" : "OFF");
+  return true;
+}
+
+bool TunerDriver::setSoftMuteAttenuation(uint8_t attenuationDb) {
+  if (!ready_ || attenuationDb > 12 || (attenuationDb % 4) != 0) return false;
+  softMuteAttenuationDb_ = attenuationDb;
+  softMuteEnabled_ = attenuationDb != 0;
+  if (modulation_ == RadioModulation::FM) radio_.setFmSoftMuteMaxAttenuation(attenuationDb);
+  else if (modulation_ == RadioModulation::AM) radio_.setAmSoftMuteMaxAttenuation(attenuationDb);
+  else radio_.setSsbSoftMuteMaxAttenuation(attenuationDb);
+  Serial.printf("[TUNER] soft mute attenuation=%u dB\\n", static_cast<unsigned>(attenuationDb));
   return true;
 }
 
@@ -191,7 +214,7 @@ bool TunerDriver::setBand(const RadioBandDefinition& band) {
     radio_.setSeekFmSNRThreshold(1);
     radio_.setFmBandwidth(0);
     radio_.setAutomaticGainControl(agcAutomatic_ ? 0 : 1, agcGainIndex_);
-    radio_.setFmSoftMuteMaxAttenuation(softMuteEnabled_ ? 8 : 0);
+    radio_.setFmSoftMuteMaxAttenuation(softMuteAttenuationDb_);
     radio_.RdsInit();
     radio_.setRdsConfig(1, 2, 2, 2, 2);
   } else if (band.modulation == RadioModulation::AM) {
