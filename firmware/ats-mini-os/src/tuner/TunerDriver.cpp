@@ -203,7 +203,9 @@ bool TunerDriver::setBand(const RadioBandDefinition& band) {
     radio_.setSeekAmRssiThreshold(10);
     radio_.setSeekAmSNRThreshold(3);
     radio_.setBandwidth(2, 1);
-    radio_.setAutomaticGainControl(agcAutomatic_ ? 0 : 1, agcGainIndex_);\n    radio_.setAmSoftMuteMaxAttenuation(softMuteEnabled_ ? 8 : 0);\n    radio_.setAvcAmMaxGain(avcGain_);
+    radio_.setAutomaticGainControl(agcAutomatic_ ? 0 : 1, agcGainIndex_);
+    radio_.setAmSoftMuteMaxAttenuation(softMuteEnabled_ ? 8 : 0);
+    radio_.setAvcAmMaxGain(avcGain_);
   } else {
     // The SI4735 requires the SSB DSP patch before sideband mode can be used.
     // Load it only when entering SSB; AM/FM transitions invalidate this state.
@@ -218,7 +220,9 @@ bool TunerDriver::setBand(const RadioBandDefinition& band) {
                   static_cast<uint16_t>(target), 0, mode);
     radio_.setSSBConfig(2, 1, 0, 1, 0, 1);
     radio_.setSSBBfo(0);
-    radio_.setAutomaticGainControl(agcAutomatic_ ? 0 : 1, agcGainIndex_);\n    radio_.setSsbSoftMuteMaxAttenuation(softMuteEnabled_ ? 8 : 0);\n    radio_.setAvcAmMaxGain(avcGain_);
+    radio_.setAutomaticGainControl(agcAutomatic_ ? 0 : 1, agcGainIndex_);
+    radio_.setSsbSoftMuteMaxAttenuation(softMuteEnabled_ ? 8 : 0);
+    radio_.setAvcAmMaxGain(avcGain_);
   }
   radio_.setVolume(volume_);
   return true;
