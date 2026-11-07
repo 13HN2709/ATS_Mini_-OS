@@ -12,6 +12,7 @@
 #include "src/system/PartitionDiagnostics.h"
 #include "src/storage/StorageDiscovery.h"
 #include "src/storage/FileManager.h"
+#include "src/settings/SettingsStore.h"
 
 namespace {
 constexpr uint32_t SERIAL_BAUD = 115200;
@@ -20,6 +21,9 @@ PerformanceManager performance;
 ClockService systemClock;
 RadioCore radio;
 DisplayDriver display;
+SettingsStore settingsStore;
+uint32_t lastBrightnessChangeMs = 0;
+bool brightnessSavePending = false;
 EncoderInput encoder;
 WifiClient wifi;
 StationLogoClient stationLogoClient;
@@ -56,7 +60,13 @@ void setup() {
   stationLogoClient.begin();
 
   encoder.begin();
-  if (display.begin()) Serial.println("[DISPLAY] first UI initialized.");
+  const bool settingsReady = settingsStore.begin();
+  Serial.printf("[SETTINGS] dedicated NVS %s\\n", settingsReady ? "ready" : "unavailable; using defaults");
+  const uint8_t savedBrightness = settingsStore.displayBrightness(180);
+  if (display.begin(savedBrightness)) {
+    Serial.printf("[DISPLAY] first UI initialized; brightness=%u/255\\n",
+      static_cast<unsigned>(display.brightness()));
+  }
   if (radio.begin(DEFAULT_FM_FREQUENCY_KHZ))
     Serial.printf("Radio ready: %.1f MHz\n",radio.snapshot().frequencyKHz/1000.0f);
   else Serial.println("[TUNER] init failed; check I2C, radio power and GPIO configuration.");
@@ -87,7 +97,10 @@ void loop() {
             const int16_t requested = static_cast<int16_t>(display.brightness()) + inputEvent.delta * 5;
             const uint8_t nextBrightness = static_cast<uint8_t>(constrain(requested, 10, 255));
             display.setBrightness(nextBrightness);
-            Serial.printf("[MENU] display brightness=%u/255\\n", static_cast<unsigned>(display.brightness()));
+            lastBrightnessChangeMs = millis();
+            brightnessSavePending = true;
+            Serial.printf("[MENU] display brightness=%u/255 (pending save)\\n",
+              static_cast<unsigned>(display.brightness()));
           } else if (menuPage == 1 && menuSelection == 1) {
             const int16_t requested = static_cast<int16_t>(radio.volume()) + inputEvent.delta;
             const uint8_t nextVolume = static_cast<uint8_t>(constrain(requested, 0, 63));
@@ -210,6 +223,15 @@ void loop() {
     }
   }
   radio.update();
+  if (brightnessSavePending && millis() - lastBrightnessChangeMs >= 900) {
+    if (settingsStore.saveDisplayBrightness(display.brightness())) {
+      Serial.printf("[SETTINGS] display brightness saved: %u/255\\n",
+        static_cast<unsigned>(display.brightness()));
+    } else {
+      Serial.println("[SETTINGS] display brightness save failed; current session remains active.");
+    }
+    brightnessSavePending = false;
+  }
   stationLogoClient.update(radio.snapshot(), wifi.connected());
   display.render(radio.snapshot(),radio.isReady(),wifi.connected(),lastEncoderEvent,encoderEventCount,&stationLogoClient,menuOpen,menuPage,menuSelection,radio.volume(),fmPath,fmEntries,fmCount,fmSelection,fmMode,fmActionSelection,(fmMode==4?fmEditName:fmSelectedName),fmMessage);
   const uint32_t now=millis();
