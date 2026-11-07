@@ -176,7 +176,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
     "Zurueck", "Display-Helligkeit", "Layout", "Farbschema"
   };
   static const char* const layoutGroupItems[] = { "Zurueck", "UKW / FM", "LW / MW / KW" };
-  static const char* const fmLayoutItems[] = { "Zurueck", "DAB Style", "HJB" };
+  static const char* const fmLayoutItems[] = { "Zurueck", "DAB Style", "HJB", "TEF6686 - FM Version" };
   static const char* const amLayoutItems[] = { "Zurueck", "Standard LW/MW/KW", "HJB" };
   static const char* const bfoItems[] = { "Zurueck", "BFO einstellen" };
   static const char* const radioItems[] = {
@@ -387,7 +387,7 @@ void DisplayDriver::setTheme(uint8_t index) {
 }
 
 void DisplayDriver::setFmLayout(uint8_t mode) {
-  fmLayout_ = mode <= 1 ? mode : 0;
+  fmLayout_ = mode <= 2 ? mode : 0;
   lastGeneration_ = UINT32_MAX;
   Serial.printf("[DISPLAY] FM layout: %s\\n", fmLayout_ == 1 ? "HJB" : "DAB Style");
 }
@@ -626,10 +626,115 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   }
   canvas.clearClipRect();
 }
+template <typename Canvas>
+void drawTef6686FmVersion(Canvas& c, const RadioSnapshot& s, bool wifiConnected) {
+  constexpr uint16_t BG=0x0000, BLUE=0x001F, CYAN=0x07FF;
+  constexpr uint16_t GREEN_TEF=0xBFE0, GREY=0x4208, YELLOW_TEF=0xFFE0, RED_TEF=0xF800;
+  const int w=c.width();
+  c.fillScreen(BG);
+
+  // Header and radio status, matching the original ATS Mini Dev TEF6686 layout.
+  c.setFont(&lgfx::fonts::FreeSansBold9pt7b);
+  c.setTextDatum(TL_DATUM);
+  c.setTextColor(GREEN_TEF,BG);
+  c.drawString(s.bandName,16,3);
+  c.setFont(&lgfx::fonts::Font0);
+  c.setTextColor(wifiConnected?CYAN:GREY,BG);
+  c.drawRightString(wifiConnected?"WLAN+":"WLAN-",w-10,5);
+
+  // Reception mode, stereo/mono and frequency unit.
+  c.drawRoundRect(10,24,48,20,3,BLUE);
+  c.setFont(&lgfx::fonts::FreeSansBold9pt7b);
+  c.setTextDatum(MC_DATUM);
+  c.setTextColor(GREEN_TEF,BG);
+  c.drawString("FM",34,34);
+
+  c.drawRoundRect(10,48,48,20,3,BLUE);
+  c.setTextColor(s.stereo?RED_TEF:0xFFFF,BG);
+  c.drawString(s.stereo?"ST":"MO",34,58);
+
+  c.drawRect(242,24,68,20,BLUE);
+  c.setTextColor(GREEN_TEF,BG);
+  c.drawString("MHz",276,34);
+
+  // Large frequency digits use the ATS Mini's seven-segment Font7.
+  char frequency[20];
+  snprintf(frequency,sizeof(frequency),"%lu.%02lu",
+    static_cast<unsigned long>(s.frequencyKHz/1000UL),
+    static_cast<unsigned long>((s.frequencyKHz%1000UL)/10UL));
+  c.setFont(&lgfx::fonts::Font7);
+  c.setTextDatum(MR_DATUM);
+  c.setTextColor(GREEN_TEF,BG);
+  c.setTextSize(0.78f);
+  c.drawString(frequency,238,43);
+  c.setTextSize(1.0f);
+
+  // Signal meter follows the Dev's 150 ms falling decay and green/yellow/red scale.
+  constexpr int meterX=10,meterY=76,meterW=300,meterH=32;
+  constexpr int barX=43,barY=87,barW=250,barH=7;
+  const int signal=constrain(static_cast<int>(s.rssi),0,60);
+  const int targetW=map(signal,0,60,0,barW);
+  static int displayedW=0;
+  static uint32_t lastMeterUpdate=0;
+  const uint32_t now=millis();
+  if(!lastMeterUpdate)lastMeterUpdate=now;
+  const uint32_t elapsed=now-lastMeterUpdate;
+  if(targetW>=displayedW){displayedW=targetW;lastMeterUpdate=now;}
+  else if(elapsed>=150){displayedW-=static_cast<int>(elapsed/150)*5;if(displayedW<targetW)displayedW=targetW;lastMeterUpdate=now;}
+  displayedW=constrain(displayedW,0,barW);
+  c.drawRect(meterX,meterY,meterW,meterH,BLUE);
+  c.setFont(&lgfx::fonts::FreeSansBold9pt7b);
+  c.setTextDatum(TL_DATUM);
+  c.setTextColor(GREEN_TEF,BG);
+  c.drawString("S",18,meterY+5);
+  c.fillRect(barX,barY,barW,barH,GREY);
+  const int greenEnd=barW*65/100,yellowEnd=barW*82/100;
+  if(displayedW>0){
+    c.fillRect(barX,barY,min(displayedW,greenEnd),barH,GREEN_TEF);
+    if(displayedW>greenEnd)c.fillRect(barX+greenEnd,barY,min(displayedW,yellowEnd)-greenEnd,barH,YELLOW_TEF);
+    if(displayedW>yellowEnd)c.fillRect(barX+yellowEnd,barY,displayedW-yellowEnd,barH,RED_TEF);
+  }
+  const int scaleValues[]={0,10,20,30,40,50,60};
+  for(int i=0;i<7;++i){int x=barX+map(scaleValues[i],0,60,0,barW);c.drawLine(x,barY-2,x,barY+barH+2,CYAN);}
+
+  // PS field: live RDS station name.
+  constexpr int psX=10,psY=116,psW=300,psH=21;
+  c.drawRect(psX,psY,psW,psH,BLUE);
+  c.setFont(&lgfx::fonts::FreeSans9pt7b);
+  c.setTextDatum(TL_DATUM);
+  c.setTextColor(CYAN,BG);
+  c.drawString("PS:",psX+5,psY+2);
+  if(s.stationName[0]){
+    c.setTextColor(GREEN_TEF,BG);
+    c.setClipRect(psX+38,psY+1,psW-43,psH-2);
+    c.drawString(s.stationName,psX+40,psY+2);
+    c.clearClipRect();
+  }
+
+  // RT field: Dev-compatible prepared RadioText, clipped to the original field.
+  constexpr int rtX=10,rtY=141,rtW=300,rtH=22;
+  c.drawRect(rtX,rtY,rtW,rtH,BLUE);
+  c.setFont(&lgfx::fonts::FreeSans9pt7b);
+  c.setTextDatum(TL_DATUM);
+  c.setTextColor(CYAN,BG);
+  c.drawString("RT:",rtX+5,rtY+2);
+  if(s.radioText[0]){
+    c.setTextColor(GREEN_TEF,BG);
+    c.setClipRect(rtX+38,rtY+1,rtW-43,rtH-2);
+    c.drawString(s.radioText,rtX+40,rtY+2);
+    c.clearClipRect();
+  }
+}
+
 void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady,bool wifiConnected,const char* lastInputEvent,uint32_t inputEventCount,const uint8_t* logoData,size_t logoLength,bool logoIsJpg,bool logoSearching,int16_t radioTextOffset,bool scrollRadioText,bool frequencyBlue) {
   // FM and AM/SSB keep independent layout selections. The established
   // FM logo/RDS screen remains untouched as the DAB Style option.
   if (s.modulation == RadioModulation::FM) {
+    if (fmLayout_ == 2) {
+      if (useSprite_) { sprite_.fillSprite(BLACK); drawTef6686FmVersion(sprite_, s, wifiConnected); sprite_.pushSprite(0, 0); }
+      else { device_.fillScreen(BLACK); drawTef6686FmVersion(device_, s, wifiConnected); }
+      return;
+    }
     if (fmLayout_ == 1) {
       if (useSprite_) { sprite_.fillSprite(BLACK); drawHJBLayout(sprite_, s, radioReady, wifiConnected); sprite_.pushSprite(0, 0); }
       else { device_.fillScreen(BLACK); drawHJBLayout(device_, s, radioReady, wifiConnected); }
