@@ -46,3 +46,14 @@ bool SettingsStore::saveDisplayBrightness(uint8_t brightness) {
   if (!ready_ || brightness < 10) return false;
   return preferences_.putUChar(kDisplayBrightnessKey, brightness) == sizeof(uint8_t);
 }
+
+uint8_t SettingsStore::displayTheme(uint8_t fallback) {
+  if (!ready_) return fallback;
+  const uint8_t saved = preferences_.getUChar(kDisplayThemeKey, fallback);
+  return saved < 3 ? saved : fallback;
+}
+
+bool SettingsStore::saveDisplayTheme(uint8_t theme) {
+  if (!ready_ || theme >= 3) return false;
+  return preferences_.putUChar(kDisplayThemeKey, theme) == sizeof(uint8_t);
+}
