@@ -91,3 +91,19 @@ bool SettingsStore::saveAvcGain(uint8_t gain) {
   return ready_ && gain >= 12 && gain <= 90 &&
          preferences_.putUChar(kAvcGainKey, gain) == sizeof(uint8_t);
 }
+uint8_t SettingsStore::ssbBandwidthChoice(uint8_t fallback) {
+  if (!ready_) return fallback;
+  const uint8_t saved = preferences_.getUChar(kSsbBandwidthKey, fallback);
+  return saved < 6 ? saved : fallback;
+}
+bool SettingsStore::saveSsbBandwidthChoice(uint8_t choice) {
+  return ready_ && choice < 6 && preferences_.putUChar(kSsbBandwidthKey, choice) == sizeof(uint8_t);
+}
+int16_t SettingsStore::bfoOffsetHz(int16_t fallback) {
+  if (!ready_) return fallback;
+  const int16_t saved = preferences_.getShort(kBfoOffsetKey, fallback);
+  return saved >= -16000 && saved <= 16000 ? saved : fallback;
+}
+bool SettingsStore::saveBfoOffsetHz(int16_t offsetHz) {
+  return ready_ && offsetHz >= -16000 && offsetHz <= 16000 && preferences_.putShort(kBfoOffsetKey, offsetHz) == sizeof(int16_t);
+}
