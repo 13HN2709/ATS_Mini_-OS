@@ -144,3 +144,7 @@ bool RadioCore::nextChannel(int16_t acceleratedDelta) {
   if (offset < 0) offset += span;
   return tune(band.minimumKHz + static_cast<uint32_t>(offset));
 }
+
+bool RadioCore::setAgcAutomatic(bool automatic) { return ready_ && tuner_.setAgcAutomatic(automatic); }
+bool RadioCore::setSoftMuteEnabled(bool enabled) { return ready_ && tuner_.setSoftMuteEnabled(enabled); }
+bool RadioCore::setAvcGain(uint8_t gain) { return ready_ && tuner_.setAvcGain(gain); }
