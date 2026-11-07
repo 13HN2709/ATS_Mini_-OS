@@ -5,8 +5,8 @@
 #include <LittleFS.h>
 
 namespace {
-uint16_t BLACK=0x0000, WHITE=0xFFFF, GREEN=0x07E0, CYAN=0x07FF, DARK_GREEN=0x0320, YELLOW=0xFFE0, MUTED=0x7BEF;
-void applyThemePalette(uint8_t index) { const ThemePalette& p=ThemeManager::at(index); BLACK=p.background; WHITE=p.text; GREEN=p.accent; CYAN=p.secondary; DARK_GREEN=p.divider; YELLOW=p.warning; MUTED=p.muted; }
+uint16_t BLACK=0x0000, WHITE=0xFFFF, GREEN=0x07E0, CYAN=0x07FF, DARK_GREEN=0x0320, YELLOW=0xFFE0, MUTED=0x7BEF, FREQ_COLOR=0x07E0, UNIT_COLOR=0x07E0, RDS_COLOR=0xFFFF;
+void applyThemePalette(uint8_t index) { const ThemePalette& p=ThemeManager::at(index); BLACK=p.background; WHITE=p.text; GREEN=p.accent; CYAN=p.secondary; DARK_GREEN=p.divider; YELLOW=p.warning; MUTED=p.muted; FREQ_COLOR=p.frequency; UNIT_COLOR=p.frequencyUnit; RDS_COLOR=p.radioText; }
 
 template <typename Canvas>
 void text(Canvas& d,const char* s,int x,int y,uint16_t c,const lgfx::IFont* f) {
@@ -513,7 +513,7 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   } else {
     snprintf(frequency,sizeof(frequency),"%lu",static_cast<unsigned long>(s.frequencyKHz));
   }
-  canvas.setTextColor(frequencyBlue?0x249F:GREEN,BLACK);
+  canvas.setTextColor(frequencyBlue?0x249F:FREQ_COLOR,BLACK);
   canvas.setFont(&lgfx::fonts::Font7);
   canvas.setTextSize(isFm ? 0.78f : 0.68f);
   canvas.drawString(frequency,frequencyX,55);
