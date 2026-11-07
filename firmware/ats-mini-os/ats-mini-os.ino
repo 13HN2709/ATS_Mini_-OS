@@ -236,16 +236,14 @@ void loop() {
           const bool saved = settingsStore.saveDisplayFmLayout(layout);
           Serial.printf("[SETTINGS] FM layout=%s %s\\n",
             layout == 1 ? "HJB" : "DAB Style", saved ? "saved" : "save failed");
-          menuPage = 0;
-          menuSelection = 8;
+          closeMenuToRadio("FM layout selected");
         } else if (menuPage == 15 && menuSelection > 0) {
           const uint8_t layout = static_cast<uint8_t>(menuSelection - 1);
           display.setAmLayout(layout);
           const bool saved = settingsStore.saveDisplayAmLayout(layout);
           Serial.printf("[SETTINGS] AM/USB/LSB layout=%s %s\\n",
             layout == 1 ? "HJB" : "AM Layout", saved ? "saved" : "save failed");
-          menuPage = 0;
-          menuSelection = 8;
+          closeMenuToRadio("LW/MW/KW layout selected");
         } else if (menuPage == 2 && menuSelection == 3) {
           menuPage = 10;
           menuSelection = static_cast<uint8_t>(display.themeIndex() + 1);
@@ -281,6 +279,7 @@ void loop() {
           if (radio.setAgcAutomatic(true)) {
             const bool saved = settingsStore.saveAgcAutomatic(true);
             Serial.printf("[SETTINGS] AGC AUTO %s\n", saved ? "saved" : "save failed");
+            closeMenuToRadio("AGC AUTO selected");
           }
         } else if (menuPage == 11 && menuSelection >= 2 && menuSelection <= 5) {
           static const uint8_t agcIndexes[] = {0, 8, 16, 24};
@@ -317,8 +316,7 @@ void loop() {
             display.notifyTuning();
             Serial.printf("[MENU] band=%s freq=%lu kHz\n", radio.snapshot().bandName,
               static_cast<unsigned long>(radio.snapshot().frequencyKHz));
-            menuPage = 0;
-            menuSelection = 2;
+            closeMenuToRadio("band selected");
           }
         } else if (menuPage == 3 && menuSelection == 3) {
           menuPage = 9;
@@ -328,8 +326,7 @@ void loop() {
           menuSelection = 4;
         } else if (menuPage == 9 && menuSelection > 0) {
           if (radio.setStepChoice(static_cast<uint8_t>(menuSelection - 1))) {
-            menuPage = 0;
-            menuSelection = 4;
+            closeMenuToRadio("step size selected");
           }
         } else if (menuPage == 3 && menuSelection == 2) {
           menuPage = 7;
@@ -344,8 +341,7 @@ void loop() {
               Serial.printf("[SETTINGS] SSB bandwidth=%u %s\n", static_cast<unsigned>(menuSelection - 1), saved ? "saved" : "save failed");
             }
             Serial.printf("[MENU] bandwidth choice=%u\n", static_cast<unsigned>(menuSelection - 1));
-            menuPage = 0;
-            menuSelection = 3;
+            closeMenuToRadio("bandwidth selected");
           }
         } else if (menuPage == 2 && menuSelection == 0) {
           saveBrightnessIfPending();
