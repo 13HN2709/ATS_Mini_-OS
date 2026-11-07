@@ -172,7 +172,9 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
   static const char* const displayItems[] = {
     "Zurueck", "Display-Helligkeit", "Layout", "Farbschema"
   };
-  static const char* const layoutItems[] = { "Zurueck", "Auto (FM/HJB)", "HJB - Alle Baender" };
+  static const char* const layoutGroupItems[] = { "Zurueck", "UKW / FM", "AM / USB / LSB" };
+  static const char* const fmLayoutItems[] = { "Zurueck", "DAB Style", "HJB" };
+  static const char* const amLayoutItems[] = { "Zurueck", "AM Layout", "HJB" };
   static const char* const radioItems[] = {
     "Zurueck", "Band waehlen", "Bandbreite", "Schrittweite", "Empfangseinstellungen", "SSB / BFO"
   };
@@ -190,14 +192,15 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
     "Zurueck", "CPU-Profil (spaeter)", "Systeminfo (spaeter)", "Dateimanager",
     "UTC+01:00 * (Sommer +02:00)"
   };
-  (void)layoutMode;
   const char* const* items = mainItems;
   uint8_t count = sizeof(mainItems) / sizeof(mainItems[0]);
   const char* title = "HAUPTMENUE";
   switch (page) {
     case 1: items=volumeItems; count=sizeof(volumeItems)/sizeof(volumeItems[0]); title="AUDIO"; break;
     case 2: items=displayItems; count=sizeof(displayItems)/sizeof(displayItems[0]); title="ANZEIGE"; break;
-    case 13: items=layoutItems; count=sizeof(layoutItems)/sizeof(layoutItems[0]); title="LAYOUT"; break;
+    case 13: items=layoutGroupItems; count=sizeof(layoutGroupItems)/sizeof(layoutGroupItems[0]); title="LAYOUT GRUPPE"; break;
+    case 14: items=fmLayoutItems; count=sizeof(fmLayoutItems)/sizeof(fmLayoutItems[0]); title="LAYOUT UKW / FM"; break;
+    case 15: items=amLayoutItems; count=sizeof(amLayoutItems)/sizeof(amLayoutItems[0]); title="LAYOUT AM / SSB"; break;
     case 3: items=radioItems; count=sizeof(radioItems)/sizeof(radioItems[0]); title="RADIO"; break;
     case 4: items=wifiItems; count=sizeof(wifiItems)/sizeof(wifiItems[0]); title="WLAN"; break;
     case 5: items=systemItems; count=sizeof(systemItems)/sizeof(systemItems[0]); title="SYSTEM"; break;
@@ -330,8 +333,9 @@ bool DisplayDriver::begin(uint8_t initialBrightness) {
   Serial.printf("[DISPLAY] ready, panel ID=0x%06lX, size=%ldx%ld\n",
     static_cast<unsigned long>(device_.getDisplayId()),
     static_cast<long>(device_.width()),static_cast<long>(device_.height()));
-  layoutMode_ = 0;
-  Serial.println("[DISPLAY] active layout: Auto (FM/HJB)");
+  fmLayout_ = 0;
+  amLayout_ = 0;
+  Serial.println("[DISPLAY] active layouts: DAB Style (FM), AM Layout (AM/SSB)");
   return true;
 }
 
@@ -351,10 +355,16 @@ void DisplayDriver::setTheme(uint8_t index) {
   Serial.printf("[DISPLAY] theme=%s\n", ThemeManager::at(themeIndex_).name);
 }
 
-void DisplayDriver::setLayoutMode(uint8_t mode) {
-  layoutMode_ = mode <= 1 ? mode : 0;
+void DisplayDriver::setFmLayout(uint8_t mode) {
+  fmLayout_ = mode <= 1 ? mode : 0;
   lastGeneration_ = UINT32_MAX;
-  Serial.printf("[DISPLAY] active layout: %s\\n", layoutMode_ == 1 ? "HJB (all bands)" : "Auto (FM/HJB)");
+  Serial.printf("[DISPLAY] FM layout: %s\\n", fmLayout_ == 1 ? "HJB" : "DAB Style");
+}
+
+void DisplayDriver::setAmLayout(uint8_t mode) {
+  amLayout_ = mode <= 1 ? mode : 0;
+  lastGeneration_ = UINT32_MAX;
+  Serial.printf("[DISPLAY] AM/USB/LSB layout: %s\\n", amLayout_ == 1 ? "HJB" : "AM Layout");
 }
 
 void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConnected,
@@ -364,7 +374,7 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
   if(!ready_)return;
   const uint32_t now=millis();
   const bool menuStateChanged = menuOpen != lastMenuOpen_ || menuPage != lastMenuPage_ ||
-      menuSelection != lastMenuSelection_ || volume != lastMenuVolume_ || layoutMode_ != lastMenuLayout_ || brightness_ != lastMenuBrightness_ || themeIndex_ != lastMenuTheme_;
+      menuSelection != lastMenuSelection_ || volume != lastMenuVolume_ || (fmLayout_ + (amLayout_ << 1)) != lastMenuLayout_ || brightness_ != lastMenuBrightness_ || themeIndex_ != lastMenuTheme_;
   // Redraw the file manager promptly while the encoder is moving; this also
   // keeps the selection frame visually attached to the active row.
   const uint32_t redrawInterval = menuOpen ? ((menuPage==6) ? 20 : 500) : 40;
@@ -375,18 +385,18 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
   lastMenuPage_=menuPage;
   lastMenuSelection_=menuSelection;
   lastMenuVolume_=volume;
-  lastMenuLayout_=layoutMode_;
+  lastMenuLayout_=static_cast<uint8_t>(fmLayout_ + (amLayout_ << 1));
   lastMenuBrightness_=brightness_;
   lastMenuTheme_=themeIndex_;
   if (menuOpen) {
     if(menuPage==6){if(useSprite_){sprite_.fillSprite(BLACK);drawFileMenu(sprite_,filePath,fileEntries,fileCount,fileSelection,fileMode,fileActionSelection,fileSelectedName,fileMessage);sprite_.pushSprite(0,0);}else{device_.fillScreen(BLACK);drawFileMenu(device_,filePath,fileEntries,fileCount,fileSelection,fileMode,fileActionSelection,fileSelectedName,fileMessage);}return;}
     if (useSprite_) {
       sprite_.fillSprite(BLACK);
-      drawMenu(sprite_, menuPage, menuSelection, volume, brightness_, layoutMode_, s.modulation, themeIndex_);
+      drawMenu(sprite_, menuPage, menuSelection, volume, brightness_, s.modulation == RadioModulation::FM ? fmLayout_ : amLayout_, s.modulation, themeIndex_);
       sprite_.pushSprite(0,0);
     } else {
       device_.fillScreen(BLACK);
-      drawMenu(device_, menuPage, menuSelection, volume, brightness_, layoutMode_, s.modulation, themeIndex_);
+      drawMenu(device_, menuPage, menuSelection, volume, brightness_, s.modulation == RadioModulation::FM ? fmLayout_ : amLayout_, s.modulation, themeIndex_);
     }
     return;
   }
@@ -430,7 +440,7 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
       static_cast<unsigned>(s.piCode), static_cast<unsigned long>(s.frequencyKHz));
   }
   // HJB intentionally has no sender-logo area and must not trigger logo lookups.
-  const bool useFmStandard = layoutMode_ == 0 && s.modulation == RadioModulation::FM;
+  const bool useFmStandard = fmLayout_ == 0 && s.modulation == RadioModulation::FM;
   const bool logoLocked = useFmStandard && logoClient && logoKey[0] &&
     logoClient->lockLogo(logoKey, logoData, logoLength, logoIsJpg);
   const bool logoSearching = useFmStandard && !logoLocked && logoClient && logoClient->isLookupPending(logoKey);
@@ -585,17 +595,24 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   canvas.clearClipRect();
 }
 void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady,bool wifiConnected,const char* lastInputEvent,uint32_t inputEventCount,const uint8_t* logoData,size_t logoLength,bool logoIsJpg,bool logoSearching,int16_t radioTextOffset,bool scrollRadioText,bool frequencyBlue) {
-  // Automatic mode: keep the established FM screen with station logos,
-  // but switch every non-FM mode to the universal, logo-free HJB layout.
-  // Explicit HJB mode uses HJB on FM as well, still without sender logos.
-  if (layoutMode_ == 1 || s.modulation != RadioModulation::FM) {
+  // FM and AM/SSB keep independent layout selections. The established
+  // FM logo/RDS screen remains untouched as the DAB Style option.
+  if (s.modulation == RadioModulation::FM) {
+    if (fmLayout_ == 1) {
+      if (useSprite_) { sprite_.fillSprite(BLACK); drawHJBLayout(sprite_, s, radioReady, wifiConnected); sprite_.pushSprite(0, 0); }
+      else { device_.fillScreen(BLACK); drawHJBLayout(device_, s, radioReady, wifiConnected); }
+      return;
+    }
+  } else {
     if (useSprite_) {
       sprite_.fillSprite(BLACK);
-      drawHJBLayout(sprite_, s, radioReady, wifiConnected);
+      if (amLayout_ == 0) drawAmBandLayout(sprite_, s, radioReady, wifiConnected);
+      else drawHJBLayout(sprite_, s, radioReady, wifiConnected);
       sprite_.pushSprite(0, 0);
     } else {
       device_.fillScreen(BLACK);
-      drawHJBLayout(device_, s, radioReady, wifiConnected);
+      if (amLayout_ == 0) drawAmBandLayout(device_, s, radioReady, wifiConnected);
+      else drawHJBLayout(device_, s, radioReady, wifiConnected);
     }
     return;
   }
