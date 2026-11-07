@@ -251,7 +251,7 @@ public:
   uint32_t detectedPanelId() const { return device_.getDisplayId(); }
 private:
   Device device_;
-  uint8_t fmLayout_ = 0; // 0 = DAB Style, 1 = HJB, 2 = TEF6686 - FM Version
+  uint8_t fmLayout_ = 0; // 0 = DAB Style, 1 = HJB, 2 = TEF6686 -FM Version
   uint8_t amLayout_ = 0; // 0 = AM layout, 1 = HJB
   uint8_t brightness_ = 180;
   uint8_t themeIndex_ = 0;
