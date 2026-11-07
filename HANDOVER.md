@@ -1420,3 +1420,50 @@ Der Nutzer hat ausdrücklich zugestimmt, den **FM DX Optimizer** als zusätzlich
 
 ### Nächster Schritt
 Zuerst die vorhandene Menü-Engine, TunerDriver-/RadioCore-Schnittstellen und die konkrete SI4735-2.1.8-API für FM-Bandbreite, Soft Mute, Seek und AGC gezielt prüfen. Danach die kleinste sichere DX-Auto/Manual/Reset-to-Auto-Version modular entwerfen und dem Nutzer vor dem Compile-only-Test zeigen.
+
+
+## 2026-11-07 – Build #114 erfolgreich: Display-Helligkeit im Menü
+
+- **Build:** [GitHub Actions #114](https://github.com/13HN2709/ATS_Mini_-OS/actions/runs/42348325947)
+- **Branch:** `dev/first-build-preparation`
+- **Workflow:** `ATS Mini OS - First Compile (manual only)`
+- **Commit / HEAD:** `ad24099b5a4221bb82164e4c1bbe6facc8300a7e` – `Label brightness adjustment in display menu`
+- **Ergebnis:** `completed / success`; beide Compile-only-Jobs erfolgreich:
+  - `Compile-only / esp32s3-qspi`
+  - `Compile-only / esp32s3-ospi`
+- Die Schritte zum Kompilieren des ATS Mini OS, zur read-only Prüfung der App-Image-Grenzen und zur Erstellung/Upload der Firmware-, Source-, Compile-Log- und Build-Notes-Artefakte waren erfolgreich.
+- **Wichtig:** Es war ein Compile-only-Build. Das Gerät wurde nicht geflasht und die neue Helligkeitssteuerung ist noch nicht am ATS Mini V4 hardwareseitig getestet.
+
+### In Build #114 kompilierte Änderungen
+
+- `DisplayDriver.h`:
+  - Helligkeitswert mit Standardwert 180 ergänzt.
+  - Getter `brightness()` und Setter `setBrightness(uint8_t)` ergänzt.
+  - Änderungsmarker für die Menü-Neuzeichnung ergänzt.
+- `DisplayDriver.cpp`:
+  - Menüpunkt von „Helligkeit (spaeter)“ auf „Display-Helligkeit“ geändert.
+  - Helligkeitswert und Balkenanzeige im Display-Untermenü ergänzt.
+  - Helligkeit wird über LovyanGFX und die ATS-Mini-V4-Backlight-Ansteuerung (GPIO 38) gesetzt.
+  - Untergrenze 10; der Wert wird im Menü in 5er-Schritten verändert.
+  - Fußzeile zeigt „Drehen: Helligkeit“.
+- `ats-mini-os.ino`:
+  - Encoder-Drehung im Display-Menü steuert die Helligkeit; Menüauswahl und Anzeige wurden dafür angepasst.
+- Zugehörige Commits dieser Änderung:
+  - `6bf5d2d433cd881c085449632de0ba427d8b4122`
+  - `9ed4a9772f76f1f3f771c56f1cbd01044b27fa55`
+  - `2f81d8e4be121ac4dcb0df92e4fafac00f269dd5`
+  - `ad24099b5a4221bb82164e4c1bbe6facc8300a7e`
+
+### Offene Punkte / nächster Schritt
+
+1. Helligkeit am Gerät prüfen, sobald ein späterer, ausdrücklich freigegebener Gerätetest ansteht; aktuell nicht als hardwaregetestet markieren.
+2. Helligkeitswert anschließend über den vorhandenen Preferences/NVS-Konfigurationsweg persistent speichern, damit er Neustarts überlebt. Vorher vorhandene Preferences-Nutzung und Schlüssel prüfen; keine Schlüssel überschreiben.
+3. Danach erneut nur Compile-only testen. Der Nutzer startet den Workflow selbst.
+
+### Verbindliche Grenzen bleiben bestehen
+
+- FM-Layout, FM-Logo, Frequenzanzeige und RDS-Ticker nicht verändern.
+- Keine Partitionsgrößen/-Offsets, Bootloader oder Slot-Konfiguration ändern.
+- Keine GitHub Actions durch den Assistenten starten oder erneut ausführen.
+- Nicht flashen und keine Flash-Vorbereitung auslösen, solange der Nutzer dies nicht ausdrücklich freigibt.
+- OTA bleibt zurückgestellt, bis Bootloader-/Dual-Boot-Kompatibilität nachgewiesen ist.
