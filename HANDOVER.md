@@ -1537,3 +1537,19 @@ Zuerst die vorhandene Menü-Engine, TunerDriver-/RadioCore-Schnittstellen und di
 - **Nächster Code-Schritt:** OS-eigene Theme-Palette und persistente Theme-Einstellung modular ergänzen; danach Theme-Auswahl in die Anzeige-Menüs integrieren, ohne Layoutauswahl oder FM-Hauptlayout zu verändern.
 - Kein Firmware-Code in diesem Schritt geändert; kein Build gestartet; keine GitHub Action ausgelöst; nichts geflasht. Build #116 bleibt letzter erfolgreicher Compile-Stand (QSPI + OSPI).
 - Grenzen unverändert: keine Partitions-/Offset-/Bootloader-/Slotänderungen, FM-Logo/Frequenz/RDS unverändert, Nutzer startet manuelle Compile-only Builds.
+
+
+## 2026-11-07 – Theme-System, erster Implementierungsschritt
+
+- Neue modulare Dateien:
+  - `firmware/ats-mini-os/src/display/ThemeManager.h`
+  - `firmware/ats-mini-os/src/display/ThemeManager.cpp`
+- Drei RGB565-Farbpaletten integriert: **Classic**, **TEF Blue** und **Amber**.
+- Anzeige-Menü erweitert: `Anzeige → Farbschema`; ausgewähltes Theme wird mit `*` markiert und beim Drehen direkt als Vorschau angewendet.
+- Theme-Farbwerte sind an die FM-Darstellung angebunden (Akzent-/Sekundärfarbe, Frequenz, Einheit, RDS-Ticker, Warnfarbe, Trenner und gedämpfte Statusfarbe). Die Geometrie/Positionen des FM-Layouts, Stationslogo, Frequenzformatierung und RDS-Lauftextlogik wurden nicht verändert.
+- Themes sind ausdrücklich **keine Layouts**. Die bisherige falsche/unerreichbare Layout-Umschaltaktion in der Anzeige-Unterseite wurde durch den echten Farbschema-Einstieg ersetzt; Layout-Auswahl bleibt separat und wird später implementiert.
+- Persistenz ergänzt über SettingsStore, vorhandene `settings`-NVS-Partition und OS-Namespace `atsmini_os`, neuer Key `disp_theme`. Gespeichert wird erst beim Verlassen des Anzeige-Menüs oder beim Schließen des Menüs per Langdruck – nicht bei jeder Encoderbewegung.
+- Ungültige Theme-Indizes werden auf Classic zurückgesetzt. Bestehende Helligkeits- und Frequenz-Keys bleiben unverändert.
+- **Noch nicht kompiliert oder auf Hardware getestet.** Keine GitHub Action ausgelöst, kein Build gestartet, nichts geflasht.
+- Nächster Schritt nach erfolgreichem QSPI/OSPI-Compile: Theme-Vorschau und Farbabstimmung auf dem ATS Mini V4 prüfen; danach weitere Appearance-Einstellungen modular ergänzen.
+- Letzter bestätigter Build bleibt #116 (QSPI + OSPI). Die Theme-Änderungen benötigen einen neuen manuellen Compile-only-Lauf durch den Nutzer.
