@@ -512,16 +512,24 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   // ATS Mini DEV TEF layout 7-segment Font7, scaled to fit the FM panel.
   char frequency[24];
   const bool isFm = s.modulation == RadioModulation::FM;
+  const bool isSsb = s.modulation == RadioModulation::LSB ||
+                     s.modulation == RadioModulation::USB;
   if (isFm) {
     snprintf(frequency,sizeof(frequency),"%lu.%02lu",
       static_cast<unsigned long>(s.frequencyKHz/1000),
       static_cast<unsigned long>((s.frequencyKHz%1000)/10));
+  } else if (isSsb) {
+    // Show the SSB carrier frequency in kHz with three decimal places.
+    // The BFO remains a separate audio offset; this is display formatting,
+    // not a claim of 1 Hz RF synthesizer resolution.
+    snprintf(frequency,sizeof(frequency),"%lu.000",
+      static_cast<unsigned long>(s.frequencyKHz));
   } else {
     snprintf(frequency,sizeof(frequency),"%lu",static_cast<unsigned long>(s.frequencyKHz));
   }
   canvas.setTextColor(frequencyBlue?0x249F:FREQ_COLOR,BLACK);
   canvas.setFont(&lgfx::fonts::Font7);
-  canvas.setTextSize(isFm ? 0.78f : 0.68f);
+  canvas.setTextSize(isFm ? 0.78f : (isSsb ? 0.56f : 0.68f));
   canvas.drawString(frequency,frequencyX,55);
   canvas.setTextSize(1.0f);
 
