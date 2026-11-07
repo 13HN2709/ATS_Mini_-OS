@@ -26,6 +26,10 @@ public:
   bool saveSoftMuteAttenuationDb(uint8_t attenuationDb);
   uint8_t avcGain(uint8_t fallback = 90);
   bool saveAvcGain(uint8_t gain);
+  uint8_t ssbBandwidthChoice(uint8_t fallback = 4);
+  bool saveSsbBandwidthChoice(uint8_t choice);
+  int16_t bfoOffsetHz(int16_t fallback = 0);
+  bool saveBfoOffsetHz(int16_t offsetHz);
   bool isReady() const { return ready_; }
 
 private:
@@ -37,6 +41,8 @@ private:
   static constexpr char kAgcGainIndexKey[] = "rx_agc_idx";
   static constexpr char kSoftMuteKey[] = "rx_softmute";
   static constexpr char kAvcGainKey[] = "rx_avc";
+  static constexpr char kSsbBandwidthKey[] = "ssb_bw";
+  static constexpr char kBfoOffsetKey[] = "ssb_bfo";
 
   Preferences preferences_;
   bool ready_ = false;
