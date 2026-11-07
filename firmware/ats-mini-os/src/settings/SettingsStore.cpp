@@ -34,3 +34,15 @@ bool SettingsStore::saveLastFmFrequencyKHz(uint32_t frequencyKHz) {
   }
   return preferences_.putUInt(kFrequencyKey, frequencyKHz) == sizeof(uint32_t);
 }
+
+uint8_t SettingsStore::displayBrightness(uint8_t fallback) {
+  if (!ready_) return fallback;
+  const uint8_t saved = preferences_.getUChar(kDisplayBrightnessKey, fallback);
+  // Keep the backlight above the hardware's unreliable near-zero range.
+  return saved < 10 ? fallback : saved;
+}
+
+bool SettingsStore::saveDisplayBrightness(uint8_t brightness) {
+  if (!ready_ || brightness < 10) return false;
+  return preferences_.putUChar(kDisplayBrightnessKey, brightness) == sizeof(uint8_t);
+}
