@@ -241,8 +241,8 @@ void loop() {
           const uint8_t layout = static_cast<uint8_t>(menuSelection - 1);
           display.setAmLayout(layout);
           const bool saved = settingsStore.saveDisplayAmLayout(layout);
-          Serial.printf("[SETTINGS] AM/USB/LSB layout=%s %s\\n",
-            layout == 1 ? "HJB" : "AM Layout", saved ? "saved" : "save failed");
+          Serial.printf("[SETTINGS] LW/MW/KW layout=%s %s\\n",
+            layout == 1 ? "HJB" : "Standard LW/MW/KW", saved ? "saved" : "save failed");
           closeMenuToRadio("LW/MW/KW layout selected");
         } else if (menuPage == 2 && menuSelection == 3) {
           menuPage = 10;
@@ -347,10 +347,7 @@ void loop() {
             closeMenuToRadio("bandwidth selected");
           }
         } else if (menuPage == 2 && menuSelection == 0) {
-          saveBrightnessIfPending();
-          saveThemeIfPending();
-          menuPage = 0;
-          menuSelection = 0;
+          closeMenuToRadio("display settings finished");
         } else if (menuSelection == 0) {
           menuPage = 0;
           menuSelection = 0;
