@@ -191,8 +191,9 @@ void loop() {
           menuPage = 15;
           menuSelection = static_cast<uint8_t>(display.amLayout() + 1);
         } else if ((menuPage == 14 || menuPage == 15) && menuSelection == 0) {
+          const uint8_t returnSelection = menuPage == 14 ? 1 : 2;
           menuPage = 13;
-          menuSelection = menuPage == 14 ? 1 : 2;
+          menuSelection = returnSelection;
         } else if (menuPage == 14 && menuSelection > 0) {
           const uint8_t layout = static_cast<uint8_t>(menuSelection - 1);
           display.setFmLayout(layout);
