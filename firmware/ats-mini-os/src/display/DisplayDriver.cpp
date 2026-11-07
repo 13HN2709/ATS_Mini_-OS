@@ -164,7 +164,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
   static const char* const mainItems[] = {
     "Zurueck", "Lautstaerke", "Band waehlen", "Bandbreite", "Schrittweite",
     "Empfang (AGC / Soft Mute / AVC)", "SSB / BFO", "Display-Helligkeit",
-    "Layout", "Farbschema", "System / UTC"
+    "Layout", "Farbschema", "System / UTC", "Dateimanager"
   };
   static const char* const volumeItems[] = {
     "Zurueck", "Lautstaerke", "Stumm (spaeter)"
