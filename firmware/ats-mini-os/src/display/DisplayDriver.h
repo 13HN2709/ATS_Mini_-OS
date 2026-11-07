@@ -246,7 +246,6 @@ public:
   uint32_t detectedPanelId() const { return device_.getDisplayId(); }
 private:
   Device device_;
-  Preferences preferences_;
   uint8_t layoutMode_ = 0; // 0 = FM main layout, 1 = diagnostic/test layout
   uint8_t brightness_ = 180;
   lgfx::LGFX_Sprite sprite_{&device_};
