@@ -10,9 +10,9 @@ constexpr ThemePalette kThemes[] = {
     0x07E0, // accent green
     0x07FF, // secondary cyan
     0xFFE0, // warning
-    0xFFFF, // frequency
+    0x07E0, // frequency
     0x07E0, // frequency unit
-    0x07E0, // RDS text
+    0xFFFF, // RDS text
     0x0320, // divider
     0x0000, // box background
     0x07E0  // box border
@@ -25,9 +25,9 @@ constexpr ThemePalette kThemes[] = {
     0x07E0,
     0x1D7F,
     0xFFE0,
+    0x07E0,
+    0x07E0,
     0xFFFF,
-    0x07E0,
-    0x07E0,
     0x1D7F,
     0x000B,
     0x1D7F
@@ -40,9 +40,9 @@ constexpr ThemePalette kThemes[] = {
     0xFD20,
     0xFBE0,
     0xFFE0,
-    0xFFFF,
     0xFD20,
-    0xFBE0,
+    0xFD20,
+    0xFFFF,
     0x8200,
     0x0000,
     0xFD20
