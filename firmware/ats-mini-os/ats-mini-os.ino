@@ -13,6 +13,7 @@
 #include "src/storage/StorageDiscovery.h"
 #include "src/storage/FileManager.h"
 #include "src/settings/SettingsStore.h"
+#include "src/menus/MenuSSB.h"
 
 namespace {
 constexpr uint32_t SERIAL_BAUD = 115200;
@@ -93,10 +94,14 @@ void setup() {
     const uint8_t agcIndex = settingsStore.agcGainIndex(20);
     const uint8_t softMuteDb = settingsStore.softMuteAttenuationDb(8);
     const uint8_t avcGain = settingsStore.avcGain(90);
+    const uint8_t ssbBandwidth = settingsStore.ssbBandwidthChoice(4);
+    const int16_t bfoOffset = settingsStore.bfoOffsetHz(0);
     if (agcAuto) radio.setAgcAutomatic(true);
     else radio.setAgcManualGain(agcIndex);
     radio.setSoftMuteAttenuation(softMuteDb);
     radio.setAvcGain(avcGain); // Remembered in FM, applied automatically in AM/SSB.
+    radio.setSsbBandwidthChoice(ssbBandwidth);
+    radio.setBfoOffsetHz(bfoOffset);
     Serial.printf("[SETTINGS] RX restored: AGC=%s/%u SoftMute=%u dB AVC=%u\n",
       agcAuto ? "AUTO" : "MANUAL", static_cast<unsigned>(agcIndex),
       static_cast<unsigned>(softMuteDb), static_cast<unsigned>(avcGain));
@@ -138,7 +143,7 @@ void loop() {
             if (radio.setVolume(nextVolume))
               Serial.printf("[MENU] volume=%u/63\n", static_cast<unsigned>(radio.volume()));
           } else {
-            const int16_t itemCount = menuPage == 0 ? 6 : (menuPage==2 ? 3 : (menuPage==10 ? 4 : (menuPage==11 ? (radio.snapshot().modulation==RadioModulation::FM ? 10 : 14) : (menuPage==5 ? 5 : (menuPage==3 ? 5 : (menuPage==7 ? radio.bandwidthChoiceCount()+1 : (menuPage==8 ? radio.bandCount()+1 : (menuPage==9 ? radio.stepChoiceCount()+1 : 3))))))));
+            const int16_t itemCount = menuPage == 0 ? 6 : (menuPage==2 ? 3 : (menuPage==10 ? 4 : (menuPage==11 ? (radio.snapshot().modulation==RadioModulation::FM ? 10 : 14) : (menuPage==5 ? 5 : (menuPage==3 ? 6 : (menuPage==12 ? MenuSSB::kItemCount : (menuPage==7 ? radio.bandwidthChoiceCount()+1 : (menuPage==8 ? radio.bandCount()+1 : (menuPage==9 ? radio.stepChoiceCount()+1 : 3)))))))));
             int16_t next = (static_cast<int16_t>(menuSelection) + inputEvent.delta) % itemCount;
             if (next < 0) next += itemCount;
             menuSelection = static_cast<uint8_t>(next);
@@ -177,6 +182,17 @@ void loop() {
         } else if (menuPage == 10 && menuSelection > 0) {
           display.setTheme(static_cast<uint8_t>(menuSelection - 1));
           themeSavePending = true;
+        } else if (menuPage == 3 && menuSelection == 5) {
+          menuPage = MenuSSB::kPage;
+          menuSelection = 0;
+        } else if (menuPage == MenuSSB::kPage && menuSelection == 0) {
+          menuPage = 3;
+          menuSelection = 5;
+        } else if (menuPage == MenuSSB::kPage && menuSelection > 0) {
+          if (MenuSSB::apply(radio, menuSelection)) {
+            const bool saved = settingsStore.saveBfoOffsetHz(radio.bfoOffsetHz());
+            Serial.printf("[SETTINGS] BFO=%d Hz %s\n", static_cast<int>(radio.bfoOffsetHz()), saved ? "saved" : "save failed");
+          } else Serial.println("[MENU] BFO change rejected (limit +/-16000 Hz)");
         } else if (menuPage == 3 && menuSelection == 4) {
           menuPage = 11;
           menuSelection = 0;
@@ -245,6 +261,10 @@ void loop() {
           menuSelection = 0;
         } else if (menuPage == 7 && menuSelection > 0) {
           if (radio.setBandwidthChoice(static_cast<uint8_t>(menuSelection - 1))) {
+            if (radio.snapshot().modulation == RadioModulation::LSB || radio.snapshot().modulation == RadioModulation::USB) {
+              const bool saved = settingsStore.saveSsbBandwidthChoice(static_cast<uint8_t>(menuSelection - 1));
+              Serial.printf("[SETTINGS] SSB bandwidth=%u %s\n", static_cast<unsigned>(menuSelection - 1), saved ? "saved" : "save failed");
+            }
             Serial.printf("[MENU] bandwidth choice=%u\n", static_cast<unsigned>(menuSelection - 1));
             menuPage = 3;
             menuSelection = 2;
