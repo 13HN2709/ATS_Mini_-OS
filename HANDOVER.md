@@ -1667,3 +1667,14 @@ Zuerst die vorhandene Menü-Engine, TunerDriver-/RadioCore-Schnittstellen und di
 
 - Nachtrag: Die Akku-Prozentanzeige bleibt im HJB-Kopf erhalten; die HJB-Ansicht reserviert weiterhin keinerlei Senderlogo-Fläche oder Logo-Lookups.
 - Zusatz-Commit: `d6e3635625fd0cc24fe60b80b43fe1ed14ec332d`.
+
+
+## 2026-11-07 – Automatische HJB-Umschaltung für Nicht-FM
+
+- Layoutmodus 0 heißt jetzt **Auto (FM/HJB)**: Bei FM bleibt das bestehende FM-Standardlayout inklusive Senderlogos und RDS-Ticker aktiv; bei AM, LW, MW, KW sowie USB/LSB wird automatisch das universelle, logo-freie HJB-Layout verwendet.
+- Layoutmodus 1 (**HJB - Alle Baender**) verwendet HJB auch bei FM, weiterhin ohne Senderlogos.
+- Logo-Lookups werden ausschließlich im FM-Standardmodus ausgeführt. Beim Wechsel in Nicht-FM-Modi werden keine Senderlogos angefordert.
+- Die bestehende FM-Standard-Zeichnung wurde nicht verändert. NVS-Werte, Partitionen, Bootmanager und Speicherlayout bleiben unverändert.
+- Geändert: `firmware/ats-mini-os/src/display/DisplayDriver.cpp`.
+- Commit: `37cd3f4bc4d1bdb9f15c30df3c524a5fe8b6a85b`.
+- Status: Änderung auf GitHub verifiziert; noch nicht kompiliert und nicht auf Hardware getestet. Der Nutzer startet QSPI-/OSPI-Compile-only-Workflows manuell.
