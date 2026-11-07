@@ -215,10 +215,6 @@ void loop() {
           }
         } else if ((menuPage==5 && menuSelection==3)) {fmOpen();
         } else if (menuPage == 0) {
-          if (menuSelection == 0) {
-            menuOpen = false;
-            Serial.println("[MENU] closed via Back");
-          } else {
             // ATS Mini Dev main-menu order and labels are preserved exactly.
             // Unsupported entries are marked with * in the renderer and stay inert.
             static const uint8_t targetPages[20] = {
