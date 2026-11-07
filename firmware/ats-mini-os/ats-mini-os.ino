@@ -84,10 +84,12 @@ void setup() {
   Serial.printf("[SETTINGS] dedicated NVS %s\n", settingsReady ? "ready" : "unavailable; using defaults");
   const uint8_t savedBrightness = settingsStore.displayBrightness(180);
   const uint8_t savedTheme = settingsStore.displayTheme(0);
-  const uint8_t savedLayout = settingsStore.displayLayout(0);
+  const uint8_t savedFmLayout = settingsStore.displayFmLayout(0);
+  const uint8_t savedAmLayout = settingsStore.displayAmLayout(0);
   if (display.begin(savedBrightness)) {
     display.setTheme(savedTheme);
-    display.setLayoutMode(savedLayout);
+    display.setFmLayout(savedFmLayout);
+    display.setAmLayout(savedAmLayout);
     Serial.printf("[DISPLAY] first UI initialized; brightness=%u/255\n",
       static_cast<unsigned>(display.brightness()));
   }
@@ -145,7 +147,7 @@ void loop() {
             if (radio.setVolume(nextVolume))
               Serial.printf("[MENU] volume=%u/63\n", static_cast<unsigned>(radio.volume()));
           } else {
-            const int16_t itemCount = menuPage == 0 ? 12 : (menuPage==2 ? 4 : (menuPage==13 ? 3 : (menuPage==10 ? 4 : (menuPage==11 ? (radio.snapshot().modulation==RadioModulation::FM ? 10 : 14) : (menuPage==5 ? 5 : (menuPage==3 ? 6 : (menuPage==12 ? MenuSSB::kItemCount : (menuPage==7 ? radio.bandwidthChoiceCount()+1 : (menuPage==8 ? radio.bandCount()+1 : (menuPage==9 ? radio.stepChoiceCount()+1 : 3))))))))));
+            const int16_t itemCount = menuPage == 0 ? 12 : (menuPage==2 ? 4 : (menuPage==13 ? 3 : ((menuPage==14 || menuPage==15) ? 3 : (menuPage==10 ? 4 : (menuPage==11 ? (radio.snapshot().modulation==RadioModulation::FM ? 10 : 14) : (menuPage==5 ? 5 : (menuPage==3 ? 6 : (menuPage==12 ? MenuSSB::kItemCount : (menuPage==7 ? radio.bandwidthChoiceCount()+1 : (menuPage==8 ? radio.bandCount()+1 : (menuPage==9 ? radio.stepChoiceCount()+1 : 3)))))))))));
             int16_t next = (static_cast<int16_t>(menuSelection) + inputEvent.delta) % itemCount;
             if (next < 0) next += itemCount;
             menuSelection = static_cast<uint8_t>(next);
@@ -174,23 +176,37 @@ void loop() {
             static const uint8_t targetPages[] = {0, 1, 8, 7, 9, 11, 12, 0, 13, 10, 5, 0};
             menuPage = targetPages[menuSelection];
             if (menuPage == 8) menuSelection = static_cast<uint8_t>(radio.currentBandIndex() + 1);
-            else if (menuPage == 13) menuSelection = static_cast<uint8_t>(display.layoutMode() + 1);
+            else if (menuPage == 13) menuSelection = 0;
             else if (menuPage == 10) menuSelection = static_cast<uint8_t>(display.themeIndex() + 1);
             else menuSelection = 0;
             Serial.printf("[MENU] opened selection page %u\n", static_cast<unsigned>(menuPage));
           }
-        } else if (menuPage == 2 && menuSelection == 2) {
-          menuPage = 13;
-          menuSelection = static_cast<uint8_t>(display.layoutMode() + 1);
         } else if (menuPage == 13 && menuSelection == 0) {
           menuPage = 0;
           menuSelection = 8;
-        } else if (menuPage == 13 && menuSelection > 0) {
+        } else if (menuPage == 13 && menuSelection == 1) {
+          menuPage = 14;
+          menuSelection = static_cast<uint8_t>(display.fmLayout() + 1);
+        } else if (menuPage == 13 && menuSelection == 2) {
+          menuPage = 15;
+          menuSelection = static_cast<uint8_t>(display.amLayout() + 1);
+        } else if ((menuPage == 14 || menuPage == 15) && menuSelection == 0) {
+          menuPage = 13;
+          menuSelection = menuPage == 14 ? 1 : 2;
+        } else if (menuPage == 14 && menuSelection > 0) {
           const uint8_t layout = static_cast<uint8_t>(menuSelection - 1);
-          display.setLayoutMode(layout);
-          const bool saved = settingsStore.saveDisplayLayout(layout);
-          Serial.printf("[SETTINGS] display layout=%s %s\\n",
-            layout == 1 ? "HJB" : "FM Standard", saved ? "saved" : "save failed");
+          display.setFmLayout(layout);
+          const bool saved = settingsStore.saveDisplayFmLayout(layout);
+          Serial.printf("[SETTINGS] FM layout=%s %s\\n",
+            layout == 1 ? "HJB" : "DAB Style", saved ? "saved" : "save failed");
+          menuPage = 0;
+          menuSelection = 8;
+        } else if (menuPage == 15 && menuSelection > 0) {
+          const uint8_t layout = static_cast<uint8_t>(menuSelection - 1);
+          display.setAmLayout(layout);
+          const bool saved = settingsStore.saveDisplayAmLayout(layout);
+          Serial.printf("[SETTINGS] AM/USB/LSB layout=%s %s\\n",
+            layout == 1 ? "HJB" : "AM Layout", saved ? "saved" : "save failed");
           menuPage = 0;
           menuSelection = 8;
         } else if (menuPage == 2 && menuSelection == 3) {
