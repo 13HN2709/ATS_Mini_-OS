@@ -161,10 +161,13 @@ template <typename Canvas>
 void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, uint8_t brightness, uint8_t layoutMode, RadioModulation modulation, uint32_t frequencyKHz, uint8_t themeIndex, bool sliderAdjustmentActive) {
   const int w = canvas.width();
   const int h = canvas.height();
+  // Main-menu labels intentionally match ATS Mini Dev verbatim.
+  // A trailing * marks entries that are not implemented in ATS Mini OS yet.
   static const char* const mainItems[] = {
-    "Zurueck", "Lautstaerke", "Band waehlen", "Modulation", "Bandbreite", "Schrittweite",
-    "Empfang (AGC / Soft Mute / AVC)", "SSB / BFO", "Display-Helligkeit",
-    "Layout", "Farbschema", "System / UTC", "Dateimanager"
+    "Mode", "Bands", "Volume", "Keypad*", "DUAL RX*", "VFO A/B*",
+    "Frequency*", "BFO", "Steps", "Seek*", "Scan*", "Memory*", "Squelch*",
+    "Bandwidth", "AGC/ATTN", "AVC", "SoftMute", "Settings",
+    "VHF Spectrum*", "ALL Band Spectrum*"
   };
   static const char* const volumeItems[] = {
     "Zurueck", "Lautstaerke", "Stumm (spaeter)"
@@ -297,7 +300,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
       canvas.drawString(items[index], 42, y+13);
     }
 
-    if ((page==1 && index==1) || (page==0 && index==8)) {
+    if ((page==1 && index==1) || (page==2 && index==1)) {
       const bool volumeControl = page == 1;
       const uint8_t level = volumeControl ? volume : brightness;
       const uint8_t maximum = volumeControl ? 63 : 255;
@@ -315,14 +318,14 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
   canvas.drawFastHLine(30,h-23,w-60,WHITE);
   canvas.setTextColor(WHITE,BLACK);
   canvas.setFont(&lgfx::fonts::FreeSansBold9pt7b);
-  if ((page == 1 && selection == 1) || (page == 0 && selection == 8) || (page == 2 && selection == 1)) {
+  if ((page == 1 && selection == 1) || (page == 2 && selection == 1)) {
     if (sliderAdjustmentActive) {
-      canvas.drawString(page == 1 ? "Drehen: Lautstaerke | Klick: Fertig" : "Drehen: Helligkeit | Klick: Fertig",38,h-19);
+      canvas.drawString(page == 1 ? "ROTATE: VOLUME | CLICK: DONE" : "ROTATE: BRIGHTNESS | CLICK: DONE",38,h-19);
     } else {
-      canvas.drawString("Klick: Einstellen",38,h-19);
+      canvas.drawString("CLICK: ADJUST",38,h-19);
     }
   } else {
-    canvas.drawString("Drehen: Auswahl",38,h-19);
+    canvas.drawString("ROTATE: SELECT",38,h-19);
   }
 }
 
