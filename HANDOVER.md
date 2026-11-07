@@ -1584,3 +1584,20 @@ Zuerst die vorhandene Menü-Engine, TunerDriver-/RadioCore-Schnittstellen und di
 - **Diese Radio-Änderungen sind noch nicht kompiliert und nicht auf Hardware getestet.** Kein Workflow gestartet, nichts geflasht.
 - Nächster Schritt: Nutzer startet manuellen Compile-only-Lauf für QSPI und OSPI. Bei Fehlern zuerst beide Compiler-Logs prüfen; bei Erfolg anschließend die Empfangseinstellungen am Gerät testen.
 - Letzter bestätigter Compile-Stand: Build #117, Commit `8903df9c4d1bb8ba685f2f01c82a765a7649b376`.
+
+
+## 2026-11-07 – Radio-Empfangseinstellungen erweitert
+
+- Empfangs-Untermenü:
+  - AGC Auto
+  - AGC manuell mit Index 0 / 8 / 16 / 24
+  - Soft Mute 0 / 4 / 8 / 12 dB
+  - AVC 12 / 30 / 60 / 90 (nur AM/SSB; nicht FM)
+- AGC-Override nutzt SI4735 mit AGCDIS=1; Auto nutzt AGCDIS=0. Die vier manuellen Indizes liegen im gültigen Bereich für FM (0–26) und AM/SSB (0–36).
+- Soft-Mute-Abschwächung wird abhängig von der Modulation auf die FM-, AM- oder SSB-Property angewendet. 0 dB deaktiviert Soft Mute.
+- AVC nutzt `setAvcAmMaxGain()` und wird bei FM bewusst nicht angeboten/angenommen.
+- Einstellungen werden bei Band-/Modulationswechsel erneut auf die jeweilige SI4735-Property angewendet; Auswahl bleibt während der Laufzeit erhalten.
+- API-Signaturen wurden gegen den exakten PU2CLR-SI4735-Tag `2.1.8` geprüft.
+- Noch nicht persistent in NVS gespeichert; folgt nach erfolgreicher Funktionsprüfung.
+- **Noch nicht kompiliert und nicht auf Hardware getestet.** Kein Workflow gestartet, nichts geflasht.
+- Nächster Schritt: manueller Compile-only-Build für QSPI und OSPI; anschließend Funktionsprüfung am Gerät.
