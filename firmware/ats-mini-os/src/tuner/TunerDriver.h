@@ -92,6 +92,10 @@ public:
   bool setSoftMuteEnabled(bool enabled);
   bool setSoftMuteAttenuation(uint8_t attenuationDb);
   bool setAvcGain(uint8_t gain);
+  bool setBfoOffsetHz(int16_t offsetHz);
+  int16_t bfoOffsetHz() const { return bfoOffsetHz_; }
+  bool setSsbBandwidthChoice(uint8_t choice);
+  uint8_t ssbBandwidthChoice() const { return ssbBandwidthChoice_; }
   bool agcAutomatic() const { return agcAutomatic_; }
   uint8_t agcGainIndex() const { return agcGainIndex_; }
   uint8_t softMuteAttenuationDb() const { return softMuteAttenuationDb_; }
@@ -125,6 +129,8 @@ private:
   bool softMuteEnabled_ = true;
   uint8_t softMuteAttenuationDb_ = 8;
   uint8_t avcGain_ = 90;
+  int16_t bfoOffsetHz_ = 0;
+  uint8_t ssbBandwidthChoice_ = 4;
   uint8_t bandwidthChoice_ = 0;
   bool haveTextFlag_ = false;
   uint8_t lastTextFlag_ = 0;
