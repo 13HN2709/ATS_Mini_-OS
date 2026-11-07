@@ -18,6 +18,10 @@ public:
   bool setSoftMuteEnabled(bool enabled);
   bool setSoftMuteAttenuation(uint8_t attenuationDb);
   bool setAvcGain(uint8_t gain);
+  bool setBfoOffsetHz(int16_t offsetHz);
+  int16_t bfoOffsetHz() const { return tuner_.bfoOffsetHz(); }
+  bool setSsbBandwidthChoice(uint8_t choice);
+  uint8_t ssbBandwidthChoice() const { return tuner_.ssbBandwidthChoice(); }
   bool agcAutomatic() const { return tuner_.agcAutomatic(); }
   uint8_t agcGainIndex() const { return tuner_.agcGainIndex(); }
   uint8_t softMuteAttenuationDb() const { return tuner_.softMuteAttenuationDb(); }
