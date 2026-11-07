@@ -57,3 +57,37 @@ bool SettingsStore::saveDisplayTheme(uint8_t theme) {
   if (!ready_ || theme >= 3) return false;
   return preferences_.putUChar(kDisplayThemeKey, theme) == sizeof(uint8_t);
 }
+
+bool SettingsStore::agcAutomatic(bool fallback) {
+  return ready_ ? preferences_.getBool(kAgcAutomaticKey, fallback) : fallback;
+}
+bool SettingsStore::saveAgcAutomatic(bool automatic) {
+  return ready_ && preferences_.putBool(kAgcAutomaticKey, automatic) == sizeof(bool);
+}
+uint8_t SettingsStore::agcGainIndex(uint8_t fallback) {
+  if (!ready_) return fallback;
+  const uint8_t saved = preferences_.getUChar(kAgcGainIndexKey, fallback);
+  return (saved <= 24 && (saved % 8) == 0) ? saved : fallback;
+}
+bool SettingsStore::saveAgcGainIndex(uint8_t index) {
+  return ready_ && index <= 24 && (index % 8) == 0 &&
+         preferences_.putUChar(kAgcGainIndexKey, index) == sizeof(uint8_t);
+}
+uint8_t SettingsStore::softMuteAttenuationDb(uint8_t fallback) {
+  if (!ready_) return fallback;
+  const uint8_t saved = preferences_.getUChar(kSoftMuteKey, fallback);
+  return (saved <= 12 && (saved % 4) == 0) ? saved : fallback;
+}
+bool SettingsStore::saveSoftMuteAttenuationDb(uint8_t attenuationDb) {
+  return ready_ && attenuationDb <= 12 && (attenuationDb % 4) == 0 &&
+         preferences_.putUChar(kSoftMuteKey, attenuationDb) == sizeof(uint8_t);
+}
+uint8_t SettingsStore::avcGain(uint8_t fallback) {
+  if (!ready_) return fallback;
+  const uint8_t saved = preferences_.getUChar(kAvcGainKey, fallback);
+  return (saved >= 12 && saved <= 90) ? saved : fallback;
+}
+bool SettingsStore::saveAvcGain(uint8_t gain) {
+  return ready_ && gain >= 12 && gain <= 90 &&
+         preferences_.putUChar(kAvcGainKey, gain) == sizeof(uint8_t);
+}
