@@ -254,7 +254,7 @@ void loop() {
           display.setFmLayout(layout);
           const bool saved = settingsStore.saveDisplayFmLayout(layout);
           Serial.printf("[SETTINGS] FM layout=%s %s\\n",
-            layout == 1 ? "HJB" : (layout == 2 ? "TEF6686 - FM Version" : "DAB Style"), saved ? "saved" : "save failed");
+            layout == 1 ? "HJB" : (layout == 2 ? "TEF6686 -FM Version" : "DAB Style"), saved ? "saved" : "save failed");
           closeMenuToRadio("FM layout selected");
         } else if (menuPage == 15 && menuSelection > 0) {
           const uint8_t layout = static_cast<uint8_t>(menuSelection - 1);
