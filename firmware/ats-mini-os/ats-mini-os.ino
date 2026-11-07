@@ -161,7 +161,7 @@ void loop() {
           } else {
             const int16_t itemCount = menuPage == 0 ? 20 :
               menuPage == 2 ? 4 : menuPage == 13 ? 3 :
-              ((menuPage == 14) ? 4 : (menuPage == 15) ? 3 :
+              ((menuPage == 14) ? 3 : (menuPage == 15) ? 2 :
               menuPage == 10 ? 4 : menuPage == 11 ?
               (radio.snapshot().modulation == RadioModulation::FM ? 10 : 14) :
               menuPage == 5 ? 5 : menuPage == 3 ? 7 :
@@ -241,27 +241,27 @@ void loop() {
           menuSelection = 8;
         } else if (menuPage == 13 && menuSelection == 1) {
           menuPage = 14;
-          menuSelection = static_cast<uint8_t>(display.fmLayout() + 1);
+          menuSelection = display.fmLayout() == 2 ? 2 : 1;
         } else if (menuPage == 13 && menuSelection == 2) {
           menuPage = 15;
-          menuSelection = static_cast<uint8_t>(display.amLayout() + 1);
+          menuSelection = 1;
         } else if ((menuPage == 14 || menuPage == 15) && menuSelection == 0) {
           const uint8_t returnSelection = menuPage == 14 ? 1 : 2;
           menuPage = 13;
           menuSelection = returnSelection;
         } else if (menuPage == 14 && menuSelection > 0) {
-          const uint8_t layout = static_cast<uint8_t>(menuSelection - 1);
+          const uint8_t layout = menuSelection == 1 ? 0 : 2;
           display.setFmLayout(layout);
           const bool saved = settingsStore.saveDisplayFmLayout(layout);
           Serial.printf("[SETTINGS] FM layout=%s %s\\n",
-            layout == 1 ? "HJB" : (layout == 2 ? "TEF6686 -FM Version" : "DAB Style"), saved ? "saved" : "save failed");
+            layout == 2 ? "TEF6686 -FM Version" : "DAB Style", saved ? "saved" : "save failed");
           closeMenuToRadio("FM layout selected");
         } else if (menuPage == 15 && menuSelection > 0) {
-          const uint8_t layout = static_cast<uint8_t>(menuSelection - 1);
+          const uint8_t layout = 1; // Only HJB is offered for LW/MW/KW.
           display.setAmLayout(layout);
           const bool saved = settingsStore.saveDisplayAmLayout(layout);
           Serial.printf("[SETTINGS] LW/MW/KW layout=%s %s\\n",
-            layout == 1 ? "HJB" : "Standard LW/MW/KW", saved ? "saved" : "save failed");
+            "HJB", saved ? "saved" : "save failed");
           closeMenuToRadio("LW/MW/KW layout selected");
         } else if (menuPage == 2 && menuSelection == 3) {
           menuPage = 10;
