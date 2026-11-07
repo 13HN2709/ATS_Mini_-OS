@@ -127,7 +127,7 @@ void loop() {
             if (radio.setVolume(nextVolume))
               Serial.printf("[MENU] volume=%u/63\n", static_cast<unsigned>(radio.volume()));
           } else {
-            const int16_t itemCount = menuPage == 0 ? 6 : (menuPage==2 ? 3 : (menuPage==10 ? 4 : (menuPage==11 ? (radio.snapshot().modulation==RadioModulation::FM ? 5 : 8) : (menuPage==5 ? 5 : (menuPage==3 ? 5 : (menuPage==7 ? radio.bandwidthChoiceCount()+1 : (menuPage==8 ? radio.bandCount()+1 : (menuPage==9 ? radio.stepChoiceCount()+1 : 3))))))));
+            const int16_t itemCount = menuPage == 0 ? 6 : (menuPage==2 ? 3 : (menuPage==10 ? 4 : (menuPage==11 ? (radio.snapshot().modulation==RadioModulation::FM ? 10 : 14) : (menuPage==5 ? 5 : (menuPage==3 ? 5 : (menuPage==7 ? radio.bandwidthChoiceCount()+1 : (menuPage==8 ? radio.bandCount()+1 : (menuPage==9 ? radio.stepChoiceCount()+1 : 3))))))));
             int16_t next = (static_cast<int16_t>(menuSelection) + inputEvent.delta) % itemCount;
             if (next < 0) next += itemCount;
             menuSelection = static_cast<uint8_t>(next);
@@ -174,18 +174,14 @@ void loop() {
           menuSelection = 4;
         } else if (menuPage == 11 && menuSelection == 1) {
           radio.setAgcAutomatic(true);
-        } else if (menuPage == 11 && menuSelection == 2) {
-          radio.setAgcAutomatic(false);
-        } else if (menuPage == 11 && menuSelection == 3) {
-          radio.setSoftMuteEnabled(true);
-        } else if (menuPage == 11 && menuSelection == 4) {
-          radio.setSoftMuteEnabled(false);
-        } else if (menuPage == 11 && menuSelection == 5) {
-          radio.setAvcGain(90);
-        } else if (menuPage == 11 && menuSelection == 6) {
-          radio.setAvcGain(60);
-        } else if (menuPage == 11 && menuSelection == 7) {
-          radio.setAvcGain(30);
+        } else if (menuPage == 11 && menuSelection >= 2 && menuSelection <= 5) {
+          static const uint8_t agcIndexes[] = {0, 8, 16, 24};
+          radio.setAgcManualGain(agcIndexes[menuSelection - 2]);
+        } else if (menuPage == 11 && menuSelection >= 6 && menuSelection <= 9) {
+          radio.setSoftMuteAttenuation(static_cast<uint8_t>((menuSelection - 6) * 4));
+        } else if (menuPage == 11 && menuSelection >= 10 && menuSelection <= 13) {
+          static const uint8_t avcGains[] = {12, 30, 60, 90};
+          radio.setAvcGain(avcGains[menuSelection - 10]);
         } else if (menuPage == 3 && menuSelection == 1) {
           menuPage = 8;
           menuSelection = static_cast<uint8_t>(radio.currentBandIndex() + 1);
