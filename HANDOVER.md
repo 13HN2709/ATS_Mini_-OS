@@ -1467,3 +1467,31 @@ Zuerst die vorhandene Menü-Engine, TunerDriver-/RadioCore-Schnittstellen und di
 - Keine GitHub Actions durch den Assistenten starten oder erneut ausführen.
 - Nicht flashen und keine Flash-Vorbereitung auslösen, solange der Nutzer dies nicht ausdrücklich freigibt.
 - OTA bleibt zurückgestellt, bis Bootloader-/Dual-Boot-Kompatibilität nachgewiesen ist.
+
+
+## 2026-11-07 – Display-Helligkeit dauerhaft speichern (Build ausstehend)
+
+- Ausgangspunkt: Build #114 hat die Helligkeitssteuerung im Display-Menü für QSPI und OSPI erfolgreich kompiliert. Hardwaretest steht weiterhin aus.
+- Vorhandene Persistenz wurde geprüft: `SettingsStore` verwendet bereits die dedizierte NVS-Partition `settings`, Namespace `atsmini_os` und den Schlüssel `fm_freq`. Die Partition ist in `partitions.csv` bereits definiert. **Partitionsdatei, Offsets und Größen wurden nicht geändert.**
+- Die Helligkeit wird nun über dasselbe zentrale Modul gespeichert; kein zweites Preferences-Objekt im Displaytreiber:
+  - Neuer NVS-Schlüssel: `disp_bri` (UChar, 1 Byte).
+  - Standardwert: 180/255, falls noch kein Wert gespeichert ist oder die gespeicherte Einstellung ungültig (unter 10) ist.
+  - Wertebereich: 10 bis 255.
+  - Beim Start wird der gespeicherte Wert vor der Display-Initialisierung geladen und direkt auf Panel sowie GPIO38-Backlight angewendet.
+  - Während des Drehens wird zunächst nur der RAM-Wert verändert. Erst beim Verlassen des Display-Untermenüs über „Zurueck“ oder beim Schließen des Menüs per Langdruck wird einmalig in NVS geschrieben. Dadurch entstehen keine Flash-Schreibvorgänge bei jedem Encoder-Schritt.
+  - Bei nicht verfügbarem SettingsStore bleibt die Firmware mit Standard-/Sitzungshelligkeit funktionsfähig; der Speicherversuch wird im Serial-Log als fehlgeschlagen gemeldet.
+- Geänderte Dateien:
+  - `src/settings/SettingsStore.h/.cpp`: API zum Laden/Speichern der Display-Helligkeit ergänzt.
+  - `src/display/DisplayDriver.h/.cpp`: initiale Helligkeit wird als Parameter übergeben; ungenutzte direkte Preferences-Abhängigkeit aus dem Displaytreiber entfernt.
+  - `ats-mini-os.ino`: SettingsStore initialisieren, gespeicherten Wert vor Displaystart laden und geänderten Wert beim Verlassen des Menüs speichern.
+- Commits:
+  - `34225937ad54b2ce711618c60cb63af0f485192b` – SettingsStore-API
+  - `630fb0a74d21d9c69f209d45a40c4266d7175984` – NVS-Lese-/Schreiblogik
+  - `c61c9ab52e898c9304699c903c700211d79f1f96` – Display-Treiber von direkter Preferences-Abhängigkeit befreit
+  - `a9748b8e5f383555140eee0914b8e5ea6d832026` – gespeicherten Wert bei Displaystart anwenden
+  - `15fb4418107b4bce70032512309f9b64a0337883` – DisplayDriver-API-Signatur
+  - `22e49735586dae6eed65caa891ea79af1ea857bc` – Laden und initiale Integration
+  - `ff3fe92a9f94e4267ae008c961da5e2a58de8837` – Speichern beim Verlassen des Display-Menüs
+- **Status:** Änderungen auf `dev/first-build-preparation` committed, aber noch nicht kompiliert und nicht auf dem ATS Mini V4 getestet. Kein Workflow durch den Assistenten gestartet, nichts geflasht.
+- **Nächster Schritt:** Nutzer startet den manuellen Compile-only-Workflow. QSPI und OSPI müssen beide erfolgreich sein. Erst danach den Build in der Übergabeliste als erfolgreich markieren; anschließend beim ausdrücklich freigegebenen Gerätetest prüfen, ob die Helligkeit nach Neustart erhalten bleibt.
+- Projektregeln bleiben unverändert: FM-Layout/RDS nicht anfassen; keine Partition-/Offset-/Bootloaderänderung; kein Flashen; keine automatische GitHub Action.
