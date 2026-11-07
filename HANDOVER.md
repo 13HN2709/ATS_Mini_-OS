@@ -1601,3 +1601,27 @@ Zuerst die vorhandene Menü-Engine, TunerDriver-/RadioCore-Schnittstellen und di
 - Noch nicht persistent in NVS gespeichert; folgt nach erfolgreicher Funktionsprüfung.
 - **Noch nicht kompiliert und nicht auf Hardware getestet.** Kein Workflow gestartet, nichts geflasht.
 - Nächster Schritt: manueller Compile-only-Build für QSPI und OSPI; anschließend Funktionsprüfung am Gerät.
+
+
+## 2026-11-07 – AGC / Soft Mute / AVC mit NVS-Persistenz
+
+- Die Empfangseinstellungen werden jetzt über den bestehenden SettingsStore in der dedizierten NVS-Partition settings, Namespace atsmini_os, gespeichert.
+- Neue OS-eigene Keys:
+  - rx_agc_auto: AGC Auto/Manual
+  - rx_agc_idx: manueller AGC-Index 0/8/16/24
+  - rx_softmute: Soft-Mute-Abschwächung 0/4/8/12 dB
+  - rx_avc: AVC-Max-Gain 12/30/60/90
+- Beim Start werden die gespeicherten Werte validiert und nach Initialisierung des SI4735 wieder angewendet. Bei fehlenden/ungültigen Werten gelten die bisherigen Standardwerte.
+- AGC Auto/Manual, Soft Mute und AVC werden beim Auswählen im Empfangsmenü direkt gespeichert; es gibt keine Schreibvorgänge bei Encoder-Drehungen ohne Auswahl.
+- AVC kann auch während FM als AM/SSB-Vorgabe gespeichert werden; die SI4735-AVC-Property wird erst bei AM/SSB gesetzt. Beim Bandwechsel übernimmt der TunerDriver den gespeicherten Wert.
+- Geänderte Dateien: SettingsStore.h/.cpp, TunerDriver.h/.cpp, RadioCore.h, ats-mini-os.ino.
+- NVS-Partition, Partitionstabelle, Offsets, Bootmanager, FM-Hauptlayout und RDS-Darstellung unverändert.
+- Commits:
+  - e140244f065be9667a169a5c1c1cef928f1f77dc – SettingsStore API/Keys
+  - 5124a9f2354e3d0b8941ffd7d0b227b4a591c1cc – NVS read/write validation
+  - 6aa0bcdf31d99b645457a471d6b2ced4b3d8b4a5 – Tuner state accessors
+  - 4c771faac6ea539063c5f9cb8f177ef8138e5292 – AVC value retained while in FM
+  - 5fa5b50e1b4fa346313adc7066534955c942b078 – RadioCore read accessors
+  - 44aa4f8de1040b40d7eb8dc8b12206173ef08497 – startup restore and menu persistence
+- Status: Änderungen committed; noch nicht kompiliert und nicht am Gerät geprüft. Kein Workflow gestartet, nichts geflasht.
+- Nächster Schritt: Nutzer startet den manuellen Compile-only-Build für QSPI und OSPI. Bei Fehlern beide Compiler-Logs prüfen.
