@@ -1625,3 +1625,12 @@ Zuerst die vorhandene Menü-Engine, TunerDriver-/RadioCore-Schnittstellen und di
   - 44aa4f8de1040b40d7eb8dc8b12206173ef08497 – startup restore and menu persistence
 - Status: Änderungen committed; noch nicht kompiliert und nicht am Gerät geprüft. Kein Workflow gestartet, nichts geflasht.
 - Nächster Schritt: Nutzer startet den manuellen Compile-only-Build für QSPI und OSPI. Bei Fehlern beide Compiler-Logs prüfen.
+
+
+## 2026-11-07 – Modular SSB / BFO-Steuerung
+
+- Neues Modul `src/menus/MenuSSB.h/.cpp` für SSB-Menüeinträge und BFO-Aktionen. Hardwarezugriff erfolgt ausschließlich über `RadioCore` und `TunerDriver`.
+- BFO-Offset von -16000 bis +16000 Hz, Schritte -500/-100/-10/+10/+100/+500 Hz und Nullstellung. Im FM-/AM-Betrieb wird der Wert nur vorgemerkt und beim Wechsel zu USB/LSB angewendet.
+- SSB-Bandbreite wird getrennt von FM/AM gespeichert und beim nächsten Wechsel in USB/LSB wiederhergestellt.
+- BFO und SSB-Bandbreite verwenden eigene Schlüssel in der vorhandenen `settings`-NVS-Partition. Keine Änderung an Partitionen oder Bootablauf.
+- Manueller QSPI-/OSPI-Compile-Test und Hardwareprüfung stehen noch aus.
