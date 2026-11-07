@@ -300,10 +300,11 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
   canvas.setTextColor(WHITE,BLACK);
   canvas.setFont(&lgfx::fonts::FreeSansBold9pt7b);
   if ((page == 1 && selection == 1) || (page == 0 && selection == 7) || (page == 2 && selection == 1)) {
-    const char* controlName = page == 1 ? "Lautstaerke" : "Helligkeit";
-    canvas.drawString(sliderAdjustmentActive
-      ? (page == 1 ? "Drehen: Lautstaerke | Klick: Fertig" : "Drehen: Helligkeit | Klick: Fertig")
-      : (page == 1 ? "Klick: Einstellen" : "Klick: Einstellen"),24,h-19);
+    if (sliderAdjustmentActive) {
+      canvas.drawString(page == 1 ? "Drehen: Lautstaerke | Klick: Fertig" : "Drehen: Helligkeit | Klick: Fertig",24,h-19);
+    } else {
+      canvas.drawString("Klick: Einstellen",24,h-19);
+    }
   } else {
     canvas.drawString("Drehen: Auswahl",24,h-19);
   }
@@ -385,7 +386,7 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
   if(!ready_)return;
   const uint32_t now=millis();
   const bool menuStateChanged = menuOpen != lastMenuOpen_ || menuPage != lastMenuPage_ ||
-      menuSelection != lastMenuSelection_ || volume != lastMenuVolume_ || (fmLayout_ + (amLayout_ << 1)) != lastMenuLayout_ || brightness_ != lastMenuBrightness_ || themeIndex_ != lastMenuTheme_;
+      menuSelection != lastMenuSelection_ || volume != lastMenuVolume_ || sliderAdjustmentActive != lastMenuSliderAdjustmentActive_ || (fmLayout_ + (amLayout_ << 1)) != lastMenuLayout_ || brightness_ != lastMenuBrightness_ || themeIndex_ != lastMenuTheme_;
   // Redraw the file manager promptly while the encoder is moving; this also
   // keeps the selection frame visually attached to the active row.
   const uint32_t redrawInterval = menuOpen ? ((menuPage==6) ? 20 : 500) : 40;
@@ -393,6 +394,7 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
   lastGeneration_=s.generation;
   lastDrawMs_=now;
   lastMenuOpen_=menuOpen;
+  lastMenuSliderAdjustmentActive_=sliderAdjustmentActive;
   lastMenuPage_=menuPage;
   lastMenuSelection_=menuSelection;
   lastMenuVolume_=volume;
