@@ -1664,3 +1664,6 @@ Zuerst die vorhandene Menü-Engine, TunerDriver-/RadioCore-Schnittstellen und di
   - `c7c582e5e9967a36453398eeadd2b20d65ac0164` – NVS-Persistenz
   - `05add0de6a15eb605e17542736782fddd283e18d` – Menü und Startwiederherstellung
   - `f9684709412a6ebf941212d087cd130a4acacd82` – Logo-Lookups im HJB-Modus deaktiviert
+
+- Nachtrag: Die Akku-Prozentanzeige bleibt im HJB-Kopf erhalten; die HJB-Ansicht reserviert weiterhin keinerlei Senderlogo-Fläche oder Logo-Lookups.
+- Zusatz-Commit: `d6e3635625fd0cc24fe60b80b43fe1ed14ec332d`.
