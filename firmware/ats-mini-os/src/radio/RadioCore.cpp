@@ -72,6 +72,8 @@ void RadioCore::update() {
 bool RadioCore::tune(uint32_t frequencyKHz) {
   const auto& band = BandManager::current();
   if (!ready_ || !BandManager::contains(BandManager::currentIndex(), frequencyKHz) ||
+      ((snapshot_.modulation == RadioModulation::LSB || snapshot_.modulation == RadioModulation::USB) &&
+       (frequencyKHz < 1800 || frequencyKHz > 30000)) ||
       !tuner_.tune(frequencyKHz, band)) return false;
   snapshot_.frequencyKHz = tuner_.frequencyKHz();
   snapshot_.piCode = 0;
@@ -104,6 +106,31 @@ bool RadioCore::selectBand(uint8_t index) {
   return true;
 }
 
+bool RadioCore::canUseModulation(RadioModulation modulation) const {
+  const auto& band = BandManager::current();
+  if (band.type == RadioBandType::FM) return modulation == RadioModulation::FM;
+  if (modulation == RadioModulation::FM) return false;
+  if (modulation == RadioModulation::AM) return true;
+  return snapshot_.frequencyKHz >= 1800 && snapshot_.frequencyKHz <= 30000 &&
+         (modulation == RadioModulation::LSB || modulation == RadioModulation::USB);
+}
+bool RadioCore::setModulation(RadioModulation modulation) {
+  if (!ready_ || !canUseModulation(modulation)) return false;
+  if (snapshot_.modulation == modulation) return true;
+  const auto& band = BandManager::current();
+  if (!tuner_.setModulation(band, modulation)) return false;
+  BandManager::setCurrentStepKHz(band.stepKHz ? band.stepKHz : 1);
+  snapshot_.modulation = modulation;
+  snapshot_.frequencyKHz = tuner_.frequencyKHz();
+  snapshot_.piCode = 0; snapshot_.pty = 0; snapshot_.rdsAvailable = false;
+  snapshot_.rdsClockValid = false; snapshot_.stationName[0] = '\0';
+  snapshot_.radioText[0] = '\0'; snapshot_.stereo = false;
+  snapshot_.generation = ++generation_;
+  lastRdsPollMs_ = millis();
+  Serial.printf("[RADIO] modulation=%u freq=%lu kHz band=%s\\n",
+    static_cast<unsigned>(modulation), static_cast<unsigned long>(snapshot_.frequencyKHz), snapshot_.bandName);
+  return true;
+}
 bool RadioCore::nextBand(int8_t direction) {
   if (!direction) return false;
   int16_t index = static_cast<int16_t>(BandManager::currentIndex()) + (direction > 0 ? 1 : -1);
@@ -137,12 +164,17 @@ bool RadioCore::nextChannel(int16_t acceleratedDelta) {
   if (!ready_ || acceleratedDelta == 0) return false;
   const auto& band = BandManager::current();
   const uint32_t step = BandManager::currentStepKHz() ? BandManager::currentStepKHz() : (band.stepKHz ? band.stepKHz : 1);
-  const int64_t span = static_cast<int64_t>(band.maximumKHz) - band.minimumKHz + step;
-  int64_t offset = static_cast<int64_t>(snapshot_.frequencyKHz) - band.minimumKHz;
+  uint32_t minimum = band.minimumKHz, maximum = band.maximumKHz;
+  if (snapshot_.modulation == RadioModulation::LSB || snapshot_.modulation == RadioModulation::USB) {
+    if (minimum < 1800) minimum = 1800;
+    if (maximum > 30000) maximum = 30000;
+  }
+  const int64_t span = static_cast<int64_t>(maximum) - minimum + step;
+  int64_t offset = static_cast<int64_t>(snapshot_.frequencyKHz) - minimum;
   offset += static_cast<int64_t>(acceleratedDelta) * step;
   offset %= span;
   if (offset < 0) offset += span;
-  return tune(band.minimumKHz + static_cast<uint32_t>(offset));
+  return tune(minimum + static_cast<uint32_t>(offset));
 }
 
 bool RadioCore::setAgcAutomatic(bool automatic) { return ready_ && tuner_.setAgcAutomatic(automatic); }
