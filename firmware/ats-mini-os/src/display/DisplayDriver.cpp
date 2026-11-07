@@ -174,7 +174,8 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
   static const char* const fmBandwidthItems[] = { "Zurueck", "Auto", "110 kHz", "84 kHz", "60 kHz", "40 kHz" };
   static const char* const amBandwidthItems[] = { "Zurueck", "1.0 kHz", "1.8 kHz", "2.0 kHz", "2.5 kHz", "3.0 kHz", "4.0 kHz", "6.0 kHz" };
   static const char* const ssbBandwidthItems[] = { "Zurueck", "0.5 kHz", "1.0 kHz", "1.2 kHz", "2.2 kHz", "3.0 kHz", "4.0 kHz" };
-  static const char* const radioSettingsItems[] = { "Zurueck", "AGC Auto", "AGC Manual", "Soft Mute Ein", "Soft Mute Aus", "AVC 90", "AVC 60", "AVC 30" };\n  static const char* const themeItems[] = { "Zurueck", "Classic", "TEF Blue", "Amber" };
+  static const char* const radioSettingsItems[] = { "Zurueck", "AGC Auto", "AGC Manual", "Soft Mute Ein", "Soft Mute Aus", "AVC 90", "AVC 60", "AVC 30" };
+  static const char* const themeItems[] = { "Zurueck", "Classic", "TEF Blue", "Amber" };
   static const char* const fmStepItems[] = { "Zurueck", "10 kHz (DX)", "50 kHz", "100 kHz", "200 kHz", "1 MHz" };
   static const char* const amStepItems[] = { "Zurueck", "1 kHz", "5 kHz", "9 kHz", "10 kHz" };
   static const char* const wifiItems[] = {
@@ -336,7 +337,7 @@ void DisplayDriver::setTheme(uint8_t index) {
   themeIndex_ = ThemeManager::normalize(index);
   applyThemePalette(themeIndex_);
   lastGeneration_ = UINT32_MAX;
-  Serial.printf("[DISPLAY] theme=%s\\n", ThemeManager::at(themeIndex_).name);
+  Serial.printf("[DISPLAY] theme=%s\n", ThemeManager::at(themeIndex_).name);
 }
 
 void DisplayDriver::setLayoutMode(uint8_t mode) {
