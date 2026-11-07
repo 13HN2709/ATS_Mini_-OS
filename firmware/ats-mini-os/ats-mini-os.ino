@@ -167,16 +167,26 @@ void loop() {
           display.setTheme(static_cast<uint8_t>(menuSelection - 1));
           themeSavePending = true;
         } else if (menuPage == 3 && menuSelection == 4) {
-          menuPage = 11;\n          menuSelection = 0;
-        } else if (menuPage == 11 && menuSelection == 0) {\n          menuPage = 3;
-          menuSelection = 4;\n        } else if (menuPage == 11 && menuSelection == 1) {
-          radio.setAgcAutomatic(true);\n        } else if (menuPage == 11 && menuSelection == 2) {
-          radio.setAgcAutomatic(false);\n        } else if (menuPage == 11 && menuSelection == 3) {
-          radio.setSoftMuteEnabled(true);\n        } else if (menuPage == 11 && menuSelection == 4) {
-          radio.setSoftMuteEnabled(false);\n        } else if (menuPage == 11 && menuSelection == 5) {
-          radio.setAvcGain(90);\n        } else if (menuPage == 11 && menuSelection == 6) {
-          radio.setAvcGain(60);\n        } else if (menuPage == 11 && menuSelection == 7) {
-          radio.setAvcGain(30);\n        } else if (menuPage == 3 && menuSelection == 1) {
+          menuPage = 11;
+          menuSelection = 0;
+        } else if (menuPage == 11 && menuSelection == 0) {
+          menuPage = 3;
+          menuSelection = 4;
+        } else if (menuPage == 11 && menuSelection == 1) {
+          radio.setAgcAutomatic(true);
+        } else if (menuPage == 11 && menuSelection == 2) {
+          radio.setAgcAutomatic(false);
+        } else if (menuPage == 11 && menuSelection == 3) {
+          radio.setSoftMuteEnabled(true);
+        } else if (menuPage == 11 && menuSelection == 4) {
+          radio.setSoftMuteEnabled(false);
+        } else if (menuPage == 11 && menuSelection == 5) {
+          radio.setAvcGain(90);
+        } else if (menuPage == 11 && menuSelection == 6) {
+          radio.setAvcGain(60);
+        } else if (menuPage == 11 && menuSelection == 7) {
+          radio.setAvcGain(30);
+        } else if (menuPage == 3 && menuSelection == 1) {
           menuPage = 8;
           menuSelection = static_cast<uint8_t>(radio.currentBandIndex() + 1);
         } else if (menuPage == 8 && menuSelection == 0) {
