@@ -88,7 +88,9 @@ public:
   RadioModulation modulation() const { return modulation_; }
   bool setVolume(uint8_t volume);
   bool setAgcAutomatic(bool automatic);
+  bool setAgcManualGain(uint8_t index);
   bool setSoftMuteEnabled(bool enabled);
+  bool setSoftMuteAttenuation(uint8_t attenuationDb);
   bool setAvcGain(uint8_t gain);
   bool setBandwidthChoice(uint8_t choice);
   bool setStepKHz(uint16_t stepKHz);
@@ -117,6 +119,7 @@ private:
   bool agcAutomatic_ = true;
   uint8_t agcGainIndex_ = 20;
   bool softMuteEnabled_ = true;
+  uint8_t softMuteAttenuationDb_ = 8;
   uint8_t avcGain_ = 90;
   uint8_t bandwidthChoice_ = 0;
   bool haveTextFlag_ = false;
