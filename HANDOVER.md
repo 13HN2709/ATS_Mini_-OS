@@ -1634,3 +1634,14 @@ Zuerst die vorhandene Menü-Engine, TunerDriver-/RadioCore-Schnittstellen und di
 - SSB-Bandbreite wird getrennt von FM/AM gespeichert und beim nächsten Wechsel in USB/LSB wiederhergestellt.
 - BFO und SSB-Bandbreite verwenden eigene Schlüssel in der vorhandenen `settings`-NVS-Partition. Keine Änderung an Partitionen oder Bootablauf.
 - Manueller QSPI-/OSPI-Compile-Test und Hardwareprüfung stehen noch aus.
+
+
+## 2026-11-07 – SSB-Frequenzanzeige mit drei Dezimalstellen
+
+- Die AM-Familienanzeige unterscheidet jetzt FM, AM und SSB explizit.
+- USB/LSB zeigen die Trägerfrequenz in kHz mit drei Nachkommastellen, z. B. `27555.000 kHz`.
+- Die SSB-Frequenz wird etwas kleiner dargestellt, damit die längere Anzeige in das Frequenzfeld passt.
+- FM bleibt unverändert bei MHz mit zwei Nachkommastellen; AM/MW/LW/SW bleiben bei ganzzahligen kHz.
+- Wichtig: Die drei angezeigten Nachkommastellen sind eine Darstellungsformatierung. Der BFO ist ein separater Audio-Offset und wird dadurch nicht in die RF-Frequenz eingerechnet; es wird keine 1-Hz-Abstimmauflösung behauptet.
+- Commit: `6cbfe6af13cfda920879ca6a10a485f9b46e433f`.
+- Noch nicht kompiliert oder auf Hardware getestet. Nächster Schritt: manueller QSPI- und OSPI-Compile-only-Lauf.
