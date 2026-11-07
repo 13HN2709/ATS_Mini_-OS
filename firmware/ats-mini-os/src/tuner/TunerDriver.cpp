@@ -130,10 +130,13 @@ bool TunerDriver::setSoftMuteAttenuation(uint8_t attenuationDb) {
 }
 
 bool TunerDriver::setAvcGain(uint8_t gain) {
-  if (!ready_ || modulation_ == RadioModulation::FM || gain < 12 || gain > 90) return false;
+  if (!ready_ || gain < 12 || gain > 90) return false;
+  // Remember the AM/SSB value while listening to FM; apply it on the next
+  // AM/SSB band switch because AVC is not a valid FM control.
   avcGain_ = gain;
-  radio_.setAvcAmMaxGain(gain);
-  Serial.printf("[TUNER] AVC max gain=%u\n", static_cast<unsigned>(gain));
+  if (modulation_ != RadioModulation::FM) radio_.setAvcAmMaxGain(gain);
+  Serial.printf("[TUNER] AVC max gain=%u%s\\n", static_cast<unsigned>(gain),
+                modulation_ == RadioModulation::FM ? " (stored for AM/SSB)" : "");
   return true;
 }
 
