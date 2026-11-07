@@ -197,7 +197,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
   };
   static const char* const systemItems[] = {
     "Zurueck", "CPU-Profil (spaeter)", "Systeminfo (spaeter)", "Dateimanager",
-    "UTC+01:00 * (Sommer +02:00)"
+    "UTC+01:00 * (Sommer +02:00)", "UKW / FM Layouts", "KW / MW / LW Layouts"
   };
   const char* const* items = mainItems;
   uint8_t count = sizeof(mainItems) / sizeof(mainItems[0]);
@@ -206,11 +206,11 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
     case 1: items=volumeItems; count=sizeof(volumeItems)/sizeof(volumeItems[0]); title="AUDIO"; break;
     case 2: items=displayItems; count=sizeof(displayItems)/sizeof(displayItems[0]); title="ANZEIGE"; break;
     case 13: items=layoutGroupItems; count=sizeof(layoutGroupItems)/sizeof(layoutGroupItems[0]); title="LAYOUT GRUPPE"; break;
-    case 14: items=fmLayoutItems; count=sizeof(fmLayoutItems)/sizeof(fmLayoutItems[0]); title="LAYOUT UKW / FM"; break;
-    case 15: items=amLayoutItems; count=sizeof(amLayoutItems)/sizeof(amLayoutItems[0]); title="LAYOUT LW / MW / KW"; break;
+    case 14: items=fmLayoutItems; count=sizeof(fmLayoutItems)/sizeof(fmLayoutItems[0]); title="UKW / FM LAYOUTS"; break;
+    case 15: items=amLayoutItems; count=sizeof(amLayoutItems)/sizeof(amLayoutItems[0]); title="KW / MW / LW LAYOUTS"; break;
     case 3: items=radioItems; count=sizeof(radioItems)/sizeof(radioItems[0]); title="RADIO"; break;
     case 4: items=wifiItems; count=sizeof(wifiItems)/sizeof(wifiItems[0]); title="WLAN"; break;
-    case 5: items=systemItems; count=sizeof(systemItems)/sizeof(systemItems[0]); title="SYSTEM"; break;
+    case 5: items=systemItems; count=sizeof(systemItems)/sizeof(systemItems[0]); title="EINSTELLUNGEN"; break;
     case 7:
       if (modulation == RadioModulation::FM) { items=fmBandwidthItems; count=sizeof(fmBandwidthItems)/sizeof(fmBandwidthItems[0]); }
       else if (modulation == RadioModulation::AM) { items=amBandwidthItems; count=sizeof(amBandwidthItems)/sizeof(amBandwidthItems[0]); }
@@ -231,102 +231,69 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
     default: break;
   }
 
-  // High-contrast monochrome menu: pure black background, bold white text,
-  // thin white selection frame and no glow, gradients or colored highlights.
+  // ATS Mini Dev XXL full-screen menu style: black canvas, blue frame,
+  // cyan Orbitron-like large text, centered selected entry and page counter.
+  const uint16_t menuBlue = 0x001F;
+  const uint16_t menuCyan = 0x07FF;
   canvas.fillScreen(BLACK);
-  canvas.setTextColor(WHITE, BLACK);
+  canvas.fillRoundRect(3, 3, w-6, h-6, 5, BLACK);
+  canvas.drawRoundRect(3, 3, w-6, h-6, 5, menuBlue);
+
+  canvas.setTextColor(menuCyan, BLACK);
   canvas.setFont(&lgfx::fonts::FreeSansBold9pt7b);
-  canvas.drawString("ATS MINI OS", 32, 3);
-  canvas.drawRightString(title, w-30, 3);
-  canvas.drawFastHLine(30, 27, w-60, WHITE);
+  canvas.setTextDatum(TL_DATUM);
+  canvas.drawString("ATS MINI OS", 12, 8);
+  canvas.setTextDatum(TR_DATUM);
+  canvas.drawString(title, w-12, 8);
 
-  // Keep the two-row list, but use a safe inset on the ATS Mini V4 panel.
-  // The extra left margin prevents the first glyphs from being clipped.
-  const int rowTop = 34;
-  const int rowHeight = 54;
-  const int visibleRows = (h - 58) / rowHeight;
-  int first = 0;
-  if (selection >= visibleRows) first = selection-visibleRows+1;
-  for (int row=0; row<visibleRows && first+row<count; ++row) {
-    const uint8_t index = static_cast<uint8_t>(first+row);
-    const int y = rowTop + row*rowHeight;
-    const bool selected = index == selection;
-    if (selected) canvas.drawRect(24, y+1, w-48, 48, WHITE);
+  char counter[16];
+  snprintf(counter, sizeof(counter), "%02u / %02u",
+    static_cast<unsigned>(selection + 1), static_cast<unsigned>(count));
+  canvas.setTextDatum(TR_DATUM);
+  canvas.setFont(&lgfx::fonts::Font0);
+  canvas.drawString(counter, w-12, 27);
 
-    canvas.setTextColor(WHITE, BLACK);
-    canvas.setFont(&lgfx::fonts::FreeSansBold9pt7b);
-    if (page == 8) {
-      if (index == 0) {
-        canvas.drawString("Zurueck", 42, y+13);
-      } else {
-        const RadioBandDefinition& band = BandManager::at(static_cast<uint8_t>(index-1));
-        char bandLabel[40];
-        if (band.type == RadioBandType::FM) {
-          snprintf(bandLabel, sizeof(bandLabel), "%s  %lu-%lu MHz", band.name,
-            static_cast<unsigned long>(band.minimumKHz/1000UL),
-            static_cast<unsigned long>(band.maximumKHz/1000UL));
-        } else {
-          snprintf(bandLabel, sizeof(bandLabel), "%s  %lu-%lu kHz", band.name,
-            static_cast<unsigned long>(band.minimumKHz),
-            static_cast<unsigned long>(band.maximumKHz));
-        }
-        if (index-1 == BandManager::currentIndex()) {
-          char currentLabel[44];
-          snprintf(currentLabel, sizeof(currentLabel), "* %s", bandLabel);
-          canvas.drawString(currentLabel, 42, y+13);
-        } else {
-          canvas.drawString(bandLabel, 42, y+13);
-        }
-      }
-    } else if (page == 16 && index > 0) {
-      const bool fmBand = BandManager::current().type == RadioBandType::FM;
-      const RadioModulation mode = fmBand ? RadioModulation::FM :
-        (index == 1 ? RadioModulation::AM : (index == 2 ? RadioModulation::USB : RadioModulation::LSB));
-      if (mode == modulation) {
-        char selectedMode[24]; snprintf(selectedMode,sizeof(selectedMode),"* %s",items[index]);
-        canvas.drawString(selectedMode,42,y+13);
-      } else canvas.drawString(items[index],42,y+13);
-    } else if ((page == 14 || page == 15) && index > 0 && index - 1 == layoutMode) {
-      char selectedLayout[40];
-      snprintf(selectedLayout, sizeof(selectedLayout), "* %s", items[index]);
-      canvas.drawString(selectedLayout, 42, y+13);
-    } else if (page == 10 && index > 0 && index - 1 == ThemeManager::normalize(themeIndex)) {
-      char selectedTheme[32];
-      snprintf(selectedTheme, sizeof(selectedTheme), "* %s", items[index]);
-      canvas.drawString(selectedTheme, 42, y+13);
-    } else if (page == MenuSSB::kPage) {
-      canvas.drawString(items[index], 42, y+13);
-    } else {
-      canvas.drawString(items[index], 42, y+13);
-    }
-
-    if ((page==1 && index==1) || (page==2 && index==1)) {
-      const bool volumeControl = page == 1;
-      const uint8_t level = volumeControl ? volume : brightness;
-      const uint8_t maximum = volumeControl ? 63 : 255;
-      char value[12];
-      if (volumeControl) snprintf(value,sizeof(value),"%u/63",static_cast<unsigned>(level));
-      else snprintf(value,sizeof(value),"%u%%",static_cast<unsigned>((static_cast<uint16_t>(level)*100U)/255U));
-      canvas.drawRightString(value,w-28,y+13);
-      const int barX=42, barY=y+36, barW=w-70;
-      canvas.drawRect(barX,barY,barW,5,WHITE);
-      const int fillW=(barW-2)*level/maximum;
-      if(fillW>0) canvas.fillRect(barX+1,barY+1,fillW,3,WHITE);
+  const char* selectedLabel = (selection < count) ? items[selection] : "";
+  char displayLabel[72];
+  snprintf(displayLabel, sizeof(displayLabel), "%s", selectedLabel);
+  for (size_t i=0; displayLabel[i]; ++i) {
+    if (displayLabel[i] >= 'a' && displayLabel[i] <= 'z')
+      displayLabel[i] = static_cast<char>(displayLabel[i] - ('a' - 'A'));
+  }
+  if (page == 8 && selection > 0) {
+    const RadioBandDefinition& band = BandManager::at(static_cast<uint8_t>(selection-1));
+    snprintf(displayLabel, sizeof(displayLabel), "%s", band.name);
+  }
+  if ((page == 14 || page == 15) && selection > 0) {
+    // Keep the currently selected layout marked, as in the Dev menu.
+    const bool active = page == 14 ? (selection-1 == layoutMode) :
+      (selection-1 == layoutMode);
+    if (active) {
+      char marked[72];
+      snprintf(marked, sizeof(marked), "* %s", displayLabel);
+      snprintf(displayLabel, sizeof(displayLabel), "%s", marked);
     }
   }
 
-  canvas.drawFastHLine(30,h-23,w-60,WHITE);
-  canvas.setTextColor(WHITE,BLACK);
-  canvas.setFont(&lgfx::fonts::FreeSansBold9pt7b);
-  if ((page == 1 && selection == 1) || (page == 2 && selection == 1)) {
-    if (sliderAdjustmentActive) {
-      canvas.drawString(page == 1 ? "ROTATE: VOLUME | CLICK: DONE" : "ROTATE: BRIGHTNESS | CLICK: DONE",38,h-19);
-    } else {
-      canvas.drawString("CLICK: ADJUST",38,h-19);
-    }
-  } else {
-    canvas.drawString("ROTATE: SELECT",38,h-19);
+  const lgfx::IFont* menuFont = &lgfx::fonts::Font7;
+  canvas.setFont(menuFont);
+  int labelWidth = canvas.textWidth(displayLabel);
+  if (labelWidth > w-28) {
+    menuFont = &lgfx::fonts::FreeSansBold9pt7b;
+    canvas.setFont(menuFont);
+    labelWidth = canvas.textWidth(displayLabel);
   }
+  canvas.setTextDatum(MC_DATUM);
+  canvas.setTextColor(menuCyan, BLACK);
+  canvas.drawCenterString(displayLabel, w/2, (h/2)+2);
+
+  canvas.setTextDatum(TL_DATUM);
+  canvas.setFont(&lgfx::fonts::Font0);
+  canvas.setTextColor(menuCyan, BLACK);
+  canvas.drawString("DREHEN: AUSWAEHLEN", 12, h-18);
+  canvas.setTextDatum(TR_DATUM);
+  canvas.drawString("KLICK: OK", w-12, h-18);
+
 }
 
 }
