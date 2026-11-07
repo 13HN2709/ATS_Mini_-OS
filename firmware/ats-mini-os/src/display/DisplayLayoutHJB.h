@@ -21,6 +21,16 @@ void drawHJBLayout(Canvas& d, const RadioSnapshot& s, bool radioReady, bool wifi
   d.setFont(&lgfx::fonts::Font0);
   d.setTextColor(wifiConnected?BLUE:MUTED,BG);
   d.drawRightString(wifiConnected?"WLAN+":"WLAN-",w-8,7);
+  // Keep the battery readout from the OS renderer; no sender-logo resources
+  // are allocated or reserved anywhere in this layout.
+  uint32_t adcTotal=0;
+  for(uint8_t i=0;i<10;++i) adcTotal+=analogRead(4);
+  const float batteryVolts=(static_cast<float>(adcTotal)/10.0f)*1.702f/1000.0f;
+  const int batteryPercent=constrain(static_cast<int>((batteryVolts-3.30f)*100.0f/0.90f+0.5f),0,100);
+  char batteryText[8];
+  snprintf(batteryText,sizeof(batteryText),"%d%%",batteryPercent);
+  d.setTextColor(batteryPercent<=15?YELLOW:GREEN,BG);
+  d.drawRightString(batteryText,w-55,7);
 
   static const char* const ptyNames[32]={
     "NONE","NEWS","CURRENT AFFAIRS","INFO","SPORT","EDUCATION","DRAMA","CULTURE",
