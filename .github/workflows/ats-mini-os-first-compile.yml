@@ -9,10 +9,8 @@ permissions:
 jobs:
   compile:
     runs-on: ubuntu-24.04
-    strategy:
-      fail-fast: false
-      name: Compile-only / esp32s3-ospi
-      env:
+    name: Compile-only / esp32s3-ospi
+    env:
         PROFILE: esp32s3-ospi
         LABEL: OSPI-DE
         PSRAM: opi
@@ -188,7 +186,7 @@ jobs:
         if: success() && hashFiles('release-artifacts/*.ino.bin') != ''
         uses: actions/upload-artifact@v4
         with:
-          name: ATS-Mini-OS-$LABEL-Firmware-BIN
+          name: ATS-Mini-OS-OSPI-DE-Firmware-BIN
           path: release-artifacts/*.ino.bin
           if-no-files-found: error
           retention-days: 14
