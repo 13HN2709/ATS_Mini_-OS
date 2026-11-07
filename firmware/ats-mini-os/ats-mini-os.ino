@@ -83,13 +83,18 @@ void loop() {
         lastEncoderEvent = inputEvent.type == EncoderEventType::RotateClockwise ? "CW" : "CCW";
         if (menuOpen) {
           if(menuPage==6){ if(fmMode==1){int v=(int)fmActionSelection+inputEvent.delta;v%=6;if(v<0)v+=6;fmActionSelection=(uint8_t)v;} else if(fmMode==2)fmActionSelection=fmActionSelection?0:1; else if(fmMode==4){const char* chars="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 _-.";size_t n=strlen(chars);char ch=fmEditName[fmEditCursor];const char* q=strchr(chars,ch?ch:65);int pos=q?(int)(q-chars):0;pos=(pos+inputEvent.delta)%(int)n;if(pos<0)pos+=(int)n;fmEditName[fmEditCursor]=chars[pos];fmEditName[fmEditCursor+1]=0;} else {uint8_t n=fmCount+(fmMode==3?1:3);int v=(int)fmSelection+inputEvent.delta;v%=n;if(v<0)v+=n;fmSelection=(uint8_t)v;} }
-          else if (menuPage == 1 && menuSelection == 1) {
+          else if (menuPage == 2 && menuSelection == 1) {
+            const int16_t requested = static_cast<int16_t>(display.brightness()) + inputEvent.delta * 5;
+            const uint8_t nextBrightness = static_cast<uint8_t>(constrain(requested, 10, 255));
+            display.setBrightness(nextBrightness);
+            Serial.printf("[MENU] display brightness=%u/255\\n", static_cast<unsigned>(display.brightness()));
+          } else if (menuPage == 1 && menuSelection == 1) {
             const int16_t requested = static_cast<int16_t>(radio.volume()) + inputEvent.delta;
             const uint8_t nextVolume = static_cast<uint8_t>(constrain(requested, 0, 63));
             if (radio.setVolume(nextVolume))
               Serial.printf("[MENU] volume=%u/63\n", static_cast<unsigned>(radio.volume()));
           } else {
-            const int16_t itemCount = menuPage == 0 ? 6 : (menuPage==5 ? 5 : (menuPage==3 ? 5 : (menuPage==7 ? radio.bandwidthChoiceCount()+1 : (menuPage==8 ? radio.bandCount()+1 : (menuPage==9 ? radio.stepChoiceCount()+1 : 3)))));
+            const int16_t itemCount = menuPage == 0 ? 6 : (menuPage==2 ? 2 : (menuPage==5 ? 5 : (menuPage==3 ? 5 : (menuPage==7 ? radio.bandwidthChoiceCount()+1 : (menuPage==8 ? radio.bandCount()+1 : (menuPage==9 ? radio.stepChoiceCount()+1 : 3))))));
             int16_t next = (static_cast<int16_t>(menuSelection) + inputEvent.delta) % itemCount;
             if (next < 0) next += itemCount;
             menuSelection = static_cast<uint8_t>(next);
