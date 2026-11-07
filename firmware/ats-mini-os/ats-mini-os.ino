@@ -23,6 +23,7 @@ RadioCore radio;
 DisplayDriver display;
 SettingsStore settingsStore;
 bool brightnessSavePending = false;
+bool themeSavePending = false;
 EncoderInput encoder;
 WifiClient wifi;
 StationLogoClient stationLogoClient;
@@ -52,6 +53,15 @@ void saveBrightnessIfPending() {
   }
   brightnessSavePending = false;
 }
+void saveThemeIfPending() {
+  if (!themeSavePending) return;
+  if (settingsStore.saveDisplayTheme(display.themeIndex())) {
+    Serial.printf("[SETTINGS] display theme saved: %s\\n", ThemeManager::at(display.themeIndex()).name);
+  } else {
+    Serial.println("[SETTINGS] display theme save failed; current session remains active.");
+  }
+  themeSavePending = false;
+}
 void fmRefresh(){ fmCount=0; if(!FileManager::list(fmPath,fmEntries,FileManager::MAX_ENTRIES,fmCount)) snprintf(fmMessage,sizeof(fmMessage),"Ordner nicht lesbar"); }
 void fmMessageSet(const char* m){ strncpy(fmMessage,m,sizeof(fmMessage)-1); fmMessage[sizeof(fmMessage)-1]=0; }
 void fmParent(){ if(strcmp(fmPath,"/")==0)return; char* p=strrchr(fmPath,47); if(p==fmPath)fmPath[1]=0; else if(p)*p=0; fmSelection=0; fmRefresh(); }
@@ -72,7 +82,9 @@ void setup() {
   const bool settingsReady = settingsStore.begin();
   Serial.printf("[SETTINGS] dedicated NVS %s\\n", settingsReady ? "ready" : "unavailable; using defaults");
   const uint8_t savedBrightness = settingsStore.displayBrightness(180);
+  const uint8_t savedTheme = settingsStore.displayTheme(0);
   if (display.begin(savedBrightness)) {
+    display.setTheme(savedTheme);
     Serial.printf("[DISPLAY] first UI initialized; brightness=%u/255\\n",
       static_cast<unsigned>(display.brightness()));
   }
@@ -115,7 +127,7 @@ void loop() {
             if (radio.setVolume(nextVolume))
               Serial.printf("[MENU] volume=%u/63\n", static_cast<unsigned>(radio.volume()));
           } else {
-            const int16_t itemCount = menuPage == 0 ? 6 : (menuPage==2 ? 2 : (menuPage==5 ? 5 : (menuPage==3 ? 5 : (menuPage==7 ? radio.bandwidthChoiceCount()+1 : (menuPage==8 ? radio.bandCount()+1 : (menuPage==9 ? radio.stepChoiceCount()+1 : 3))))));
+            const int16_t itemCount = menuPage == 0 ? 6 : (menuPage==2 ? 3 : (menuPage==10 ? 4 : (menuPage==5 ? 5 : (menuPage==3 ? 5 : (menuPage==7 ? radio.bandwidthChoiceCount()+1 : (menuPage==8 ? radio.bandCount()+1 : (menuPage==9 ? radio.stepChoiceCount()+1 : 3)))))));
             int16_t next = (static_cast<int16_t>(menuSelection) + inputEvent.delta) % itemCount;
             if (next < 0) next += itemCount;
             menuSelection = static_cast<uint8_t>(next);
@@ -145,6 +157,15 @@ void loop() {
             menuSelection = 0;
             Serial.printf("[MENU] opened submenu %u\n", static_cast<unsigned>(menuPage));
           }
+        } else if (menuPage == 2 && menuSelection == 2) {
+          menuPage = 10;
+          menuSelection = static_cast<uint8_t>(display.themeIndex() + 1);
+        } else if (menuPage == 10 && menuSelection == 0) {
+          menuPage = 2;
+          menuSelection = 0;
+        } else if (menuPage == 10 && menuSelection > 0) {
+          display.setTheme(static_cast<uint8_t>(menuSelection - 1));
+          themeSavePending = true;
         } else if (menuPage == 3 && menuSelection == 1) {
           menuPage = 8;
           menuSelection = static_cast<uint8_t>(radio.currentBandIndex() + 1);
@@ -182,11 +203,9 @@ void loop() {
             menuPage = 3;
             menuSelection = 2;
           }
-        } else if (menuPage == 2 && menuSelection == 2) {
-          display.setLayoutMode(display.layoutMode() == 0 ? 1 : 0);
-          Serial.println("[MENU] display layout toggled");
         } else if (menuPage == 2 && menuSelection == 0) {
           saveBrightnessIfPending();
+          saveThemeIfPending();
           menuPage = 0;
           menuSelection = 0;
         } else if (menuSelection == 0) {
@@ -221,6 +240,7 @@ void loop() {
             fmMessageSet("Abgebrochen");
           } else {
             saveBrightnessIfPending();
+            saveThemeIfPending();
             menuOpen = false;
             menuPage = 0;
             menuSelection = 0;
