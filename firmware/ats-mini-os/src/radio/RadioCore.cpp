@@ -146,5 +146,7 @@ bool RadioCore::nextChannel(int16_t acceleratedDelta) {
 }
 
 bool RadioCore::setAgcAutomatic(bool automatic) { return ready_ && tuner_.setAgcAutomatic(automatic); }
+bool RadioCore::setAgcManualGain(uint8_t index) { return ready_ && tuner_.setAgcManualGain(index); }
 bool RadioCore::setSoftMuteEnabled(bool enabled) { return ready_ && tuner_.setSoftMuteEnabled(enabled); }
+bool RadioCore::setSoftMuteAttenuation(uint8_t attenuationDb) { return ready_ && tuner_.setSoftMuteAttenuation(attenuationDb); }
 bool RadioCore::setAvcGain(uint8_t gain) { return ready_ && tuner_.setAvcGain(gain); }
