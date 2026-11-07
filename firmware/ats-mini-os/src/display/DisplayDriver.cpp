@@ -425,9 +425,10 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
     snprintf(logoKey, sizeof(logoKey), "%04X_%lu",
       static_cast<unsigned>(s.piCode), static_cast<unsigned long>(s.frequencyKHz));
   }
-  const bool logoLocked = logoClient && logoKey[0] &&
+  // HJB intentionally has no sender-logo area and must not trigger logo lookups.
+  const bool logoLocked = layoutMode_ == 0 && logoClient && logoKey[0] &&
     logoClient->lockLogo(logoKey, logoData, logoLength, logoIsJpg);
-  const bool logoSearching = !logoLocked && logoClient && logoClient->isLookupPending(logoKey);
+  const bool logoSearching = layoutMode_ == 0 && !logoLocked && logoClient && logoClient->isLookupPending(logoKey);
   draw(s,radioReady,wifiConnected,lastInputEvent,inputEventCount,
        logoLocked ? logoData : nullptr,logoLocked ? logoLength : 0,logoIsJpg,logoSearching,
        radioTextOffset_, scrollRadioText, millis() < tuningUntilMs_);
