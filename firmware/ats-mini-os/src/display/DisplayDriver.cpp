@@ -426,7 +426,8 @@ void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConne
       static_cast<unsigned>(s.piCode), static_cast<unsigned long>(s.frequencyKHz));
   }
   // HJB intentionally has no sender-logo area and must not trigger logo lookups.
-  const bool useFmStandard = layoutMode_ == 0 && s.modulation == RadioModulation::FM;\n  const bool logoLocked = useFmStandard && logoClient && logoKey[0] &&
+  const bool useFmStandard = layoutMode_ == 0 && s.modulation == RadioModulation::FM;
+  const bool logoLocked = useFmStandard && logoClient && logoKey[0] &&
     logoClient->lockLogo(logoKey, logoData, logoLength, logoIsJpg);
   const bool logoSearching = useFmStandard && !logoLocked && logoClient && logoClient->isLookupPending(logoKey);
   draw(s,radioReady,wifiConnected,lastInputEvent,inputEventCount,
