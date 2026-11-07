@@ -102,7 +102,7 @@ bool TunerDriver::setAgcManualGain(uint8_t index) {
   agcAutomatic_ = false;
   agcGainIndex_ = index;
   radio_.setAutomaticGainControl(1, agcGainIndex_);
-  Serial.printf("[TUNER] AGC manual index=%u\\n", static_cast<unsigned>(agcGainIndex_));
+  Serial.printf("[TUNER] AGC manual index=%u\n", static_cast<unsigned>(agcGainIndex_));
   return true;
 }
 
@@ -125,7 +125,7 @@ bool TunerDriver::setSoftMuteAttenuation(uint8_t attenuationDb) {
   if (modulation_ == RadioModulation::FM) radio_.setFmSoftMuteMaxAttenuation(attenuationDb);
   else if (modulation_ == RadioModulation::AM) radio_.setAmSoftMuteMaxAttenuation(attenuationDb);
   else radio_.setSsbSoftMuteMaxAttenuation(attenuationDb);
-  Serial.printf("[TUNER] soft mute attenuation=%u dB\\n", static_cast<unsigned>(attenuationDb));
+  Serial.printf("[TUNER] soft mute attenuation=%u dB\n", static_cast<unsigned>(attenuationDb));
   return true;
 }
 
@@ -229,7 +229,7 @@ bool TunerDriver::setBand(const RadioBandDefinition& band) {
     radio_.setSeekAmSNRThreshold(3);
     radio_.setBandwidth(2, 1);
     radio_.setAutomaticGainControl(agcAutomatic_ ? 0 : 1, agcGainIndex_);
-    radio_.setAmSoftMuteMaxAttenuation(softMuteEnabled_ ? 8 : 0);
+    radio_.setAmSoftMuteMaxAttenuation(softMuteAttenuationDb_);
     radio_.setAvcAmMaxGain(avcGain_);
   } else {
     // The SI4735 requires the SSB DSP patch before sideband mode can be used.
@@ -246,7 +246,7 @@ bool TunerDriver::setBand(const RadioBandDefinition& band) {
     radio_.setSSBConfig(2, 1, 0, 1, 0, 1);
     radio_.setSSBBfo(0);
     radio_.setAutomaticGainControl(agcAutomatic_ ? 0 : 1, agcGainIndex_);
-    radio_.setSsbSoftMuteMaxAttenuation(softMuteEnabled_ ? 8 : 0);
+    radio_.setSsbSoftMuteMaxAttenuation(softMuteAttenuationDb_);
     radio_.setAvcAmMaxGain(avcGain_);
   }
   radio_.setVolume(volume_);
