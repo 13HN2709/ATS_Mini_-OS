@@ -62,7 +62,7 @@ void RadioCore::update() {
         snapshot_.rdsClockValid = true;
       }
       if (rds.stationNameUpdated) copyField(snapshot_.stationName, sizeof(snapshot_.stationName), rds.stationName);
-      if (rds.radioTextUpdated && rds.radioText[0] != '\0')
+      if (rds.radioTextUpdated)
         copyField(snapshot_.radioText, sizeof(snapshot_.radioText), rds.radioText);
       snapshot_.rdsAvailable = true;
     }
