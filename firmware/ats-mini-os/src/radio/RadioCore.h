@@ -9,6 +9,8 @@ public:
   void update();
   bool tune(uint32_t frequencyKHz);
   bool selectBand(uint8_t index);
+  bool canUseModulation(RadioModulation modulation) const;
+  bool setModulation(RadioModulation modulation);
   uint8_t bandCount() const { return BandManager::count(); }
   uint8_t currentBandIndex() const { return BandManager::currentIndex(); }
   bool nextBand(int8_t direction);
