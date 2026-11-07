@@ -267,6 +267,10 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
           canvas.drawString(bandLabel, 24, y+13);
         }
       }
+    } else if ((page == 14 || page == 15) && index > 0 && index - 1 == layoutMode) {
+      char selectedLayout[40];
+      snprintf(selectedLayout, sizeof(selectedLayout), "* %s", items[index]);
+      canvas.drawString(selectedLayout, 24, y+13);
     } else if (page == 10 && index > 0 && index - 1 == ThemeManager::normalize(themeIndex)) {
       char selectedTheme[32];
       snprintf(selectedTheme, sizeof(selectedTheme), "* %s", items[index]);
