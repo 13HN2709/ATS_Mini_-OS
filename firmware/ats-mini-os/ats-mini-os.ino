@@ -159,7 +159,17 @@ void loop() {
             if (radio.setVolume(nextVolume))
               Serial.printf("[MENU] volume=%u/63\n", static_cast<unsigned>(radio.volume()));
           } else {
-            const int16_t itemCount = menuPage == 0 ? 12 : (menuPage==2 ? 4 : (menuPage==13 ? 3 : ((menuPage==14 || menuPage==15) ? 3 : (menuPage==10 ? 4 : (menuPage==11 ? (radio.snapshot().modulation==RadioModulation::FM ? 10 : 14) : (menuPage==5 ? 5 : (menuPage==3 ? 6 : (menuPage==12 ? 2 : (menuPage==7 ? radio.bandwidthChoiceCount()+1 : (menuPage==8 ? radio.bandCount()+1 : (menuPage==9 ? radio.stepChoiceCount()+1 : 3)))))))))));
+            const int16_t itemCount = menuPage == 0 ? 12 :
+              menuPage == 2 ? 4 : menuPage == 13 ? 3 :
+              ((menuPage == 14 || menuPage == 15) ? 3 :
+              menuPage == 10 ? 4 : menuPage == 11 ?
+              (radio.snapshot().modulation == RadioModulation::FM ? 10 : 14) :
+              menuPage == 5 ? 5 : menuPage == 3 ? 7 :
+              menuPage == 12 ? 2 : menuPage == 16 ?
+              (radio.canUseModulation(RadioModulation::USB) ? 4 : 2) :
+              menuPage == 7 ? radio.bandwidthChoiceCount()+1 :
+              menuPage == 8 ? radio.bandCount()+1 :
+              menuPage == 9 ? radio.stepChoiceCount()+1 : 3);
             int16_t next = (static_cast<int16_t>(menuSelection) + inputEvent.delta) % itemCount;
             if (next < 0) next += itemCount;
             menuSelection = static_cast<uint8_t>(next);
@@ -272,7 +282,9 @@ void loop() {
             const bool saved = settingsStore.saveBfoOffsetHz(radio.bfoOffsetHz());
             Serial.printf("[SETTINGS] BFO=%d Hz %s\n", static_cast<int>(radio.bfoOffsetHz()), saved ? "saved" : "save failed");
           } else Serial.println("[MENU] BFO change rejected (limit +/-16000 Hz)");
-        } else if (menuPage == 3 && menuSelection == 4) {
+        } else if (menuPage == 3 && menuSelection == 6) {
+          menuPage = 12; menuSelection = 0;
+        } else if (menuPage == 3 && menuSelection == 5) {
           menuPage = 11;
           menuSelection = 0;
         } else if (menuPage == 11 && menuSelection == 0) {
@@ -309,6 +321,22 @@ void loop() {
               static_cast<unsigned>(gain), saved ? "saved" : "save failed");
           }
         } else if (menuPage == 3 && menuSelection == 1) {
+          menuPage = 16;
+          menuSelection = radio.snapshot().modulation == RadioModulation::FM ? 1 :
+            (radio.snapshot().modulation == RadioModulation::AM ? 1 :
+             (radio.snapshot().modulation == RadioModulation::USB ? 2 : 3));
+        } else if (menuPage == 16 && menuSelection == 0) {
+          menuPage = 3; menuSelection = 1;
+        } else if (menuPage == 16 && menuSelection > 0) {
+          const bool fmBand = radio.snapshot().bandMinimumKHz >= 64000;
+          const RadioModulation requested = fmBand ? RadioModulation::FM :
+            (menuSelection == 1 ? RadioModulation::AM :
+             (menuSelection == 2 ? RadioModulation::USB : RadioModulation::LSB));
+          if (radio.setModulation(requested)) {
+            display.notifyTuning();
+            closeMenuToRadio("modulation selected");
+          }
+        } else if (menuPage == 3 && menuSelection == 2) {
           menuPage = 8;
           menuSelection = static_cast<uint8_t>(radio.currentBandIndex() + 1);
         } else if (menuPage == 8 && menuSelection == 0) {
@@ -321,7 +349,7 @@ void loop() {
               static_cast<unsigned long>(radio.snapshot().frequencyKHz));
             closeMenuToRadio("band selected");
           }
-        } else if (menuPage == 3 && menuSelection == 3) {
+        } else if (menuPage == 3 && menuSelection == 4) {
           menuPage = 9;
           menuSelection = static_cast<uint8_t>(radio.stepChoice() + 1);
         } else if (menuPage == 9 && menuSelection == 0) {
@@ -331,7 +359,7 @@ void loop() {
           if (radio.setStepChoice(static_cast<uint8_t>(menuSelection - 1))) {
             closeMenuToRadio("step size selected");
           }
-        } else if (menuPage == 3 && menuSelection == 2) {
+        } else if (menuPage == 3 && menuSelection == 3) {
           menuPage = 7;
           menuSelection = static_cast<uint8_t>(radio.bandwidthChoice() + 1);
         } else if (menuPage == 7 && menuSelection == 0) {
