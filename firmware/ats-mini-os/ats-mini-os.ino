@@ -203,7 +203,7 @@ void loop() {
           } else {
             const int16_t itemCount = menuPage == 0 ? 21 :
               menuPage == 2 ? 4 : menuPage == 5 ? 7 : menuPage == 13 ? 3 :
-              ((menuPage == 14) ? 3 : (menuPage == 15) ? 2 :
+              ((menuPage == 14) ? 3 : (menuPage == 15) ? 8 :
               menuPage == 10 ? 4 : menuPage == 11 ?
               (radio.snapshot().modulation == RadioModulation::FM ? 10 : 14) :
               menuPage == 3 ? 7 :
@@ -301,11 +301,16 @@ void loop() {
             layout == 2 ? "TEF6686 -FM Version" : "DAB Style", saved ? "saved" : "save failed");
           closeMenuToRadio("FM layout selected");
         } else if (menuPage == 15 && menuSelection > 0) {
-          const uint8_t layout = 1; // Only HJB is offered for LW/MW/KW.
+          // Index 1 is the existing HJB layout; 2-7 are the six DEV ports.
+          const uint8_t layout = menuSelection;
+          static const char* const layoutNames[] = {
+            "Standard", "HJB", "Default", "Clean", "Decoder / Wasserfall",
+            "New UI", "S-Meter", "TinyRadio"
+          };
           display.setAmLayout(layout);
           const bool saved = settingsStore.saveDisplayAmLayout(layout);
           Serial.printf("[SETTINGS] LW/MW/KW layout=%s %s\\n",
-            "HJB", saved ? "saved" : "save failed");
+            layoutNames[layout], saved ? "saved" : "save failed");
           closeMenuToRadio("LW/MW/KW layout selected");
         } else if (menuPage == 5 && menuSelection == 5) {
           menuPage = 14;
