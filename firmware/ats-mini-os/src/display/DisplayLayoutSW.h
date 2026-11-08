@@ -1,6 +1,7 @@
 #pragma once
 #include <Arduino.h>
 #include "../radio/RadioSnapshot.h"
+#include <string.h>
 
 // ATS Mini DEV LW/MW/KW layouts adapted to the OS RadioSnapshot contract.
 // Each renderer is isolated from the FM/DAB and TEF6686 renderers.
@@ -129,7 +130,7 @@ template<class C> void drawDecoder(C& d,const RadioSnapshot& s,bool ready,bool w
 template<class C> void drawTiny(C& d,const RadioSnapshot& s,bool ready,bool wifi) {
   d.fillScreen(BG);
   const char* labels[]={"LW","MW","KW"}; const int xx[]={4,42,80};
-  for(int i=0;i<3;i++){d.drawRect(xx[i],3,34,18,i==2?CYAN:GREY);d.setTextDatum(MC_DATUM);d.setTextColor(i==2?CYAN:GREY,BG);d.drawString(labels[i],xx[i]+17,8);}
+  for(int i=0;i<3;i++){const bool selected=strcmp(s.bandName,labels[i])==0;d.drawRect(xx[i],3,34,18,selected?CYAN:GREY);d.setTextDatum(MC_DATUM);d.setTextColor(selected?CYAN:GREY,BG);d.drawString(labels[i],xx[i]+17,8);}
   d.setTextDatum(TR_DATUM);d.setTextColor(wifi?CYAN:GREY,BG);d.drawString(wifi?"WLAN+":"WLAN-",312,6);
   frequency(d,s,8,34,0.80f);
   d.setFont(&lgfx::fonts::FreeSansBold9pt7b);d.setTextDatum(TL_DATUM);d.setTextColor(CYAN,BG);
