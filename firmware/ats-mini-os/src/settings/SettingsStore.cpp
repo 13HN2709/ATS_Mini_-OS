@@ -72,11 +72,11 @@ bool SettingsStore::saveDisplayFmLayout(uint8_t layout) {
 uint8_t SettingsStore::displayAmLayout(uint8_t fallback) {
   if (!ready_) return fallback;
   const uint8_t saved = preferences_.getUChar(kDisplayAmLayoutKey, fallback);
-  return saved <= 1 ? saved : fallback;
+  return saved <= 7 ? saved : fallback;
 }
 
 bool SettingsStore::saveDisplayAmLayout(uint8_t layout) {
-  return ready_ && layout <= 1 &&
+  return ready_ && layout <= 7 &&
          preferences_.putUChar(kDisplayAmLayoutKey, layout) == sizeof(uint8_t);
 }
 
