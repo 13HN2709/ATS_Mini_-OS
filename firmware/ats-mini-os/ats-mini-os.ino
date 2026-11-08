@@ -273,16 +273,16 @@ void loop() {
             } else {
               menuPage = targetPage;
               if (menuPage == 8) menuSelection = static_cast<uint8_t>(radio.currentBandIndex() + 1);
-              else if (menuPage == 11 && selectedMainItem == 15) {
+              else if (menuPage == 11 && selectedMainItem == 16) {
                 menuSelection = radio.snapshot().modulation == RadioModulation::FM ? 0 : 10;
-              } else if (menuPage == 11 && selectedMainItem == 16) menuSelection = 6;
-              else if (menuPage == 11 && selectedMainItem == 14) menuSelection = 1;
+              } else if (menuPage == 11 && selectedMainItem == 17) menuSelection = 6;
+              else if (menuPage == 11 && selectedMainItem == 15) menuSelection = 1;
               else menuSelection = 0;
               Serial.printf("[MENU] opened selection page %u\n", static_cast<unsigned>(menuPage));
             }
         } else if (menuPage == 13 && menuSelection == 0) {
           menuPage = 0;
-          menuSelection = 8;
+          menuSelection = 9;
         } else if (menuPage == 13 && menuSelection == 1) {
           menuPage = 14;
           menuSelection = display.fmLayout() == 2 ? 2 : 1;
