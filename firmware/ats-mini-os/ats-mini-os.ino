@@ -318,7 +318,7 @@ void loop() {
           menuSelection = display.fmLayout() == 2 ? 2 : 1;
         } else if (menuPage == 5 && menuSelection == 6) {
           menuPage = 15;
-          menuSelection = 1;
+          menuSelection = static_cast<uint8_t>(display.amLayout() + 1);
         } else if (menuPage == 2 && menuSelection == 3) {
           menuPage = 10;
           menuSelection = static_cast<uint8_t>(display.themeIndex() + 1);
