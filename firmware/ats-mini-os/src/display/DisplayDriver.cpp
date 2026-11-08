@@ -289,8 +289,8 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
   canvas.setFont(&lgfx::fonts::FreeSansBold9pt7b);
   canvas.setTextDatum(TL_DATUM);
   canvas.drawString("ATS MINI OS", 12, 8);
-  canvas.setTextDatum(TR_DATUM);
-  canvas.drawString(title, w-12, 8);
+  const int titleWidth=canvas.textWidth(title,&lgfx::fonts::FreeSansBold9pt7b);
+  drawMenuDigitalText(canvas,title,w-12-titleWidth,8,menuCyan,&lgfx::fonts::FreeSansBold9pt7b);
 
   char counter[16];
   snprintf(counter, sizeof(counter), "%02u / %02u",
