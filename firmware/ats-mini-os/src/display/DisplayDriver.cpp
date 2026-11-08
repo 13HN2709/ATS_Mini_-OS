@@ -330,27 +330,26 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
     menuFont=&lgfx::fonts::FreeSansBold9pt7b;
     labelWidth=canvas.textWidth(displayLabel,menuFont);
   }
-  const int labelY=(h/2)-12;
+  const bool showLevel = (page == 1 && selection == 1) || (page == 2 && selection == 1);
+  const int labelY = showLevel ? 101 : (h/2)-12;
   const int labelX=(w-labelWidth)/2;
   drawMenuDigitalText(canvas,displayLabel,labelX,labelY,menuCyan,menuFont);
 
-  // Show live values while adjusting volume or display brightness.
-  // The values remain visible even before the encoder is moved.
-  if ((page == 1 && selection == 1) || (page == 2 && selection == 1)) {
+  // Show the numeric level above the selected menu label.
+  if (showLevel) {
     const bool isVolume = page == 1;
     const int maximum = isVolume ? 63 : 255;
     const int value = isVolume ? volume : brightness;
     const int percent = (value * 100 + maximum / 2) / maximum;
-    char valueText[40];
-    snprintf(valueText, sizeof(valueText), "%s: %d / %d  (%d%%)",
-      isVolume ? "VOLUME" : "HELLIGKEIT", value, maximum, percent);
+    char valueText[32];
+    snprintf(valueText, sizeof(valueText), "%d / %d  (%d%%)", value, maximum, percent);
 
     canvas.setFont(&lgfx::fonts::FreeSansBold9pt7b);
     canvas.setTextDatum(MC_DATUM);
-    canvas.setTextColor(WHITE, BLACK);
-    canvas.drawCenterString(valueText, w/2, 91);
+    canvas.setTextColor(menuCyan, BLACK);
+    canvas.drawCenterString(valueText, w/2, 69);
 
-    const int barX=42, barY=116, barW=w-84, barH=12;
+    const int barX=42, barY=128, barW=w-84, barH=12;
     canvas.drawRoundRect(barX,barY,barW,barH,3,menuBlue);
     canvas.fillRect(barX+2,barY+2,(barW-4)*value/maximum,barH-4,menuCyan);
   }
