@@ -203,7 +203,7 @@ void loop() {
           } else {
             const int16_t itemCount = menuPage == 0 ? 21 :
               menuPage == 2 ? 4 : menuPage == 5 ? 7 : menuPage == 13 ? 3 :
-              ((menuPage == 14) ? 3 : (menuPage == 15) ? 8 :
+              ((menuPage == 14) ? 3 : (menuPage == 15) ? 9 :
               menuPage == 10 ? 4 : menuPage == 11 ?
               (radio.snapshot().modulation == RadioModulation::FM ? 10 : 14) :
               menuPage == 3 ? 7 :
@@ -288,7 +288,7 @@ void loop() {
           menuSelection = display.fmLayout() == 2 ? 2 : 1;
         } else if (menuPage == 13 && menuSelection == 2) {
           menuPage = 15;
-          menuSelection = 1;
+          menuSelection = static_cast<uint8_t>(display.amLayout() + 1);
         } else if ((menuPage == 14 || menuPage == 15) && menuSelection == 0) {
           const bool returningFromFm = menuPage == 14;
           menuPage = 5;
@@ -301,8 +301,9 @@ void loop() {
             layout == 2 ? "TEF6686 -FM Version" : "DAB Style", saved ? "saved" : "save failed");
           closeMenuToRadio("FM layout selected");
         } else if (menuPage == 15 && menuSelection > 0) {
-          // Index 1 is the existing HJB layout; 2-7 are the six DEV ports.
-          const uint8_t layout = menuSelection;
+          // Menu index 1 selects the original OS layout; 2 selects HJB;
+          // 3-8 select the six adapted ATS Mini DEV layouts.
+          const uint8_t layout = static_cast<uint8_t>(menuSelection - 1);
           static const char* const layoutNames[] = {
             "Standard", "HJB", "Default", "Clean", "Decoder / Wasserfall",
             "New UI", "S-Meter", "TinyRadio"
