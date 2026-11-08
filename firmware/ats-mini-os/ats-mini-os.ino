@@ -201,7 +201,7 @@ void loop() {
             if (radio.setVolume(nextVolume))
               Serial.printf("[MENU] volume=%u/63\n", static_cast<unsigned>(radio.volume()));
           } else {
-            const int16_t itemCount = menuPage == 0 ? 20 :
+            const int16_t itemCount = menuPage == 0 ? 21 :
               menuPage == 2 ? 4 : menuPage == 5 ? 7 : menuPage == 13 ? 3 :
               ((menuPage == 14) ? 3 : (menuPage == 15) ? 2 :
               menuPage == 10 ? 4 : menuPage == 11 ?
@@ -259,13 +259,15 @@ void loop() {
         } else if (menuPage == 0) {
             // ATS Mini Dev main-menu order and labels are preserved exactly.
             // Unsupported entries are marked with * in the renderer and stay inert.
-            static const uint8_t targetPages[20] = {
-              16, 8, 1, 255, 255, 255, 255, 12, 9, 255,
+            static const uint8_t targetPages[21] = {
+              255, 16, 8, 1, 255, 255, 255, 255, 12, 9, 255,
               255, 255, 255, 7, 11, 11, 11, 5, 255, 255
             };
             const uint8_t selectedMainItem = menuSelection;
             const uint8_t targetPage = targetPages[selectedMainItem];
-            if (targetPage == 255) {
+            if (selectedMainItem == 0) {
+              closeMenuToRadio("main menu back");
+            } else if (targetPage == 255) {
               Serial.printf("[MENU] '%u' is not implemented yet\n",
                 static_cast<unsigned>(selectedMainItem));
             } else {
