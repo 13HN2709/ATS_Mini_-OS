@@ -340,6 +340,10 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
   canvas.setTextDatum(TR_DATUM);
   canvas.drawString("KLICK: OK", w-12, h-18);
 
+  // Do not leak menu text alignment/scale into the next radio frame.
+  canvas.setTextDatum(TL_DATUM);
+  canvas.setTextSize(1.0f);
+  canvas.setFont(&lgfx::fonts::Font0);
 }
 
 }
@@ -505,6 +509,12 @@ void drawLayout(Canvas& canvas,const RadioSnapshot& s,bool radioReady,bool wifiC
   const int w=canvas.width();
   const int h=canvas.height();
   (void)lastInputEvent; (void)inputEventCount;
+
+  // A menu may leave the shared LovyanGFX canvas right-aligned or scaled.
+  // Restore the radio layout's drawing defaults before placing any content.
+  canvas.setTextDatum(TL_DATUM);
+  canvas.setTextSize(1.0f);
+  canvas.setFont(&lgfx::fonts::Font0);
 
   canvas.fillScreen(BLACK);
 
