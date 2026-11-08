@@ -18,8 +18,8 @@
 
 namespace {
 constexpr uint32_t SERIAL_BAUD = 115200;
-constexpr const char* DIAGNOSTIC_LOG_PATH = "/RDS/ats-mini-os.log";
-constexpr const char* DIAGNOSTIC_LOG_OLD_PATH = "/RDS/ats-mini-os.log.1";
+constexpr const char* DIAGNOSTIC_LOG_PATH = "/ats-mini-os.log";
+constexpr const char* DIAGNOSTIC_LOG_OLD_PATH = "/ats-mini-os.log.1";
 
 void writeDiagnosticLog(const char* event, const char* details = "") {
   if (!StorageDiscovery::ready()) return;
