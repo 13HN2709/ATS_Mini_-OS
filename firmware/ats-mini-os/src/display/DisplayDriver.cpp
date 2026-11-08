@@ -210,10 +210,10 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
   // Main-menu labels intentionally match ATS Mini Dev verbatim.
   // A trailing * marks entries that are not implemented in ATS Mini OS yet.
   static const char* const mainItems[] = {
-    "Modulation", "Bänder", "Lautstärke", "Keypad*", "DUAL RX*", "VFO A/B*",
-    "Frequenz*", "BFO", "Schrittweite", "Suche*", "Scannen*", "Speicher*", "Rauschsperre*",
+    "Zurück", "Modulation", "Bänder", "Lautstärke", "Keypad*", "DUAL RX*", "VFO A/B*",
+    "Frequenz*", "BFO", "STEP", "Suche*", "Scannen*", "Speicher*", "Rauschsperre*",
     "Bandbreite", "AGC/Dämpfung", "Auto-Lautstärke", "Soft-Mute", "Einstellungen",
-    "VHF Spektrum*", "Gesamtes Bandspektrum*"
+    "VHF Spektrum*", "ALL-Band Spektrum*"
   };
   static const char* const volumeItems[] = {
     "Zurück", "Lautstärke", "Stumm (später)"
@@ -336,7 +336,7 @@ void drawMenu(Canvas& canvas, uint8_t page, uint8_t selection, uint8_t volume, u
   canvas.setTextDatum(TL_DATUM);
   canvas.setFont(&lgfx::fonts::Font0);
   canvas.setTextColor(menuCyan, BLACK);
-  canvas.drawString("DREHEN: AUSWÄHLEN", 12, h-18);
+  drawMenuDigitalText(canvas,"DREHEN: AUSWÄHLEN",12,h-18,menuCyan,&lgfx::fonts::Font0);
   canvas.setTextDatum(TR_DATUM);
   canvas.drawString("KLICK: OK", w-12, h-18);
 
