@@ -2,6 +2,7 @@
 #include "ThemeManager.h"
 #include "DisplayLayoutAM.h"
 #include "DisplayLayoutHJB.h"
+#include "DisplayLayoutSW.h"
 #include "../radio/BandManager.h"
 #include "../menus/MenuSSB.h"
 #include <LittleFS.h>
@@ -410,9 +411,9 @@ void DisplayDriver::setFmLayout(uint8_t mode) {
 }
 
 void DisplayDriver::setAmLayout(uint8_t mode) {
-  amLayout_ = mode <= 1 ? mode : 0;
+  amLayout_ = mode <= 7 ? mode : 0;
   lastGeneration_ = UINT32_MAX;
-  Serial.printf("[DISPLAY] LW/MW/KW layout: %s\\n", amLayout_ == 1 ? "HJB" : "Standard LW/MW/KW");
+  Serial.printf("[DISPLAY] LW/MW/KW layout index: %u\\n", static_cast<unsigned>(amLayout_));
 }
 
 void DisplayDriver::render(const RadioSnapshot& s,bool radioReady,bool wifiConnected,
@@ -768,15 +769,26 @@ void DisplayDriver::draw(const RadioSnapshot& s,bool radioReady,bool wifiConnect
       return;
     }
   } else {
+    auto renderSw = [&](auto& canvas) {
+      switch (amLayout_) {
+        case 0: drawAmBandLayout(canvas, s, radioReady, wifiConnected); break;
+        case 1: drawHJBLayout(canvas, s, radioReady, wifiConnected); break;
+        case 2: SWLayouts::drawDefault(canvas, s, radioReady, wifiConnected); break;
+        case 3: SWLayouts::drawClean(canvas, s, radioReady, wifiConnected); break;
+        case 4: SWLayouts::drawDecoder(canvas, s, radioReady, wifiConnected); break;
+        case 5: SWLayouts::drawNewUI(canvas, s, radioReady, wifiConnected); break;
+        case 6: SWLayouts::drawSMeter(canvas, s, radioReady, wifiConnected); break;
+        case 7: SWLayouts::drawTiny(canvas, s, radioReady, wifiConnected); break;
+        default: drawAmBandLayout(canvas, s, radioReady, wifiConnected); break;
+      }
+    };
     if (useSprite_) {
       sprite_.fillSprite(BLACK);
-      if (amLayout_ == 0) drawAmBandLayout(sprite_, s, radioReady, wifiConnected);
-      else drawHJBLayout(sprite_, s, radioReady, wifiConnected);
+      renderSw(sprite_);
       sprite_.pushSprite(0, 0);
     } else {
       device_.fillScreen(BLACK);
-      if (amLayout_ == 0) drawAmBandLayout(device_, s, radioReady, wifiConnected);
-      else drawHJBLayout(device_, s, radioReady, wifiConnected);
+      renderSw(device_);
     }
     return;
   }
