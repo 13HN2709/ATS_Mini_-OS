@@ -15,7 +15,8 @@ Ein eigenständiges, modular aufgebautes Betriebssystem-/Firmwareprojekt für de
 ## 2. Schutz bestehender Firmware
 
 - Die aktuell gut funktionierende Firmware in **Slot A** muss unangetastet bleiben.
-- **DiamondRadio in Slot B** muss ebenfalls unangetastet bleiben.
+- **ATS Mini OS läuft bereits dauerhaft in Slot B / APP1.** Dieser Slot ist unser aktiver OS-Test- und Entwicklungsplatz; DiamondRadio ist dort nicht installiert und gehört nicht zum aktuellen Slot-Setup.
+- Die funktionierende Firmware in Slot A / APP0 bleibt unangetastet.
 - Vor späteren Build- oder Flash-Schritten müssen Partitionslayout, Slot-Größen, Image-Format, Bootloader-/Bootmanager-Anforderungen und Recovery-Verfahren anhand belastbarer Quellen geprüft werden.
 - Keine vorhandenen Projekte, Branches, Releases oder Workflow-Dateien verändern, um dieses neue OS aufzubauen.
 - Der Nutzer startet GitHub Actions selbst. Keine Workflows auslösen.
@@ -127,7 +128,7 @@ Diese Module sind Zielideen. Verfügbarkeit und Aufwand werden erst nach der Inv
 | Risiko | Gegenmaßnahme |
 |---|---|
 | Bestehende Slot-A-Firmware wird überschrieben | Keine Flash-Aktion; Partitions- und Bootpfade zuerst verifizieren |
-| DiamondRadio in Slot B wird beeinträchtigt | Slot B nicht verändern; Image-/Slot-Kompatibilität dokumentieren |
+| Bestehende Firmware in Slot A wird beeinträchtigt | Slot A unangetastet lassen; Änderungen und Tests ausschließlich im vorgesehenen ATS-Mini-OS-Entwicklungszweig durchführen |
 | Firmware-Image passt nicht in App-Slot | Slotgröße und Imagegröße vor jedem späteren Build/Flash abgleichen |
 | Tuner kann Dual RX nicht wirklich parallel | Hardwarefähigkeiten und Treiber prüfen; Funktion nur entsprechend ausweisen |
 | Bibliotheks-/Framework-Versionen inkompatibel | Versionen aus Quellcode und Buildkonfiguration ermitteln, nicht raten |
@@ -216,7 +217,7 @@ Vorläufige Auswahl:
 - **Bilddarstellung:** LovyanGFX nennt TJpgDec und Pngle als mögliche technische Referenzen; Espressif zeigt Decoderbeispiele für ESP32-S3. Es ist noch nicht bestätigt, dass ein allgemeiner Bilddecoder in der bestehenden ATS-Referenzfirmware bereits eingebunden ist.
 - **Netzwerkarchitektur:** gemeinsame Netzwerkdienste, HTTPS-Zertifikatsprüfung, begrenzte Downloads, Cache und nicht blockierende Abläufe vorsehen. AP Only allein hat keinen Internetzugang; für externe Wetter-/Logo-Daten muss STA-Internet verfügbar sein.
 
-Die Ergebnisse sind Recherche-Hinweise und noch keine Implementierung oder endgültige Anbieterfreigabe. Alle Schutzgrenzen aus diesem Dokument bleiben bestehen: Referenz-Repositories read-only, keine Builds/Actions/Flashvorgänge und keine Änderungen an Slot A oder Slot B.
+Die Ergebnisse sind Recherche-Hinweise und noch keine Implementierung oder endgültige Anbieterfreigabe. Alle Schutzgrenzen aus diesem Dokument bleiben bestehen: Referenz-Repositories read-only, keine Builds/Actions/Flashvorgänge und keine Änderungen an Slot A; ATS Mini OS bleibt im bereits verwendeten Slot B / APP1.
 
 
 ## 14. Entscheidung: RadioDNS als bevorzugten Logo-Kandidaten aufnehmen
@@ -248,7 +249,7 @@ Der Nutzer hat festgelegt, dass wir das ATS Mini OS zuerst als einfaches **UKW-R
 - RDS/RT/PTY/Logo sind abhängig von Senderdaten und Hardwareunterstützung; fehlende Daten dürfen kein Fehler für das Radio sein.
 - RadioDNS bleibt der bevorzugte erste Logo-Kandidat, ist aber keine Garantie, dass jeder Sender ein Logo veröffentlicht.
 - Die Architektur-/Reihenfolgeentscheidung ist noch keine Freigabe für ausführbaren Code, Builds, Actions oder Flashvorgänge.
-- Bestehende Slot-A- und Slot-B-Firmware und Referenz-Repositories bleiben unangetastet. Der aktuelle Status bleibt Planung/Inventarisierung.
+- Slot A / APP0 und Referenz-Repositories bleiben unangetastet. ATS Mini OS wird in Slot B / APP1 entwickelt und getestet.
 
 
 ## 15. RadioDNS: vollständige Erfassung der nötigen RDS-Daten
@@ -277,7 +278,7 @@ Der Nutzer hat festgelegt, dass wir für den ersten UKW-Radio-Ausbau alle für R
 
 ### Dual-Boot- und spätere Vollspeicher-Strategie
 1. Zunächst **Dual-Boot-Unterstützung beibehalten** und die neue Firmware für den vorgesehenen Dateinamen/Installationsweg `ats.mini-ino.bin` vorbereiten. Den exakten Dateinamen und das benötigte Binärformat vor einem späteren Build/Flash anhand des realen Update-Verfahrens verifizieren.
-2. Slot A mit der funktionierenden Firmware und Slot B mit DiamondRadio bleiben unangetastet. Der Nutzer wechselt später selbst wieder auf das andere Dual-Boot-System, um die dortigen Speicherwerte bei Bedarf erneut zu prüfen.
+2. Slot A / APP0 enthält weiterhin die funktionierende Bestands-Firmware und bleibt unangetastet. Slot B / APP1 ist der bereits verwendete ATS-Mini-OS-Slot.
 3. Erst wenn ATS Mini OS stabil fertiggestellt und getestet ist, soll optional auf eine Einzel-Firmware ohne Dual Boot umgestellt und die Partitionierung für möglichst viel nutzbaren Speicher neu geplant werden.
 4. Auch im späteren Einzel-Firmware-Betrieb benötigen Bootloader, Partitionstabelle, System-/Recovery-Bereiche und Dateisystem weiterhin geeigneten Platz; „gesamte 16 MB nutzen“ bedeutet, die Aufteilung sinnvoll zu optimieren, nicht jeden Byte ausschließlich für App-Code oder Nutzdateien zu reservieren.
 
@@ -356,7 +357,7 @@ Am 1. November 2026 wurden die offizielle Bibliotheksversion pu2clr/SI4735 Tag 2
 Die SI4735-Antwort stellt Rohfelder bereit, um die Dekodierung von ECC, AF, TP/TA und RT+ weiterzuverfolgen. Das bedeutet noch nicht, dass diese Felder im bestehenden ATS-Anwendungscode verfügbar oder korrekt dekodiert sind. Gruppenbitbelegung, Fehlerprüfung und ODA-Zuordnung für RT+ müssen vor einer Implementierung normativ geprüft werden.
 
 ### Arbeitsgrenzen bleiben unverändert
-Nur öffentliche Quellen und Dokumentation. 13HN2709/ats-mini-dev und bestehende Firmware-Repositories bleiben unverändert; keine Firmwareimplementierung, Builds, GitHub Actions oder Flashvorgänge. Slot A und DiamondRadio in Slot B bleiben unangetastet.
+Nur öffentliche Quellen und Dokumentation. 13HN2709/ats-mini-dev und bestehende Firmware-Repositories bleiben unverändert; keine Firmwareimplementierung, Builds, GitHub Actions oder Flashvorgänge. Slot A / APP0 bleibt unangetastet; ATS Mini OS läuft in Slot B / APP1.
 
 
 ## 21. RadioDNS-Logo-Datenfluss und Diagnoseanforderungen dokumentiert
@@ -407,7 +408,7 @@ Am 1. November 2026 wurde `docs/RADIODNS_INTERFACES_AND_TEST_LAYOUT.md` ergänzt
 - Diese Werte sind noch nicht als verifizierte Hardwarefakten oder finaler OS-Buildvertrag zu behandeln.
 - Schriftkandidat für das Testlayout: DSEGstended 14-Segment Regular; Quelle und SIL OFL 1.1 sind dokumentiert. Fontdatei und tatsächliche Glyphen-/Speicherprüfung stehen noch aus.
 - Nächster Weg: Referenzdisplay-/Tuner-Initialisierung und Lizenz/Pin-Konfiguration vollständig nachvollziehen; dann minimale, klar getrennte Radio-Core- und UI-Grundlage auf dem Arbeitszweig anlegen und statisch prüfen.
-- **Noch nicht durchgeführt:** Build, GitHub Actions, Flashen oder Änderungen an bestehenden Firmware-Repositories. Slot A und DiamondRadio Slot B bleiben geschützt.
+- **Noch nicht durchgeführt:** Build, GitHub Actions, Flashen oder Änderungen an bestehenden Firmware-Repositories. Slot A / APP0 bleibt geschützt; Slot B / APP1 ist der aktive ATS-Mini-OS-Slot.
 
 
 - Ergänzung: `docs/FIRST_BUILD_READINESS.md` bündelt die Quellcode-Erkenntnisse, offene Build-Blocker und den sicheren Ablauf bis zum ersten Compile.
@@ -548,10 +549,10 @@ Der Standardstart der ersten FM-Diagnose wurde auf **95,4 MHz (95400 kHz)** gese
 
 Der Nutzer bestätigt den aktuellen Gerätezustand: Die gut funktionierende aktuelle Dev-Firmware läuft auf **APP0**; neue OS-Tests sollen für **APP1** vorgesehen werden.
 - APP0: Start `0x010000`, Größe 3584 KB. Stabiler Betrieb – nicht überschreiben oder verändern.
-- APP1: Start `0x390000`, Größe 3584 KB. Vorgesehener Testslot für neues ATS Mini OS, aber noch kein Flash freigegeben.
+- APP1 / Slot B: Start `0x390000`, Größe 3584 KB. Hier läuft bereits ATS Mini OS; dies ist unser aktiver OS-Test- und Entwicklungs-Slot.
 - Vollständiges Backup `ATSMiniFULLBackup.nbin` (16 MB) und Recovery erhalten.
 - Die bisherige OS-Konfiguration/Partition-CSV ist nur für Compile-Tests und darf nicht als Flash-/Upload-Konfiguration verwendet werden. Vor einem ersten Flash müssen Binärformat, Flash-Offsets, Bootloader-/OTA-Mechanismus und 3.5-MiB-Slotgröße verifiziert werden. Keine Firmware auf Offset `0x0`, kein Clean Install, keine Änderung an Bootmanager/Recovery.
-- Der Nutzer hat APP1 als Testplatz vorgesehen; dies ist noch keine ausdrückliche Freigabe, jetzt zu flashen. Bis zur gesonderten Freigabe nur Compile-/Artefaktprüfung.
+- APP1 / Slot B ist der vorgesehene und bereits verwendete ATS-Mini-OS-Slot. Diese Feststellung ist keine neue Freigabe für weitere Flash-Aktionen. Bis zur gesonderten Freigabe nur Compile-/Artefaktprüfung.
 
 
 ## 37. Selbstständige Prüfung und persistente Einstellungen (2026-11-01; Compile ausstehend)
@@ -1678,3 +1679,14 @@ Zuerst die vorhandene Menü-Engine, TunerDriver-/RadioCore-Schnittstellen und di
 - Geändert: `firmware/ats-mini-os/src/display/DisplayDriver.cpp`.
 - Commit: `37cd3f4bc4d1bdb9f15c30df3c524a5fe8b6a85b`.
 - Status: Änderung auf GitHub verifiziert; noch nicht kompiliert und nicht auf Hardware getestet. Der Nutzer startet QSPI-/OSPI-Compile-only-Workflows manuell.
+
+
+## 2026-11-09 – Verbindliche Slot- und Arbeitsbranch-Klarstellung
+
+- Korrektur früherer Übergabetexte: **DiamondRadio ist nicht in Slot B / APP1 installiert und gehört nicht zum aktuellen Gerätezustand.** Dort läuft bereits unser ATS Mini OS.
+- **Slot A / APP0** enthält weiterhin die funktionierende Bestands-Firmware und bleibt unangetastet.
+- **Slot B / APP1** ist der aktive ATS-Mini-OS-Slot. Die bisherige Formulierung, Slot B müsse wegen DiamondRadio unangetastet bleiben oder sei nur für einen späteren Test vorgesehen, ist überholt.
+- Verbindlicher Arbeitsbranch für die weitere Entwicklung ist ausschließlich `dev/first-build-preparation`. Keine Änderungen auf `main` oder anderen Branches, sofern der Nutzer das nicht ausdrücklich anders beauftragt.
+- GitHub Actions startet weiterhin ausschließlich der Nutzer. Keine Workflows durch den Assistenten auslösen.
+- Keine Änderungen an Bootloader, Bootmanager, Recovery oder Partitionierung und keine weiteren Flash-Aktionen ohne ausdrückliche Freigabe.
+- Diese Klarstellung wurde auf dem Branch `dev/first-build-preparation` dokumentiert.
