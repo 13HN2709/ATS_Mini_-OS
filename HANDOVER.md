@@ -547,7 +547,7 @@ Der Standardstart der ersten FM-Diagnose wurde auf **95,4 MHz (95400 kHz)** gese
 
 ## 36. Slot-Aufteilung für Tests verbindlich bestätigt (2026-11-01)
 
-Der Nutzer bestätigt den aktuellen Gerätezustand: Die gut funktionierende aktuelle Dev-Firmware läuft auf **APP0**; neue OS-Tests sollen für **APP1** vorgesehen werden.
+Der Nutzer bestätigt den aktuellen Gerätezustand: Die gut funktionierende Bestands-Firmware läuft auf **APP0**; unser ATS Mini OS ist bereits in **APP1 / Slot B** installiert und wird dort fortlaufend entwickelt und getestet.
 - APP0: Start `0x010000`, Größe 3584 KB. Stabiler Betrieb – nicht überschreiben oder verändern.
 - APP1 / Slot B: Start `0x390000`, Größe 3584 KB. Hier läuft bereits ATS Mini OS; dies ist unser aktiver OS-Test- und Entwicklungs-Slot.
 - Vollständiges Backup `ATSMiniFULLBackup.nbin` (16 MB) und Recovery erhalten.
