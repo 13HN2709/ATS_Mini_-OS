@@ -96,7 +96,7 @@ void drawHJBLayout(Canvas& d, const RadioSnapshot& s, bool radioReady, bool wifi
   d.setTextDatum(MC_DATUM);
   d.setTextColor(BLUE,BG);
   d.setFont(&lgfx::fonts::Font0);
-  d.drawString(s.modulation==RadioModulation::FM?"MHz":"kHz",gx+gw/2,unitBoxY+3);
+  d.drawString("kHz",gx+gw/2,unitBoxY+3);
 
   // Right signal bars.
   const int bx=258;
