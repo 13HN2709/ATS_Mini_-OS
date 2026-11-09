@@ -1690,3 +1690,12 @@ Zuerst die vorhandene Menü-Engine, TunerDriver-/RadioCore-Schnittstellen und di
 - GitHub Actions startet weiterhin ausschließlich der Nutzer. Keine Workflows durch den Assistenten auslösen.
 - Keine Änderungen an Bootloader, Bootmanager, Recovery oder Partitionierung und keine weiteren Flash-Aktionen ohne ausdrückliche Freigabe.
 - Diese Klarstellung wurde auf dem Branch `dev/first-build-preparation` dokumentiert.
+
+
+## 2026-11-09 – HJB-Frequenzeinheit in separaten Kasten verschoben
+
+- Im eigenständigen HJB-Renderer `firmware/ats-mini-os/src/display/DisplayLayoutHJB.h` einen kleinen Einheitenkasten direkt unter dem linken RSSI/SNR-Verlauf ergänzt.
+- USB/LSB sowie AM zeigen darin `kHz`; FM zeigt korrekt `MHz`.
+- Die große Frequenzdarstellung und die Frequenzskala wurden nicht verändert. Die Einheit wird im HJB-Renderer separat gezeichnet und liegt nicht mehr an der Frequenzanzeige.
+- Commit: `245130e0f787cef10010bba3238bf01ae8b397fb`.
+- Status: Änderung committed und auf GitHub verifiziert; noch nicht kompiliert und nicht auf Hardware getestet. Nutzer startet den manuellen QSPI-/OSPI-Compile-only-Build. Keine GitHub Actions durch den Assistenten gestartet; nichts geflasht.
