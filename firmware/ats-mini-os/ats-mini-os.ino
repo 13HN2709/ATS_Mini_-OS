@@ -2,7 +2,6 @@
 #include <esp_system.h>
 #include <WebServer.h>
 #include <LovyanGFX.hpp>
-#include <LittleFS.h>
 #include "src/radio/RadioCore.h"
 #include "src/system/PerformanceManager.h"
 #include "src/system/ClockService.h"
@@ -18,32 +17,6 @@
 
 namespace {
 constexpr uint32_t SERIAL_BAUD = 115200;
-constexpr const char* DIAGNOSTIC_LOG_PATH = "/ats-mini-os.log";
-constexpr const char* DIAGNOSTIC_LOG_OLD_PATH = "/ats-mini-os.log.1";
-
-void writeDiagnosticLog(const char* event, const char* details = "") {
-  if (!StorageDiscovery::ready()) return;
-  // Keep the log bounded so repeated resets cannot consume the LittleFS partition.
-  if (LittleFS.exists(DIAGNOSTIC_LOG_PATH)) {
-    File current = LittleFS.open(DIAGNOSTIC_LOG_PATH, "r");
-    const size_t size = current ? current.size() : 0;
-    if (current) current.close();
-    if (size > 48U * 1024U) {
-      LittleFS.remove(DIAGNOSTIC_LOG_OLD_PATH);
-      LittleFS.rename(DIAGNOSTIC_LOG_PATH, DIAGNOSTIC_LOG_OLD_PATH);
-    }
-  }
-  File logFile = LittleFS.open(DIAGNOSTIC_LOG_PATH, "a");
-  if (!logFile) {
-    Serial.println("[LOG] LittleFS diagnostic log could not be opened");
-    return;
-  }
-  logFile.printf("%lu ms | %s | %s\n",
-    static_cast<unsigned long>(millis()), event ? event : "event",
-    details ? details : "");
-  logFile.flush();
-  logFile.close();
-}
 constexpr uint32_t DEFAULT_FM_FREQUENCY_KHZ = 95400;
 PerformanceManager performance;
 ClockService systemClock;
@@ -123,14 +96,6 @@ void setup() {
   PartitionDiagnostics::printToSerial();
   StorageDiscovery::begin();
   FileManager::begin();
-  char bootDetails[128];
-  snprintf(bootDetails, sizeof(bootDetails),
-    "reset_reason=%d free_heap=%u largest_block=%u fs=%s",
-    static_cast<int>(esp_reset_reason()),
-    static_cast<unsigned>(ESP.getFreeHeap()),
-    static_cast<unsigned>(ESP.getMaxAllocHeap()),
-    StorageDiscovery::ready() ? StorageDiscovery::partitionLabel() : "unavailable");
-  writeDiagnosticLog("BOOT", bootDetails);
   stationLogoClient.begin();
 
   encoder.begin();
@@ -405,15 +370,6 @@ void loop() {
         } else if (menuPage == 8 && menuSelection > 0) {
           if (radio.selectBand(static_cast<uint8_t>(menuSelection - 1))) {
             display.notifyTuning();
-            char bandDetails[128];
-            snprintf(bandDetails, sizeof(bandDetails),
-              "band=%s freq=%lu kHz min=%lu max=%lu modulation=%u",
-              radio.snapshot().bandName,
-              static_cast<unsigned long>(radio.snapshot().frequencyKHz),
-              static_cast<unsigned long>(radio.snapshot().bandMinimumKHz),
-              static_cast<unsigned long>(radio.snapshot().bandMaximumKHz),
-              static_cast<unsigned>(radio.snapshot().modulation));
-            writeDiagnosticLog("BAND_SELECT", bandDetails);
             Serial.printf("[MENU] band=%s freq=%lu kHz\n", radio.snapshot().bandName,
               static_cast<unsigned long>(radio.snapshot().frequencyKHz));
             closeMenuToRadio("band selected");
