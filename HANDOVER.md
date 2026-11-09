@@ -1699,3 +1699,12 @@ Zuerst die vorhandene Menü-Engine, TunerDriver-/RadioCore-Schnittstellen und di
 - Die große Frequenzdarstellung und die Frequenzskala wurden nicht verändert. Die Einheit wird im HJB-Renderer separat gezeichnet und liegt nicht mehr an der Frequenzanzeige.
 - Commit: `245130e0f787cef10010bba3238bf01ae8b397fb`.
 - Status: Änderung committed und auf GitHub verifiziert; noch nicht kompiliert und nicht auf Hardware getestet. Nutzer startet den manuellen QSPI-/OSPI-Compile-only-Build. Keine GitHub Actions durch den Assistenten gestartet; nichts geflasht.
+
+
+### Korrektur zum HJB-Einheitenkasten (2026-11-09)
+
+- Klarstellung des Nutzers: HJB ist ein reines AM-/USB-/LSB-Layout. FM/MHz gehört nicht in dieses Layout; die Layouts bleiben strikt getrennt.
+- Der Einheitenkasten unter dem RSSI/SNR-Meter zeigt deshalb fest `kHz`. Es gibt dort keine FM-/MHz-Umschaltung.
+- Die vorherige bedingte FM/MHz-Ausgabe wurde korrigiert.
+- Korrektur-Commit: `b55cac858bf96304391f41723c189df2e7dfd0a8`.
+- Noch nicht kompiliert oder auf Hardware getestet. QSPI-/OSPI-Compile-only-Build startet weiterhin der Nutzer.
