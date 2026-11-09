@@ -89,6 +89,15 @@ void drawHJBLayout(Canvas& d, const RadioSnapshot& s, bool radioReady, bool wifi
   d.setTextColor(BLUE,BG); d.drawString("RSSI",gx+2,gy-10);
   d.setTextColor(RED,BG); d.drawString("SNR",gx+34,gy-10);
 
+  // Keep the frequency unit in a dedicated box below the left RSSI/SNR meter.
+  // This prevents the unit from colliding with the large seven-segment digits.
+  constexpr int unitBoxY=102, unitBoxH=16;
+  d.drawRect(gx,unitBoxY,gw,unitBoxH,GRID);
+  d.setTextDatum(MC_DATUM);
+  d.setTextColor(BLUE,BG);
+  d.setFont(&lgfx::fonts::Font0);
+  d.drawString(s.modulation==RadioModulation::FM?"MHz":"kHz",gx+gw/2,unitBoxY+3);
+
   // Right signal bars.
   const int bx=258;
   d.setTextDatum(MC_DATUM);
