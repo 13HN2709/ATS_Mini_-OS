@@ -2,8 +2,10 @@
 #include <esp_system.h>
 #include <WebServer.h>
 #include <LovyanGFX.hpp>
+#include <LittleFS.h>
 #include "src/radio/RadioCore.h"
 #include "src/system/PerformanceManager.h"
+#include "src/system/MemoryManager.h"
 #include "src/system/ClockService.h"
 #include "src/display/DisplayDriver.h"
 #include "src/input/EncoderInput.h"
@@ -96,6 +98,7 @@ void setup() {
   PartitionDiagnostics::printToSerial();
   StorageDiscovery::begin();
   FileManager::begin();
+  MemoryManager::begin();
   stationLogoClient.begin();
 
   encoder.begin();
@@ -135,9 +138,60 @@ void setup() {
 }
 void loop() {
   performance.update();
+  MemoryManager::update();
   wifi.update();
   systemClock.update(wifi.connected());
   if (wifi.connected() && !diagnosticsServerStarted) {
+    diagnosticsServer.on("/memory.json", HTTP_GET, []() {
+      const MemoryManager::Snapshot m = MemoryManager::snapshot();
+      char json[640];
+      snprintf(json, sizeof(json),
+        "{\\"uptime_ms\\":%lu,\\"psram_total\\":%lu,\\"psram_free\\":%lu,"
+        "\\"psram_largest_block\\":%lu,\\"psram_min_free\\":%lu,"
+        "\\"internal_total\\":%lu,\\"internal_free\\":%lu,"
+        "\\"internal_largest_block\\":%lu,\\"internal_min_free\\":%lu,"
+        "\\"allocation_failures\\":%lu,\\"reset_reason\\":\\"%s\\",\\"log_ready\\":%s}",
+        static_cast<unsigned long>(m.sampleUptimeMs),
+        static_cast<unsigned long>(m.psramTotal),
+        static_cast<unsigned long>(m.psramFree),
+        static_cast<unsigned long>(m.psramLargest),
+        static_cast<unsigned long>(m.psramMinimumFree),
+        static_cast<unsigned long>(m.internalTotal),
+        static_cast<unsigned long>(m.internalFree),
+        static_cast<unsigned long>(m.internalLargest),
+        static_cast<unsigned long>(m.internalMinimumFree),
+        static_cast<unsigned long>(m.allocationFailures),
+        MemoryManager::resetReasonName(), m.logReady ? "true" : "false");
+      diagnosticsServer.send(200, "application/json", json);
+    });
+    diagnosticsServer.on("/memory.log", HTTP_GET, []() {
+      if (!MemoryManager::logAvailable()) {
+        diagnosticsServer.send(503, "text/plain", "LittleFS memory log unavailable");
+        return;
+      }
+      File log = LittleFS.open("/system/memory.log", "r");
+      if (!log) {
+        diagnosticsServer.send(404, "text/plain", "No memory log yet");
+        return;
+      }
+      diagnosticsServer.sendHeader("Content-Disposition", "attachment; filename=ats-mini-memory.log");
+      diagnosticsServer.streamFile(log, "text/plain");
+      log.close();
+    });
+    diagnosticsServer.on("/memory-prev.log", HTTP_GET, []() {
+      if (!MemoryManager::logAvailable()) {
+        diagnosticsServer.send(503, "text/plain", "LittleFS memory log unavailable");
+        return;
+      }
+      File log = LittleFS.open("/system/memory.prev.log", "r");
+      if (!log) {
+        diagnosticsServer.send(404, "text/plain", "No previous memory log segment");
+        return;
+      }
+      diagnosticsServer.sendHeader("Content-Disposition", "attachment; filename=ats-mini-memory-prev.log");
+      diagnosticsServer.streamFile(log, "text/plain");
+      log.close();
+    });
     diagnosticsServer.begin();
     diagnosticsServerStarted = true;
     Serial.printf("[DIAG] Web status server: http://%s/ logo status only\n", WiFi.localIP().toString().c_str());
