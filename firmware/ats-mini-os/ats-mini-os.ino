@@ -146,11 +146,11 @@ void loop() {
       const MemoryManager::Snapshot m = MemoryManager::snapshot();
       char json[640];
       snprintf(json, sizeof(json),
-        "{\\"uptime_ms\\":%lu,\\"psram_total\\":%lu,\\"psram_free\\":%lu,"
-        "\\"psram_largest_block\\":%lu,\\"psram_min_free\\":%lu,"
-        "\\"internal_total\\":%lu,\\"internal_free\\":%lu,"
-        "\\"internal_largest_block\\":%lu,\\"internal_min_free\\":%lu,"
-        "\\"allocation_failures\\":%lu,\\"reset_reason\\":\\"%s\\",\\"log_ready\\":%s}",
+        "{\"uptime_ms\":%lu,\"psram_total\":%lu,\"psram_free\":%lu,"
+        "\"psram_largest_block\":%lu,\"psram_min_free\":%lu,"
+        "\"internal_total\":%lu,\"internal_free\":%lu,"
+        "\"internal_largest_block\":%lu,\"internal_min_free\":%lu,"
+        "\"allocation_failures\":%lu,\"reset_reason\":\"%s\",\"log_ready\":%s}",
         static_cast<unsigned long>(m.sampleUptimeMs),
         static_cast<unsigned long>(m.psramTotal),
         static_cast<unsigned long>(m.psramFree),
